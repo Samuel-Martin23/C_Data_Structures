@@ -287,6 +287,8 @@ Linked_List_T *NewLinkedList(Type T, void *data)
 Linked_List_T *InitLinkedList(Type T, void *data, int data_len)
 {
     Linked_List_T *new_list = NULL;
+    Node_T *top = NULL;
+    Node_T *curr = NULL;
 
     switch (T)
     {
@@ -294,101 +296,88 @@ Linked_List_T *InitLinkedList(Type T, void *data, int data_len)
             {
                 int *data_array = ((int*)data);
                 new_list = NewLinkedList(T, data_array);
-                Node_T *top = new_list->head;
+                top = new_list->head;
                 data_array++;
 
                 for (int i = 1; i < data_len; i++)
                 {
-                    Node_T *curr = NewNode(T, data_array);
+                    curr = NewNode(T, data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
-                    new_list->size++;
                 }
-
-                new_list->tail = top;
             }
             break;
         case DOUBLE:
             {
                 double *data_array= ((double*)data);
                 new_list = NewLinkedList(T, data_array);
-                Node_T *top = new_list->head;
+                top = new_list->head;
                 data_array++;
 
                 for (int i = 1; i < data_len; i++)
                 {
-                    Node_T *curr = NewNode(T, data_array);
+                    curr = NewNode(T, data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
-                    new_list->size++;
                 }
-
-                new_list->tail = top;
             }
             break;
         case FLOAT:
             {
                 float *data_array= ((float*)data);
                 new_list = NewLinkedList(T, data_array);
-                Node_T *top = new_list->head;
+                top = new_list->head;
                 data_array++;
 
                 for (int i = 1; i < data_len; i++)
                 {
-                    Node_T *curr = NewNode(T, data_array);
+                    curr = NewNode(T, data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
-                    new_list->size++;
                 }
-
-                new_list->tail = top;
             }
             break;
         case CHAR:
             {
                 char *data_array = ((char*)data);
                 new_list = NewLinkedList(T, data_array);
-                Node_T *top = new_list->head;
+                top = new_list->head;
                 data_array++;
 
                 for (int i = 1; i < data_len; i++)
                 {
-                    Node_T *curr = NewNode(T, data_array);
+                    curr = NewNode(T, data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
-                    new_list->size++;
                 }
-
-                new_list->tail = top;
             }
             break;
         case STR:
             {
                 char **data_array = (char**)((char*)data);
                 new_list = NewLinkedList(T, *data_array);
-                Node_T *top = new_list->head;
+                top = new_list->head;
                 data_array++;
 
                 for (int i = 1; i < data_len; i++)
                 {
-                    Node_T *curr = NewNode(T, *data_array);
+                    curr = NewNode(T, *data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
-                    new_list->size++;
                 }
-
-                new_list->tail = top;
             }
             break;
         default:
             break;
     }
 
+    new_list->tail = top;
+    new_list->size = data_len;
     return new_list;
 }
 
@@ -459,7 +448,7 @@ void LinkedListInsert(Linked_List_T **data_set, int index, Type T, void *data)
 void LinkedListFree(Linked_List_T **curr);
 void LinkedListExtend(Linked_List_T **data_set, Type T, void *data, int data_len)
 {
-    if ( !(CheckListNull(*data_set)) && CheckNodeNull((*data_set)->head))
+    if (!(CheckListNull(*data_set)) && CheckNodeNull((*data_set)->head))
     {
         LinkedListFree(data_set);
         *data_set = InitLinkedList(T, data, data_len);
