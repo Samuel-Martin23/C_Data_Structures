@@ -9,7 +9,7 @@ const char *VoidCastStr(void *value) {return ((const char*)value);}
 
 int DataTypeSize(Type T, void *value)
 {
-    int size = -1;
+    int size = 0;
 
     switch (T)
     {
@@ -107,12 +107,12 @@ Bucket_T *NewBucket(Type T_Key, void *key, Type T_Value, void *value)
     return container;
 }
 
-void FreeBucket(Bucket_T **container)
+void FreeBucket(Bucket_T *container)
 {
-    free((*container)->key);
-    free((*container)->value);
-    free(*container);
-    *container = NULL;
+    free(container->key);
+    free(container->value);
+    free(container);
+    container = NULL;
 }
 
 void *NewBucketElement(Hash_Table_T *inventory, Type T, void *element)
@@ -121,18 +121,18 @@ void *NewBucketElement(Hash_Table_T *inventory, Type T, void *element)
     {
         case INT:
             {
-                int *allocated_key = malloc(sizeof(int));
+                int *allocated_value = malloc(sizeof(int));
                 inventory->allocated_mem += (int)sizeof(int);
-                *allocated_key = VoidCastInt(element);
-                element = allocated_key;
+                *allocated_value = VoidCastInt(element);
+                element = allocated_value;
             }
             break;
         case DOUBLE:
             {
-                double *allocated_key = malloc(sizeof(double));
+                double *allocated_value = malloc(sizeof(double));
                 inventory->allocated_mem += (int)sizeof(double);
-                *allocated_key = VoidCastDouble(element);
-                element = allocated_key;
+                *allocated_value = VoidCastDouble(element);
+                element = allocated_value;
             }
             break;
         case FLOAT:
@@ -146,26 +146,26 @@ void *NewBucketElement(Hash_Table_T *inventory, Type T, void *element)
         case CHAR:
             {
                 char key_data = VoidCastChar(element);
-                const char *allocated_key = malloc(sizeof(char) * 2);
+                const char *allocated_value = malloc(sizeof(char) * 2);
 
                 inventory->allocated_mem += (int)(sizeof(char) * 2);
-                memcpy((char*)allocated_key, &key_data, 1);
-                *((char*)allocated_key + 1) = '\0';
+                memcpy((char*)allocated_value, &key_data, 1);
+                *((char*)allocated_value + 1) = '\0';
 
-                element = (char*)allocated_key;
+                element = (char*)allocated_value;
             }
             break;
         case STR:
             {
                 const char *key_data = VoidCastStr(element);
                 int str_length = (int)strlen(key_data);
-                const char *allocated_key = malloc(sizeof(char) * (str_length + 1));
+                const char *allocated_value = malloc(sizeof(char) * (str_length + 1));
 
                 inventory->allocated_mem += (int)(sizeof(char) * (str_length + 1));
-                memcpy((char*)allocated_key, key_data, str_length);
-                *((char*)allocated_key + str_length) = '\0';
+                memcpy((char*)allocated_value, key_data, str_length);
+                *((char*)allocated_value + str_length) = '\0';
 
-                element = (char*)allocated_key;
+                element = (char*)allocated_value;
             }
             break;
         default:
@@ -177,7 +177,7 @@ void *NewBucketElement(Hash_Table_T *inventory, Type T, void *element)
 
 int GenerateHashCode(Type T_Key, void *key, int hash_table_size)
 {
-    int hash_code = -1;
+    int hash_code = 0;
 
     switch (T_Key)
     {
@@ -198,7 +198,6 @@ int GenerateHashCode(Type T_Key, void *key, int hash_table_size)
                 int i;
                 const char *word = VoidCastStr(key);
                 int str_length = (int)strlen(word);
-                hash_code = 0;
 
                 for (i = 0; i < str_length; i++)
                 {
@@ -235,7 +234,7 @@ void InsertHashTable(Hash_Table_T *inventory, Type T_Key, void *key, Type T_Valu
     {
         inventory->hash_table[index] = container;
     }
-    else if (strcmp(inventory->hash_table[index]->key, container->key) == 0)
+    else if (CheckEqualValue(inventory->hash_table[index]->T_Key, inventory->hash_table[index]->key, T_Key, key))
     {
         return;
     }
@@ -272,16 +271,10 @@ Bucket_T *LookupHashTable(Hash_Table_T *inventory, Type T_Key, void *key)
 
  void DeleteHashTableBucket(Hash_Table_T *inventory, Type T_Key, void *key)
  {
-     Bucket_T *curr = LookupHashTable(inventory, T_Key, key);
+     int index = GenerateHashCode(T_Key, key, inventory->size);
 
-
-     if (curr == NULL)
-     {
-         return;
-     }
-
-     int index = GenerateHashCode(curr->T_Key, curr->key, inventory->size);
      Bucket_T *prev = NULL;
+     Bucket_T *curr = inventory->hash_table[index];
 
      while (curr != NULL && !(CheckEqualValue(curr->T_Key, curr->key, T_Key, key)))
      {
@@ -300,7 +293,7 @@ Bucket_T *LookupHashTable(Hash_Table_T *inventory, Type T_Key, void *key)
 
      inventory->allocated_mem -= (DataTypeSize(curr->T_Key, curr->key) +
                                   DataTypeSize(curr->T_Value,  curr->value));
-     FreeBucket(&curr);
+     FreeBucket(curr);
      inventory->allocated_mem -= sizeof(Bucket_T);
  }
 
@@ -323,14 +316,14 @@ void ClearHashTable(Hash_Table_T *inventory)
             curr_next = &((*curr)->next);
             inventory->allocated_mem -= (DataTypeSize((*curr)->T_Key, (*curr)->key) +
                                          DataTypeSize((*curr)->T_Value,  (*curr)->value));
-            FreeBucket(curr);
+            FreeBucket(*curr);
             inventory->allocated_mem -= (int)sizeof(Bucket_T);
             curr = curr_next;
         }
 
         inventory->allocated_mem -= (DataTypeSize((*curr)->T_Key, (*curr)->key) +
                                      DataTypeSize((*curr)->T_Value,  (*curr)->value));
-        FreeBucket(curr);
+        FreeBucket(*curr);
         inventory->allocated_mem -= (int)sizeof(Bucket_T);
     }
 }
