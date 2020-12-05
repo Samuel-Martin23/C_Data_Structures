@@ -13,10 +13,12 @@ int main()
     VectorReverse(&scores);                                 // |6| |5| |4| |7| |2| |3| |1|
     VectorSort(&scores);                                    // |1| |2| |3| |4| |5| |6| |7|
 
-    PrintVectorSize(&scores);
-    VectorPrint(&scores);
     VectorClear(&scores);
-    PrintVectorSize(&scores);
+    PrintAllocatedMemory(&scores);                          // Bytes Allocated: 800
+
+    scores = VectorInitInt(12, 2, 1);                       // |12| |2| |1|
+    PrintAllocatedMemory(&scores);                          // Bytes Allocated: 812
+
     VectorFree(&scores);
     PrintAllocatedMemory(&scores);
 

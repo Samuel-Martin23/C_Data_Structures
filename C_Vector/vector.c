@@ -7,6 +7,37 @@ float VoidCastFloat(void *value) {return (*(float*)value);}
 char VoidCastChar(void *value) {return (*(const char*)value);}
 const char *VoidCastStr(void *value) {return ((const char*)value);}
 
+int DataTypeSize(Type T, void *value)
+{
+    int size = 0;
+
+    switch (T)
+    {
+        case INT:
+            size = sizeof(int);
+            break;
+        case DOUBLE:
+            size = sizeof(double);
+            break;
+        case FLOAT:
+            size = sizeof(float);
+            break;
+        case CHAR:
+            size = sizeof(char) + 1;
+            break;
+        case STR:
+            {
+                const char *str_value = VoidCastStr(value);
+                size = (int)(sizeof(char) * strlen(str_value) + 1);
+            }
+            break;
+        default:
+            break;
+    }
+
+    return size;
+}
+
 bool CheckWarnings(Vector_T *vec_data, int warning_code, const char *function_name, int check_value)
 {
     if (warning_code & VEC_FREE)
@@ -66,7 +97,7 @@ bool CheckWarnings(Vector_T *vec_data, int warning_code, const char *function_na
 
         if (new_vector_size <= vec_data->size)
         {
-            printf("Warning in %s: new_vector_size is less than the current size of the vector.\n", function_name);
+            printf("Warning in %s: new_vector_size is less than or equal to the current size of the vector.\n", function_name);
             return true;
         }
     }
@@ -113,19 +144,6 @@ void PrintVectorSize(Vector_T *vec_data)
     printf("Vector Size: %d\n", vec_data->size);
 }
 
-int StrLen(const char *word)
-{
-    int length = 0;
-
-    while (*word != '\0')
-    {
-        word++;
-        length++;
-    }
-
-    return length;
-}
-
 bool CheckEqualValue(Type T, void *value_1, void *value_2)
 {
     switch (T)
@@ -139,7 +157,7 @@ bool CheckEqualValue(Type T, void *value_1, void *value_2)
         case CHAR:
             return (VoidCastChar(value_1) == VoidCastChar(value_2));
         case STR:
-            return (StrLen(VoidCastStr(value_1)) == StrLen(VoidCastStr(value_2)));
+            return (strlen(VoidCastStr(value_1)) == strlen(VoidCastStr(value_2)));
         default:
             return false;
     }
@@ -158,7 +176,7 @@ bool CheckGreaterValue(Type T, void *value_1, void *value_2)
         case CHAR:
             return (VoidCastChar(value_1) > VoidCastChar(value_2));
         case STR:
-            return (StrLen(VoidCastStr(value_1)) > StrLen(VoidCastStr(value_2)));
+            return (strlen(VoidCastStr(value_1)) > strlen(VoidCastStr(value_2)));
         default:
             return false;
     }
@@ -202,21 +220,96 @@ void *ReallocVoidElements(Vector_T *vec_data, int new_vector_size)
     return realloc(vec_data->data, sizeof(void*) * (new_vector_size));
 }
 
+void *NewIndex(Vector_T *vec_data, void *index_value)
+{
+    switch (vec_data->T)
+    {
+        case INT:
+            {
+                int *allocated_value = malloc(sizeof(int));
+                *allocated_value = VoidCastInt(index_value);
+                vec_data->allocated_mem += sizeof(int);
+                index_value = allocated_value;
+            }
+            break;
+        case DOUBLE:
+            {
+                double *allocated_value = malloc(sizeof(double));
+                *allocated_value = VoidCastDouble(index_value);
+                vec_data->allocated_mem += sizeof(double);
+                index_value = allocated_value;
+            }
+            break;
+        case FLOAT:
+            {
+                float *allocated_value = malloc(sizeof(float));
+                *allocated_value = VoidCastFloat(index_value);
+                vec_data->allocated_mem += sizeof(float);
+                index_value = allocated_value;
+            }
+            break;
+        case CHAR:
+             {
+                char key_data = VoidCastChar(index_value);
+                const char *allocated_value = malloc(sizeof(char) + 1);
+
+                vec_data->allocated_mem += (int)(sizeof(char) + 1);
+                memcpy((char*)allocated_value, &key_data, 1);
+                *((char*)allocated_value + 1) = '\0';
+
+                index_value = (char*)allocated_value;
+            }
+            break;
+        case STR:
+            {
+                const char *str_value = VoidCastStr(index_value);
+                int str_length = (int)strlen(str_value);
+                const char *allocated_value = malloc(sizeof(char) * (str_length + 1));
+
+                vec_data->allocated_mem += (int)(sizeof(char) * (str_length + 1));
+                memcpy((char*)allocated_value, str_value, str_length);
+                *((char*)allocated_value + str_length) = '\0';
+
+                index_value = (char*)allocated_value;
+            }
+            break;
+        default:
+            break;
+    }
+
+    return index_value;
+}
+
+void FreeIndex(Vector_T *vec_data, int index)
+{
+    vec_data->allocated_mem -= DataTypeSize(vec_data->T, vec_data->data[index]);
+    free(vec_data->data[index]);
+}
+
+void NullIndex(Vector_T *vec_data)
+{
+    vec_data->size--;
+    vec_data->data[vec_data->size] = NULL;
+}
+
 Vector_T VectorInit(Type T, void *array, int size)
 {
     Vector_T new_vector;
-    new_vector.capacity = size > DEFAULT_CAPACITY_SIZE ? size + DEFAULT_CAPACITY_SIZE : DEFAULT_CAPACITY_SIZE;
+    new_vector.size = size;
+    new_vector.capacity = new_vector.size > DEFAULT_CAPACITY_SIZE ? new_vector.size + DEFAULT_CAPACITY_SIZE : DEFAULT_CAPACITY_SIZE;
+    new_vector.T = T;
+    new_vector.allocated_mem = 0;
     new_vector.data = NewVoidElements(&new_vector);
 
-    switch (T)
+    switch (new_vector.T)
     {
         case INT:
             {
                 int *data_array = ((int*)array);
 
-                for (int i = 0; i < size; i++)
+                for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = (void*)data_array;
+                    new_vector.data[i] = NewIndex(&new_vector, data_array);
                     data_array++;
                 }
             }
@@ -225,9 +318,9 @@ Vector_T VectorInit(Type T, void *array, int size)
             {
                 double *data_array = ((double*)array);
 
-                for (int i = 0; i < size; i++)
+                for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = (void*)data_array;
+                    new_vector.data[i] = NewIndex(&new_vector, data_array);
                     data_array++;
                 }
             }
@@ -236,9 +329,9 @@ Vector_T VectorInit(Type T, void *array, int size)
             {
                 float *data_array = ((float*)array);
 
-                for (int i = 0; i < size; i++)
+                for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = (void*)data_array;
+                    new_vector.data[i] = NewIndex(&new_vector, data_array);
                     data_array++;
                 }
             }
@@ -247,9 +340,9 @@ Vector_T VectorInit(Type T, void *array, int size)
             {
                 char *data_array = ((char*)array);
 
-                for (int i = 0; i < size; i++)
+                for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = (void*)data_array;
+                    new_vector.data[i] = NewIndex(&new_vector, data_array);
                     data_array++;
                 }
             }
@@ -258,18 +351,18 @@ Vector_T VectorInit(Type T, void *array, int size)
             {
                 char **data_array= (char**)((char*)array);
 
-                for (int i = 0; i < size; i++)
+                for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = (void*)*data_array;
+                    new_vector.data[i] = NewIndex(&new_vector, *data_array);
                     data_array++;
                 }
             }
             break;
         default:
+            exit(1);
             break;
     }
 
-    new_vector.size = size;
     return new_vector;
 }
 
@@ -285,7 +378,7 @@ void VectorPush(Vector_T *vec_data, Type T, void *value)
         vec_data->data = ReallocVoidElements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
     }
 
-    vec_data->data[vec_data->size] = value;
+    vec_data->data[vec_data->size] = NewIndex(vec_data, value);
     vec_data->size++;
 }
 
@@ -308,7 +401,7 @@ void VectorInsert(Vector_T *vec_data, Type T, void *value, int index)
     }
 
     vec_data->size++;
-    vec_data->data[index] = value;
+    vec_data->data[index] = NewIndex(vec_data, value);
 }
 
 void VectorExtend(Vector_T *vec_data, Type T, void *array, int size_array)
@@ -333,7 +426,7 @@ void VectorExtend(Vector_T *vec_data, Type T, void *array, int size_array)
                         vec_data->data = ReallocVoidElements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
                     }
 
-                    vec_data->data[i] = (void*)data_array;
+                    vec_data->data[i] = NewIndex(vec_data, data_array);
                     data_array++;
                 }
             }
@@ -349,7 +442,7 @@ void VectorExtend(Vector_T *vec_data, Type T, void *array, int size_array)
                         vec_data->data = ReallocVoidElements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
                     }
 
-                    vec_data->data[i] = (void*)data_array;
+                    vec_data->data[i] = NewIndex(vec_data, data_array);
                     data_array++;
                 }
             }
@@ -365,7 +458,7 @@ void VectorExtend(Vector_T *vec_data, Type T, void *array, int size_array)
                         vec_data->data = ReallocVoidElements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
                     }
 
-                    vec_data->data[i] = (void*)data_array;
+                    vec_data->data[i] = NewIndex(vec_data, data_array);
                     data_array++;
                 }
             }
@@ -381,7 +474,7 @@ void VectorExtend(Vector_T *vec_data, Type T, void *array, int size_array)
                         vec_data->data = ReallocVoidElements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
                     }
 
-                    vec_data->data[i] = (void*)data_array;
+                    vec_data->data[i] = NewIndex(vec_data, data_array);
                     data_array++;
                 }
             }
@@ -397,7 +490,7 @@ void VectorExtend(Vector_T *vec_data, Type T, void *array, int size_array)
                         vec_data->data = ReallocVoidElements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
                     }
 
-                    vec_data->data[i] = (void*)data_array;
+                    vec_data->data[i] = NewIndex(vec_data, *data_array);
                     data_array++;
                 }
             }
@@ -416,8 +509,8 @@ void VectorPop(Vector_T *vec_data)
         return;
     }
 
-    vec_data->size--;
-    vec_data->data[vec_data->size] = NULL;
+    FreeIndex(vec_data, vec_data->size-1);
+    NullIndex(vec_data);
 }
 
 void VectorPopIndex(Vector_T *vec_data, int index)
@@ -427,13 +520,21 @@ void VectorPopIndex(Vector_T *vec_data, int index)
         return;
     }
 
+    if (index == vec_data->size-1)
+    {
+        FreeIndex(vec_data, index);
+        NullIndex(vec_data);
+        return;
+    }
+
+    FreeIndex(vec_data, index);
+
     for (int i = index; i < vec_data->size-1; i++)
     {
         vec_data->data[i] = vec_data->data[i + 1];
     }
 
-    vec_data->size--;
-    vec_data->data[vec_data->size] = NULL;
+    NullIndex(vec_data);
 }
 
 void VectorRemoveValue(Vector_T *vec_data, Type T, void *value)
@@ -491,6 +592,7 @@ void VectorClear(Vector_T *vec_data)
 
     for (int i = 0; i < vec_data->size; i++)
     {
+        FreeIndex(vec_data, i);
         vec_data->data[i] = NULL;
     }
 
@@ -499,11 +601,12 @@ void VectorClear(Vector_T *vec_data)
 
 void VectorFree(Vector_T *vec_data)
 {
-    if (CheckWarnings(vec_data, VEC_FREE, "VectorClear", -1))
+    if (CheckWarnings(vec_data, VEC_FREE, "VectorFree", -1))
     {
         return;
     }
 
+    VectorClear(vec_data);
     vec_data->allocated_mem -= (vec_data->capacity * sizeof(void*));
     vec_data->size = -1;
     vec_data->capacity = -1;

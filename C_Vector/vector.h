@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define IntCastVoid(value)          INT, &(int){value}
 #define DoubleCastVoid(value)       DOUBLE, &(double){value}
@@ -51,16 +52,19 @@ float VoidCastFloat(void *value);
 char VoidCastChar(void *value);
 const char *VoidCastStr(void *value);
 
+int DataTypeSize(Type T, void *value);
 bool CheckWarnings(Vector_T *vec_data, int warning_code, const char *function_name, int check_value);
 void PrintT(Type T, void *value, const char *beginning, const char *end);
 void PrintAllocatedMemory(Vector_T *vec_data);
 void PrintVectorSize(Vector_T *vec_data);
-int StrLen(const char *word);
 bool CheckEqualValue(Type T, void *value_1, void *value_2);
 bool CheckGreaterValue(Type T, void *value_1, void *value_2);
 void InsertionSort(Type T, void **array, int array_size);
 void *NewVoidElements(Vector_T *vec_data);
 void *ReallocVoidElements(Vector_T *vec_data, int new_vector_size);
+void *NewIndex(Vector_T *vec_data, void *index_value);
+void FreeIndex(Vector_T *vec_data, int index);
+void NullIndex(Vector_T *vec_data);
 
 Vector_T VectorInit(Type T, void *array, int size);
 void VectorPush(Vector_T *vec_data, Type T, void *value);
