@@ -20,7 +20,7 @@ int main()
     PrintAllocatedMemory(&scores);                          // Bytes Allocated: 812
 
     VectorFree(&scores);
-    PrintAllocatedMemory(&scores);
+    PrintAllocatedMemory(&scores);                          // Bytes Allocated: 0
 
     return 0;
 }
