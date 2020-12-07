@@ -120,7 +120,7 @@ void PrintListSize(Linked_List_T *list)
         return;
     }
 
-    printf("List Size: %d\n", list->size);
+    printf("Linked List Size: %d\n", list->size);
 }
 
 bool CheckLessEqualValue(Type T, void *value1, void *value2)

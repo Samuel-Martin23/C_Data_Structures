@@ -16,5 +16,6 @@ int main()
     LinkedListPrint(&scores);
     LinkedListFree(&scores);
     PrintAllocatedMemory(&scores);
+
     return 0;
 }

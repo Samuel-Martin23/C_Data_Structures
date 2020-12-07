@@ -1,7 +1,8 @@
 
 object_files=main.o vector.o
+name_of_executable=executable
 
-executable: $(object_files)
+$(name_of_executable): $(object_files)
 	cc $^ -o $@
 
 main.o: main.c
@@ -11,4 +12,4 @@ vector.o: vector.c vector.h
 	cc -c vector.c -o vector.o
 
 clean:
-	rm *.o
+	rm *.o $(name_of_executable)
