@@ -13,7 +13,6 @@
 #define VEC_TYPE                    0x00000004
 #define VEC_SIZE_G                  0x00000008
 #define VEC_SIZE_GE                 0x00000010
-#define VEC_NEW_SIZE                0x00000020
 
 #define DEFAULT_CAPACITY_SIZE       100
 
@@ -61,7 +60,8 @@ bool CheckEqualValue(Type T, void *value_1, void *value_2);
 bool CheckGreaterValue(Type T, void *value_1, void *value_2);
 void InsertionSort(Type T, void **array, int array_size);
 void *NewVoidElements(Vector_T *vec_data);
-void *ReallocVoidElements(Vector_T *vec_data, int new_vector_size);
+void *ReallocVoidElements(Vector_T *vec_data, int new_vector_capacity);
+void CheckCapacityReallocation(Vector_T *vec_data);
 void *NewIndex(Vector_T *vec_data, void *index_value);
 void FreeIndex(Vector_T *vec_data, int index);
 void NullIndex(Vector_T *vec_data);

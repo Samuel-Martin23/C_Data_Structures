@@ -91,17 +91,6 @@ bool CheckWarnings(Vector_T *vec_data, int warning_code, const char *function_na
         }
     }
 
-    if (warning_code & VEC_NEW_SIZE)
-    {
-        int new_vector_size = check_value;
-
-        if (new_vector_size <= vec_data->size)
-        {
-            printf("Warning in %s: new_vector_size is less than or equal to the current size of the vector.\n", function_name);
-            return true;
-        }
-    }
-
     return false;
 }
 
@@ -208,16 +197,19 @@ void *NewVoidElements(Vector_T *vec_data)
     return malloc(sizeof(void *) * vec_data->capacity);
 }
 
-void *ReallocVoidElements(Vector_T *vec_data, int new_vector_size)
+void *ReallocVoidElements(Vector_T *vec_data, int new_vector_capacity)
 {
-    if (CheckWarnings(vec_data, VEC_NEW_SIZE, "ReallocVoid", new_vector_size))
-    {
-        return NULL;
-    }
+    vec_data->allocated_mem += (int)(sizeof(void *) * (new_vector_capacity - vec_data->capacity));
+    vec_data->capacity = new_vector_capacity;
+    return realloc(vec_data->data, sizeof(void*) * (new_vector_capacity));
+}
 
-    vec_data->capacity = new_vector_size;
-    vec_data->allocated_mem += (int)(sizeof(void *) * (new_vector_size - vec_data->size));
-    return realloc(vec_data->data, sizeof(void*) * (new_vector_size));
+void CheckCapacityReallocation(Vector_T *vec_data)
+{
+    if (vec_data->size % DEFAULT_CAPACITY_SIZE == 0 && vec_data->capacity != DEFAULT_CAPACITY_SIZE)
+    {
+        vec_data->data = ReallocVoidElements(vec_data, vec_data->size);
+    }
 }
 
 void *NewIndex(Vector_T *vec_data, void *index_value)
@@ -511,6 +503,8 @@ void VectorPop(Vector_T *vec_data)
 
     FreeIndex(vec_data, vec_data->size-1);
     NullIndex(vec_data);
+
+    CheckCapacityReallocation(vec_data);
 }
 
 void VectorPopIndex(Vector_T *vec_data, int index)
@@ -522,8 +516,7 @@ void VectorPopIndex(Vector_T *vec_data, int index)
 
     if (index == vec_data->size-1)
     {
-        FreeIndex(vec_data, index);
-        NullIndex(vec_data);
+        VectorPop(vec_data);
         return;
     }
 
@@ -535,6 +528,8 @@ void VectorPopIndex(Vector_T *vec_data, int index)
     }
 
     NullIndex(vec_data);
+
+    CheckCapacityReallocation(vec_data);
 }
 
 void VectorRemoveValue(Vector_T *vec_data, Type T, void *value)
