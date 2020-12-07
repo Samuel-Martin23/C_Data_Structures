@@ -11,5 +11,5 @@ main.o: main.c
 linked_list.o: linked_list.c linked_list.h
 	cc -c linked_list.c -o linked_list.o
 
-clear:
+clean:
 	rm *.o $(name_of_executable)
