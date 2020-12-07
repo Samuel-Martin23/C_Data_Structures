@@ -1,6 +1,8 @@
+*
+!*.*
+!*/
+!**/Makefile
+
 .vscode/
 .DS_Store
-.idea/
 *.o
-cmake-build-debug/
-CMakeLists.txt

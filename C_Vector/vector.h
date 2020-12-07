@@ -8,6 +8,15 @@
 #include <stdbool.h>
 #include <string.h>
 
+#define VEC_FREE                    0x00000001
+#define VEC_SIZE_ZERO               0x00000002
+#define VEC_TYPE                    0x00000004
+#define VEC_SIZE_G                  0x00000008
+#define VEC_SIZE_GE                 0x00000010
+#define VEC_NEW_SIZE                0x00000020
+
+#define DEFAULT_CAPACITY_SIZE       100
+
 #define IntCastVoid(value)          INT, &(int){value}
 #define DoubleCastVoid(value)       DOUBLE, &(double){value}
 #define FloatCastVoid(value)        FLOAT, &(float){value}
@@ -25,15 +34,6 @@
 #define VectorInitFloat(...)        VectorInit(FloatCastVoidArray(__VA_ARGS__))
 #define VectorInitChar(...)         VectorInit(CharCastVoidArray(__VA_ARGS__))
 #define VectorInitStr(...)          VectorInit(StrCastVoidArray(__VA_ARGS__))
-
-#define VEC_FREE                    0x00000001
-#define VEC_SIZE_ZERO               0x00000002
-#define VEC_TYPE                    0x00000004
-#define VEC_SIZE_G                  0x00000008
-#define VEC_SIZE_GE                 0x00000010
-#define VEC_NEW_SIZE                0x00000020
-
-#define DEFAULT_CAPACITY_SIZE       100
 
 typedef enum T {INT, DOUBLE, FLOAT, CHAR, STR} Type;
 

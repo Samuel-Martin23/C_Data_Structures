@@ -1,5 +1,5 @@
 
-#include "list.h"
+#include "linked_list.h"
 
 int VoidCastInt(void *value) {return (*(int*)value);}
 double VoidCastDouble(void *value) {return (*(double*)value);}
@@ -7,7 +7,74 @@ float VoidCastFloat(void *value) {return (*(float*)value);}
 char VoidCastChar(void *value) {return (*(const char*)value);}
 const char *VoidCastStr(void *value) {return ((const char*)value);}
 
-void PrintT(Node_T *curr, const char *beginning, const char *end)
+int DataTypeSize(Type T, void *value)
+{
+    int size = 0;
+
+    switch (T)
+    {
+        case INT:
+            size = sizeof(int);
+            break;
+        case DOUBLE:
+            size = sizeof(double);
+            break;
+        case FLOAT:
+            size = sizeof(float);
+            break;
+        case CHAR:
+            size = sizeof(char) + 1;
+            break;
+        case STR:
+            {
+                const char *str_value = VoidCastStr(value);
+                size = (int)(sizeof(char) * strlen(str_value) + 1);
+            }
+            break;
+        default:
+            break;
+    }
+
+    return size;
+}
+
+bool CheckWarnings(Linked_List_T *list, int warning_code, const char *function_name, int check_value)
+{
+    if (warning_code & LINKED_LIST_TYPE)
+    {
+        Type T = check_value;
+
+        if (list->T != T)
+        {
+            printf("Warning in %s: Linked List type does not equal the new value type.\n", function_name);
+            return true;
+        }
+    }
+
+    if (warning_code & LINKED_LIST_HEAD_NULL)
+    {
+        if (list->head == NULL)
+        {
+            printf("Warning in %s: Linked List head is NULL.\n", function_name);
+            return true;
+        }
+    }
+
+    if (warning_code & LINKED_LIST_INDEX_LGE)
+    {
+        int index = check_value;
+
+        if (index < 0 || index >= list->size)
+        {
+            printf("Warning in %s: Index out of range.\n", function_name);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void PrintT(Type T, Node_T *curr, const char *beginning, const char *end)
 {
     if (curr == NULL)
     {
@@ -16,7 +83,7 @@ void PrintT(Node_T *curr, const char *beginning, const char *end)
 
     printf("%s", beginning);
 
-    switch (curr->T)
+    switch (T)
     {
         case INT:
             printf("%d", VoidCastInt(curr->data));
@@ -43,25 +110,17 @@ void PrintT(Node_T *curr, const char *beginning, const char *end)
 
 void PrintAllocatedMemory(Linked_List_T *list)
 {
-    printf("Bytes Allocated:%d\n", list->allocated_mem);
+    printf("Bytes Allocated: %d\n", list->allocated_mem);
 }
 
 void PrintListSize(Linked_List_T *list)
 {
-    printf("List Size: %d\n", list->size);
-}
-
-int StrLen(const char *word)
-{
-    int len = 0;
-
-    while (*word != '\0')
+    if (CheckWarnings(list, LINKED_LIST_HEAD_NULL, "PrintListSize", -1))
     {
-        word++;
-        len++;
+        return;
     }
 
-    return len;
+    printf("List Size: %d\n", list->size);
 }
 
 bool CheckLessEqualValue(Type T, void *value1, void *value2)
@@ -77,7 +136,7 @@ bool CheckLessEqualValue(Type T, void *value1, void *value2)
         case CHAR:
             return (VoidCastChar(value1) <= VoidCastChar(value2));
         case STR:
-            return (StrLen(VoidCastStr(value1)) <= StrLen(VoidCastStr(value2)));
+            return (strlen(VoidCastStr(value1)) <= strlen(VoidCastStr(value2)));
         default:
             return false;
     }
@@ -96,7 +155,7 @@ bool CheckGreaterValue(Type T, void *value1, void *value2)
         case CHAR:
             return (VoidCastChar(value1) > VoidCastChar(value2));
         case STR:
-            return (StrLen(VoidCastStr(value1)) > StrLen(VoidCastStr(value2)));
+            return (strlen(VoidCastStr(value1)) > strlen(VoidCastStr(value2)));
         default:
             return false;
     }
@@ -115,13 +174,13 @@ bool CheckEqualValue(Type T, void *value1, void *value2)
         case CHAR:
             return (VoidCastChar(value1) == VoidCastChar(value2));
         case STR:
-            return (StrLen(VoidCastStr(value1)) == StrLen(VoidCastStr(value2)));
+            return (strlen(VoidCastStr(value1)) == strlen(VoidCastStr(value2)));
         default:
             return false;
     }
 }
 
-Node_T *MergeLists(Node_T *left, Node_T *right)
+Node_T *MergeLists(Node_T *left, Node_T *right, Type T)
 {
     if (left == NULL)
     {
@@ -134,15 +193,15 @@ Node_T *MergeLists(Node_T *left, Node_T *right)
 
     Node_T *merged_head = NULL;
 
-    if (CheckLessEqualValue(right->T, left->data, right->data))
+    if (CheckLessEqualValue(T, left->data, right->data))
     {
         merged_head = left;
-        merged_head->next = MergeLists(left->next, right);
+        merged_head->next = MergeLists(left->next, right, T);
     }
     else
     {
         merged_head = right;
-        merged_head->next = MergeLists(left, right->next);
+        merged_head->next = MergeLists(left, right->next, T);
     }
 
     return merged_head;
@@ -180,7 +239,7 @@ void PartitionList(Node_T *head, Node_T **front, Node_T **back)
     }
 }
 
-void SortDataValues(Node_T **head)
+void SortDataValues(Node_T **head, Type T)
 {
     Node_T *top = *head;
     Node_T *split_left = NULL;
@@ -193,24 +252,90 @@ void SortDataValues(Node_T **head)
 
     PartitionList(top, &split_left, &split_right);
 
-    SortDataValues(&split_left);
-    SortDataValues(&split_right);
+    SortDataValues(&split_left, T);
+    SortDataValues(&split_right, T);
 
-    *head = MergeLists(split_left, split_right);
+    *head = MergeLists(split_left, split_right, T);
 }
 
-Node_T *NewNode(Linked_List_T *list, Type T, void *data)
+void *NewValue(Linked_List_T *list, void *value)
+{
+    switch (list->T)
+    {
+        case INT:
+            {
+                int *allocated_value = malloc(sizeof(int));
+                *allocated_value = VoidCastInt(value);
+                list->allocated_mem += sizeof(int);
+                value = allocated_value;
+            }
+            break;
+        case DOUBLE:
+            {
+                double *allocated_value = malloc(sizeof(double));
+                *allocated_value = VoidCastDouble(value);
+                list->allocated_mem += sizeof(double);
+                value = allocated_value;
+            }
+            break;
+        case FLOAT:
+            {
+                float *allocated_value = malloc(sizeof(float));
+                *allocated_value = VoidCastFloat(value);
+                list->allocated_mem += sizeof(float);
+                value = allocated_value;
+            }
+            break;
+        case CHAR:
+             {
+                char key_data = VoidCastChar(value);
+                const char *allocated_value = malloc(sizeof(char) + 1);
+
+                list->allocated_mem += (int)(sizeof(char) + 1);
+                memcpy((char*)allocated_value, &key_data, 1);
+                *((char*)allocated_value + 1) = '\0';
+
+                value = (char*)allocated_value;
+            }
+            break;
+        case STR:
+            {
+                const char *str_value = VoidCastStr(value);
+                int str_length = (int)strlen(str_value);
+                const char *allocated_value = malloc(sizeof(char) * (str_length + 1));
+
+                list->allocated_mem += (int)(sizeof(char) * (str_length + 1));
+                memcpy((char*)allocated_value, str_value, str_length);
+                *((char*)allocated_value + str_length) = '\0';
+
+                value = (char*)allocated_value;
+            }
+            break;
+        default:
+            break;
+    }
+
+    return value;
+}
+
+void FreeValue(Linked_List_T *list, Node_T **curr)
+{
+    list->allocated_mem -= DataTypeSize(list->T, (*curr)->data);
+    free((*curr)->data);
+}
+
+Node_T *NewNode(Linked_List_T *list, void *data)
 {
     Node_T *curr = malloc(sizeof(Node_T));
-    curr->data = data;
+    curr->data = NewValue(list, data);
     curr->next = NULL;
-    curr->T = T;
     list->allocated_mem += sizeof(Node_T);
     return curr;
 }
 
 void FreeNode(Linked_List_T *list, Node_T **curr)
 {
+    FreeValue(list, curr);
     free(*curr);
     *curr = NULL;
     list->allocated_mem -= sizeof(Node_T);
@@ -223,6 +348,8 @@ Linked_List_T InitLinkedList(Type T, void *data, int size)
     Node_T *curr = NULL;
 
     new_list.size = size;
+    new_list.T = T;
+    new_list.allocated_mem = 0;
 
     switch (T)
     {
@@ -230,13 +357,13 @@ Linked_List_T InitLinkedList(Type T, void *data, int size)
             {
                 int *data_array = ((int*)data);
 
-                new_list.head = NewNode(&new_list, T, data_array);
+                new_list.head = NewNode(&new_list, data_array);
                 top = new_list.head;
                 data_array++;
 
                 for (int i = 1; i < new_list.size; i++)
                 {
-                    curr = NewNode(&new_list, T, data_array);
+                    curr = NewNode(&new_list, data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
@@ -247,13 +374,13 @@ Linked_List_T InitLinkedList(Type T, void *data, int size)
             {
                 double *data_array= ((double*)data);
 
-                new_list.head = NewNode(&new_list, T, data_array);
+                new_list.head = NewNode(&new_list, data_array);
                 top = new_list.head;
                 data_array++;
 
                 for (int i = 1; i < new_list.size; i++)
                 {
-                    curr = NewNode(&new_list, T, data_array);
+                    curr = NewNode(&new_list, data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
@@ -264,13 +391,13 @@ Linked_List_T InitLinkedList(Type T, void *data, int size)
             {
                 float *data_array= ((float*)data);
 
-                new_list.head = NewNode(&new_list, T, data_array);
+                new_list.head = NewNode(&new_list, data_array);
                 top = new_list.head;
                 data_array++;
 
                 for (int i = 1; i < new_list.size; i++)
                 {
-                    curr = NewNode(&new_list, T, data_array);
+                    curr = NewNode(&new_list, data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
@@ -281,13 +408,13 @@ Linked_List_T InitLinkedList(Type T, void *data, int size)
             {
                 char *data_array = ((char*)data);
 
-                new_list.head = NewNode(&new_list, T, data_array);
+                new_list.head = NewNode(&new_list, data_array);
                 top = new_list.head;
                 data_array++;
 
                 for (int i = 1; i < new_list.size; i++)
                 {
-                    curr = NewNode(&new_list, T, data_array);
+                    curr = NewNode(&new_list, data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
@@ -298,13 +425,13 @@ Linked_List_T InitLinkedList(Type T, void *data, int size)
             {
                 char **data_array = (char**)((char*)data);
 
-                new_list.head = NewNode(&new_list, T, data_array);
+                new_list.head = NewNode(&new_list, *data_array);
                 top = new_list.head;
                 data_array++;
 
                 for (int i = 1; i < new_list.size; i++)
                 {
-                    curr = NewNode(&new_list, T, data_array);
+                    curr = NewNode(&new_list, *data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
@@ -324,17 +451,17 @@ void LinkedListAppend(Linked_List_T *list, Type T, void *data)
 {
     if (list->head == NULL)
     {
-        list->head = NewNode(list, T, data);
-        list->tail = list->head;
+        *list = InitLinkedList(T, data, 1);
         return;
     }
-    else if (list->tail == NULL)
+
+    if (CheckWarnings(list, LINKED_LIST_TYPE, "LinkedListAppend", T))
     {
         return;
     }
 
     Node_T **tail = &(list->tail);
-    Node_T *curr = NewNode(list, (*tail)->T, data);
+    Node_T *curr = NewNode(list, data);
 
     (*tail)->next = curr;
     *tail = (*tail)->next;
@@ -343,12 +470,14 @@ void LinkedListAppend(Linked_List_T *list, Type T, void *data)
 
 void LinkedListInsert(Linked_List_T *list, int index, Type T, void *data)
 {
-    if (list->head == NULL)
+    if (list->head == NULL && index == 0)
     {
+        *list = InitLinkedList(T, data, 1);
         return;
     }
 
-    if (index < 0 || index >= list->size)
+    if (CheckWarnings(list, LINKED_LIST_TYPE | LINKED_LIST_HEAD_NULL, "LinkedListInsert", T)
+        || CheckWarnings(list, LINKED_LIST_INDEX_LGE, "LinkedListInsert", index))
     {
         return;
     }
@@ -357,7 +486,7 @@ void LinkedListInsert(Linked_List_T *list, int index, Type T, void *data)
 
     if (index == 0)
     {
-        Node_T *temp = NewNode(list, (*head)->T, data);
+        Node_T *temp = NewNode(list, data);
         temp->next = *head;
         *head = temp;
         list->size++;
@@ -378,7 +507,7 @@ void LinkedListInsert(Linked_List_T *list, int index, Type T, void *data)
         curr = curr->next;
     }
 
-    Node_T *temp = NewNode(list, curr->T, data);
+    Node_T *temp = NewNode(list, data);
     prev->next = temp;
     temp->next = curr;
     list->size++;
@@ -391,7 +520,8 @@ void LinkedListExtend(Linked_List_T *list, Type T, void *data, int size)
         *list = InitLinkedList(T, data, size);
         return;
     }
-    else if (list->tail == NULL)
+
+    if (CheckWarnings(list, LINKED_LIST_TYPE, "LinkedListExtend", T))
     {
         return;
     }
@@ -407,7 +537,7 @@ void LinkedListExtend(Linked_List_T *list, Type T, void *data, int size)
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = NewNode(list, (*tail)->T, data_array);
+                    curr = NewNode(list, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
@@ -422,7 +552,7 @@ void LinkedListExtend(Linked_List_T *list, Type T, void *data, int size)
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = NewNode(list, (*tail)->T, data_array);
+                    curr = NewNode(list, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
@@ -437,7 +567,7 @@ void LinkedListExtend(Linked_List_T *list, Type T, void *data, int size)
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = NewNode(list, (*tail)->T, data_array);
+                    curr = NewNode(list, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
@@ -452,7 +582,7 @@ void LinkedListExtend(Linked_List_T *list, Type T, void *data, int size)
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = NewNode(list, (*tail)->T, data_array);
+                    curr = NewNode(list, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
@@ -467,7 +597,7 @@ void LinkedListExtend(Linked_List_T *list, Type T, void *data, int size)
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = NewNode(list, (*tail)->T, data_array);
+                    curr = NewNode(list, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
@@ -485,12 +615,7 @@ void LinkedListExtend(Linked_List_T *list, Type T, void *data, int size)
 
 void LinkedListRemoveIndex(Linked_List_T *list, int index)
 {
-    if (list->head == NULL)
-    {
-        return;
-    }
-
-    if (index < 0 || index >= list->size)
+    if (CheckWarnings(list, LINKED_LIST_HEAD_NULL | LINKED_LIST_INDEX_LGE, "LinkedListRemoveIndex", index))
     {
         return;
     }
@@ -522,7 +647,7 @@ void LinkedListRemoveIndex(Linked_List_T *list, int index)
 
 void LinkedListRemoveValue(Linked_List_T *list, Type T, void *value)
 {
-    if (list->tail == NULL)
+    if (CheckWarnings(list, LINKED_LIST_TYPE | LINKED_LIST_HEAD_NULL, "LinkedListRemoveValue", T))
     {
         return;
     }
@@ -563,19 +688,12 @@ void LinkedListRemoveValue(Linked_List_T *list, Type T, void *value)
 
 Node_T *LinkedListGetValue(Linked_List_T *list, int index)
 {
-    Node_T *top = NULL;
-    
-    if (list->head == NULL)
+    if (CheckWarnings(list, LINKED_LIST_HEAD_NULL | LINKED_LIST_INDEX_LGE, "LinkedListGetValue", index))
     {
-        return top;
+        return NULL;
     }
 
-    if (index < 0 || index >= list->size)
-    {
-        return top;
-    }
-
-    top = list->head;
+    Node_T *top = list->head;
 
     for (int i = 0; i < index; i++)
     {
@@ -592,7 +710,7 @@ Node_T *LinkedListGetValue(Linked_List_T *list, int index)
 
 bool LinkedListCheckValue(Linked_List_T *list, Type T, void *data)
 {
-    if (list->head == NULL)
+    if (CheckWarnings(list, LINKED_LIST_TYPE | LINKED_LIST_HEAD_NULL, "LinkedListCheckValue", T))
     {
         return false;
     }
@@ -614,6 +732,11 @@ bool LinkedListCheckValue(Linked_List_T *list, Type T, void *data)
 
 void LinkedListReverse(Linked_List_T *list)
 {
+    if (CheckWarnings(list, LINKED_LIST_HEAD_NULL, "LinkedListReverse", -1))
+    {
+        return;
+    }
+  
     Node_T *curr = list->head;
     Node_T *prev = NULL;
     Node_T *next = NULL;
@@ -631,7 +754,12 @@ void LinkedListReverse(Linked_List_T *list)
 
 void LinkedListSort(Linked_List_T *list)
 {
-    SortDataValues(&(list->head));
+    if (CheckWarnings(list, LINKED_LIST_HEAD_NULL, "LinkedListSort", -1))
+    {
+        return;
+    }
+
+    SortDataValues(&(list->head), list->T);
     
     if (list->tail != NULL)
     {
@@ -648,7 +776,7 @@ void LinkedListSort(Linked_List_T *list)
 
 void LinkedListFree(Linked_List_T *list)
 {
-    if (list->tail == NULL)
+    if (CheckWarnings(list, LINKED_LIST_HEAD_NULL, "LinkedListFree", -1))
     {
         return;
     }
@@ -659,28 +787,28 @@ void LinkedListFree(Linked_List_T *list)
     while (succeeding != NULL)
     {
         FreeNode(list, head);
-        list->size--;
         *head = succeeding;
         succeeding = succeeding->next;
     }
 
     FreeNode(list, head);
-    list->size--;
     list->tail = NULL;
+    list->size = -1;
+    list->T = -1;
 }
 
-void LinkedListPrint(Linked_List_T *data_set)
+void LinkedListPrint(Linked_List_T *list)
 {
-    if (data_set->head == NULL)
+    if (CheckWarnings(list, LINKED_LIST_HEAD_NULL, "LinkedListPrint", -1))
     {
         return;
     }
 
-    Node_T *top = data_set->head;
+    Node_T *top = list->head;
 
     while (top != NULL)
     {
-        PrintT(top, "", "");
+        PrintT(list->T, top, "", "");
         printf("-->");
         top = top->next;
     }
