@@ -63,21 +63,6 @@ static bool CheckWarnings(Vector_t *vec_data, int warning_code, const char *func
     return false;
 }
 
-void PrintAllocatedMemVector(Vector_t *vec_data)
-{
-    printf("Bytes Allocated: %d\n", vec_data->allocated_mem);
-}
-
-void PrintVectorSize(Vector_t *vec_data)
-{
-    if (CheckWarnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "PrintVectorSize", -1))
-    {
-        return;
-    }
-
-    printf("Vector Size: %d\n", vec_data->size);
-}
-
 void InsertionSort(Template T, void **array, int array_size)
 {
     int j;
@@ -189,6 +174,21 @@ void NullIndex(Vector_t *vec_data)
 {
     vec_data->size--;
     vec_data->data[vec_data->size] = NULL;
+}
+
+void PrintAllocatedMemory(Vector_t *vec_data)
+{
+    printf("Bytes Allocated: %d\n", vec_data->allocated_mem);
+}
+
+void PrintVectorSize(Vector_t *vec_data)
+{
+    if (CheckWarnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "PrintVectorSize", -1))
+    {
+        return;
+    }
+
+    printf("Vector Size: %d\n", vec_data->size);
 }
 
 Vector_t VectorInit(Template T, void *array, int size)

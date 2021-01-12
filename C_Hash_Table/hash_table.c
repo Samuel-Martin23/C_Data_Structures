@@ -27,37 +27,6 @@ bool CheckTwoEqualValue(Template T_Key_1, void *key_1, Template T_Key_2, void *k
     return false;
 }
 
-Hash_Table_t InitHashTable(int size)
-{
-    Hash_Table_t curr_table;
-    curr_table.size = size;
-    curr_table.number_of_buckets = 0;
-    curr_table.hash_table = malloc(sizeof(Bucket_t*) * curr_table.size);
-    curr_table.first_index = 0;
-    curr_table.last_index = 0;
-    curr_table.allocated_mem = (int)sizeof(Bucket_t*) * curr_table.size;
-
-    for (int i = 0; i < curr_table.size; i++)
-    {
-        curr_table.hash_table[i] = NULL;
-    }
-
-    return curr_table;
-}
-
-void FreeHashTable(Hash_Table_t *inventory)
-{
-    ClearHashTable(inventory);
-    free(inventory->hash_table);
-
-    inventory->allocated_mem -= (int)sizeof(Bucket_t*) * inventory->size;
-    inventory->size = -1;
-    inventory->number_of_buckets = -1;
-    inventory->hash_table = NULL;
-    inventory->first_index = -1;
-    inventory->last_index = -1;
-}
-
 Bucket_t *NewBucket(Template T_Key, void *key, Template T_Value, void *value)
 {
     Bucket_t *container = malloc(sizeof(Bucket_t));
@@ -177,7 +146,35 @@ int GenerateHashCode(Template T_Key, void *key, int hash_table_size)
     return hash_code;
 }
 
-void InsertHashTable(Hash_Table_t *inventory, Template T_Key, void *key, Template T_Value, void *value)
+void PrintAllocatedMemHT(Hash_Table_t *inventory)
+{
+    printf("Bytes Allocated: %d\n", inventory->allocated_mem);
+}
+
+void PrintHashTableSize(Hash_Table_t *inventory)
+{
+    printf("Hash Table Size: %d\n", inventory->number_of_buckets);
+}
+
+Hash_Table_t HashTableInit(int size)
+{
+    Hash_Table_t curr_table;
+    curr_table.size = size;
+    curr_table.number_of_buckets = 0;
+    curr_table.hash_table = malloc(sizeof(Bucket_t*) * curr_table.size);
+    curr_table.first_index = 0;
+    curr_table.last_index = 0;
+    curr_table.allocated_mem = (int)sizeof(Bucket_t*) * curr_table.size;
+
+    for (int i = 0; i < curr_table.size; i++)
+    {
+        curr_table.hash_table[i] = NULL;
+    }
+
+    return curr_table;
+}
+
+void HashTableInsert(Hash_Table_t *inventory, Template T_Key, void *key, Template T_Value, void *value)
 {
     key = NewBucketElement(inventory, T_Key, key);
     value = NewBucketElement(inventory, T_Value, value);
@@ -219,7 +216,7 @@ void InsertHashTable(Hash_Table_t *inventory, Template T_Key, void *key, Templat
     inventory->number_of_buckets++;
 }
 
-Bucket_t *LookupHashTable(Hash_Table_t *inventory, Template T_Key, void *key)
+Bucket_t *HashTableLookup(Hash_Table_t *inventory, Template T_Key, void *key)
 {
     int index = GenerateHashCode(T_Key, key, inventory->size);
     Bucket_t *temp = inventory->hash_table[index];
@@ -232,7 +229,7 @@ Bucket_t *LookupHashTable(Hash_Table_t *inventory, Template T_Key, void *key)
     return temp;
 }
 
- void DeleteHashTableBucket(Hash_Table_t *inventory, Template T_Key, void *key)
+ void HashTableDeleteBucket(Hash_Table_t *inventory, Template T_Key, void *key)
  {
      int index = GenerateHashCode(T_Key, key, inventory->size);
 
@@ -260,7 +257,7 @@ Bucket_t *LookupHashTable(Hash_Table_t *inventory, Template T_Key, void *key)
      inventory->allocated_mem -= sizeof(Bucket_t);
  }
 
-void ClearHashTable(Hash_Table_t *inventory)
+void HashTableClear(Hash_Table_t *inventory)
 {
     Bucket_t **curr = NULL;
     Bucket_t **curr_next = NULL;
@@ -291,7 +288,20 @@ void ClearHashTable(Hash_Table_t *inventory)
     }
 }
 
-void PrintHashTable(Hash_Table_t *inventory, const char *beginning, const char *end)
+void HashTableFree(Hash_Table_t *inventory)
+{
+    HashTableClear(inventory);
+    free(inventory->hash_table);
+
+    inventory->allocated_mem -= (int)sizeof(Bucket_t*) * inventory->size;
+    inventory->size = -1;
+    inventory->number_of_buckets = -1;
+    inventory->hash_table = NULL;
+    inventory->first_index = -1;
+    inventory->last_index = -1;
+}
+
+void HashTablePrint(Hash_Table_t *inventory, const char *beginning, const char *end)
 {
     if (inventory->hash_table == NULL)
     {
@@ -335,9 +345,4 @@ void PrintHashTable(Hash_Table_t *inventory, const char *beginning, const char *
     PrintT(temp->T_Key, temp->key, "", ":");
     PrintT(temp->T_Value, temp->value, " ", "|");
     printf("%s", end);
-}
-
-void PrintAllocatedMemHT(Hash_Table_t *inventory)
-{
-    printf("Bytes Allocated: %d\n", inventory->allocated_mem);
 }

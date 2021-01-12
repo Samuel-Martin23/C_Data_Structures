@@ -41,21 +41,6 @@ static bool CheckWarnings(Linked_List_t *list, int warning_code, const char *fun
     return false;
 }
 
-void PrintAllocatedMemList(Linked_List_t *list)
-{
-    printf("Bytes Allocated: %d\n", list->allocated_mem);
-}
-
-void PrintListSize(Linked_List_t *list)
-{
-    if (CheckWarnings(list, LINKED_LIST_HEAD_NULL, "PrintListSize", -1))
-    {
-        return;
-    }
-
-    printf("Linked List Size: %d\n", list->size);
-}
-
 Node_t *MergeLists(Node_t *left, Node_t *right, Template T)
 {
     if (left == NULL)
@@ -216,6 +201,22 @@ void FreeNode(Linked_List_t *list, Node_t **curr)
     *curr = NULL;
     list->allocated_mem -= sizeof(Node_t);
 }
+
+void PrintAllocatedMemList(Linked_List_t *list)
+{
+    printf("Bytes Allocated: %d\n", list->allocated_mem);
+}
+
+void PrintListSize(Linked_List_t *list)
+{
+    if (CheckWarnings(list, LINKED_LIST_HEAD_NULL, "PrintListSize", -1))
+    {
+        return;
+    }
+
+    printf("Linked List Size: %d\n", list->size);
+}
+
 
 Linked_List_t InitLinkedList(Template T, void *data, int size)
 {
