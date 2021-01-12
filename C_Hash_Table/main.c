@@ -3,7 +3,7 @@
 
 int main()
 {
-    Hash_Table_T names = InitHashTable(10);
+    Hash_Table_t names = InitHashTable(10);
 
     InsertHashTable(&names, StrCastVoid("sam"), IntCastVoid(18));
     InsertHashTable(&names, CharCastVoid('S'), StrCastVoid("vader"));
@@ -13,15 +13,15 @@ int main()
     InsertHashTable(&names, DoubleCastVoid(511.21), FloatCastVoid(90.12));
     PrintHashTable(&names, "", "\n");
 
-    Bucket_T *age = LookupHashTable(&names, StrCastVoid("sam"));
+    Bucket_t *age = LookupHashTable(&names, StrCastVoid("sam"));
     PrintT(age->T_Value, age->value, "", "\n");
 
     DeleteHashTableBucket(&names, CharCastVoid('S'));
     PrintHashTable(&names, "", "\n");
 
-    PrintAllocatedMemory(&names);
+    PrintAllocatedMemHT(&names);
     FreeHashTable(&names);
-    PrintAllocatedMemory(&names);
+    PrintAllocatedMemHT(&names);
 
     return 0;
 }

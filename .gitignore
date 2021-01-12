@@ -4,5 +4,7 @@
 !**/Makefile
 
 .vscode/
-.DS_Store
+*.DS_Store
 *.o
+*.dylib
+*.a

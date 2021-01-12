@@ -3,7 +3,7 @@
 
 int main()
 {
-    Vector_T scores = VectorInitInt(5, 1, 3, 2, 4);         // |5| |1| |3| |2| |4|
+    Vector_t scores = VectorInitInt(5, 1, 3, 2, 4);         // |5| |1| |3| |2| |4|
     VectorPush(&scores, IntCastVoid(6));                    // |5| |1| |3| |2| |4| |6|
     VectorPop(&scores);                                     // |5| |1| |3| |2| |4|
     VectorPopIndex(&scores, 0);                             // |1| |3| |2| |4|
@@ -14,13 +14,13 @@ int main()
     VectorSort(&scores);                                    // |1| |2| |3| |4| |5| |6| |7|
 
     VectorClear(&scores);
-    PrintAllocatedMemory(&scores);                          // Bytes Allocated: 800
+    PrintAllocatedMemVector(&scores);                       // Bytes Allocated: 800
 
     scores = VectorInitInt(12, 2, 1);                       // |12| |2| |1|
-    PrintAllocatedMemory(&scores);                          // Bytes Allocated: 812
+    PrintAllocatedMemVector(&scores);                       // Bytes Allocated: 812
 
     VectorFree(&scores);
-    PrintAllocatedMemory(&scores);                          // Bytes Allocated: 0
+    PrintAllocatedMemVector(&scores);                       // Bytes Allocated: 0
 
     return 0;
 }

@@ -1,44 +1,13 @@
 
 #include "vector.h"
 
-int VoidCastInt(void *value) {return (*(int*)value);}
-double VoidCastDouble(void *value) {return (*(double*)value);}
-float VoidCastFloat(void *value) {return (*(float*)value);}
-char VoidCastChar(void *value) {return (*(const char*)value);}
-const char *VoidCastStr(void *value) {return ((const char*)value);}
+#define VEC_FREE                    0x00000001
+#define VEC_SIZE_ZERO               0x00000002
+#define VEC_TYPE                    0x00000004
+#define VEC_SIZE_G                  0x00000008
+#define VEC_SIZE_GE                 0x00000010
 
-int DataTypeSize(Type T, void *value)
-{
-    int size = 0;
-
-    switch (T)
-    {
-        case INT:
-            size = sizeof(int);
-            break;
-        case DOUBLE:
-            size = sizeof(double);
-            break;
-        case FLOAT:
-            size = sizeof(float);
-            break;
-        case CHAR:
-            size = sizeof(char) + 1;
-            break;
-        case STR:
-            {
-                const char *str_value = VoidCastStr(value);
-                size = (int)(sizeof(char) * strlen(str_value) + 1);
-            }
-            break;
-        default:
-            break;
-    }
-
-    return size;
-}
-
-bool CheckWarnings(Vector_T *vec_data, int warning_code, const char *function_name, int check_value)
+static bool CheckWarnings(Vector_t *vec_data, int warning_code, const char *function_name, int check_value)
 {
     if (warning_code & VEC_FREE)
     {
@@ -60,7 +29,7 @@ bool CheckWarnings(Vector_T *vec_data, int warning_code, const char *function_na
 
     if (warning_code & VEC_TYPE)
     {
-        Type T = check_value;
+        Template T = check_value;
 
         if (vec_data->T != T)
         {
@@ -94,36 +63,12 @@ bool CheckWarnings(Vector_T *vec_data, int warning_code, const char *function_na
     return false;
 }
 
-void PrintT(Type T, void *value, const char *beginning, const char *end)
-{
-    switch(T)
-    {
-        case INT:
-            printf("%s%d%s", beginning, VoidCastInt(value), end);
-            break;
-        case DOUBLE:
-            printf("%s%.2f%s", beginning, VoidCastDouble(value), end);
-            break;
-        case FLOAT:
-            printf("%s%.2f%s", beginning, VoidCastFloat(value), end);
-            break;
-        case CHAR:
-            printf("%s\'%c\'%s", beginning, VoidCastChar(value), end);
-            break;
-        case STR:
-            printf("%s\"%s\"%s", beginning, VoidCastStr(value), end);
-            break;
-        default:
-            break;
-    }
-}
-
-void PrintAllocatedMemory(Vector_T *vec_data)
+void PrintAllocatedMemVector(Vector_t *vec_data)
 {
     printf("Bytes Allocated: %d\n", vec_data->allocated_mem);
 }
 
-void PrintVectorSize(Vector_T *vec_data)
+void PrintVectorSize(Vector_t *vec_data)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "PrintVectorSize", -1))
     {
@@ -133,45 +78,7 @@ void PrintVectorSize(Vector_T *vec_data)
     printf("Vector Size: %d\n", vec_data->size);
 }
 
-bool CheckEqualValue(Type T, void *value_1, void *value_2)
-{
-    switch (T)
-    {
-        case INT:
-            return (VoidCastInt(value_1) == VoidCastInt(value_2));
-        case DOUBLE:
-            return (VoidCastDouble(value_1) == VoidCastDouble(value_2));
-        case FLOAT:
-            return (VoidCastFloat(value_1) == VoidCastFloat(value_2));
-        case CHAR:
-            return (VoidCastChar(value_1) == VoidCastChar(value_2));
-        case STR:
-            return (strlen(VoidCastStr(value_1)) == strlen(VoidCastStr(value_2)));
-        default:
-            return false;
-    }
-}
-
-bool CheckGreaterValue(Type T, void *value_1, void *value_2)
-{
-    switch (T)
-    {
-        case INT:
-            return (VoidCastInt(value_1) > VoidCastInt(value_2));
-        case DOUBLE:
-            return (VoidCastDouble(value_1) > VoidCastDouble(value_2));
-        case FLOAT:
-            return (VoidCastFloat(value_1) > VoidCastFloat(value_2));
-        case CHAR:
-            return (VoidCastChar(value_1) > VoidCastChar(value_2));
-        case STR:
-            return (strlen(VoidCastStr(value_1)) > strlen(VoidCastStr(value_2)));
-        default:
-            return false;
-    }
-}
-
-void InsertionSort(Type T, void **array, int array_size)
+void InsertionSort(Template T, void **array, int array_size)
 {
     int j;
     void *key;
@@ -191,20 +98,20 @@ void InsertionSort(Type T, void **array, int array_size)
     }
 }
 
-void *NewVoidElements(Vector_T *vec_data)
+void *NewVoidElements(Vector_t *vec_data)
 {
     vec_data->allocated_mem += sizeof(void *) * vec_data->capacity;
     return malloc(sizeof(void *) * vec_data->capacity);
 }
 
-void *ReallocVoidElements(Vector_T *vec_data, int new_vector_capacity)
+void *ReallocVoidElements(Vector_t *vec_data, int new_vector_capacity)
 {
     vec_data->allocated_mem += (int)(sizeof(void *) * (new_vector_capacity - vec_data->capacity));
     vec_data->capacity = new_vector_capacity;
     return realloc(vec_data->data, sizeof(void*) * (new_vector_capacity));
 }
 
-void CheckCapacityReallocation(Vector_T *vec_data)
+void CheckCapacityReallocation(Vector_t *vec_data)
 {
     if (vec_data->size % DEFAULT_CAPACITY_SIZE == 0 && vec_data->capacity != DEFAULT_CAPACITY_SIZE)
     {
@@ -212,7 +119,7 @@ void CheckCapacityReallocation(Vector_T *vec_data)
     }
 }
 
-void *NewIndex(Vector_T *vec_data, void *index_value)
+void *NewIndex(Vector_t *vec_data, void *index_value)
 {
     switch (vec_data->T)
     {
@@ -272,21 +179,21 @@ void *NewIndex(Vector_T *vec_data, void *index_value)
     return index_value;
 }
 
-void FreeIndex(Vector_T *vec_data, int index)
+void FreeIndex(Vector_t *vec_data, int index)
 {
-    vec_data->allocated_mem -= DataTypeSize(vec_data->T, vec_data->data[index]);
+    vec_data->allocated_mem -= SizeOfType(vec_data->T, vec_data->data[index]);
     free(vec_data->data[index]);
 }
 
-void NullIndex(Vector_T *vec_data)
+void NullIndex(Vector_t *vec_data)
 {
     vec_data->size--;
     vec_data->data[vec_data->size] = NULL;
 }
 
-Vector_T VectorInit(Type T, void *array, int size)
+Vector_t VectorInit(Template T, void *array, int size)
 {
-    Vector_T new_vector;
+    Vector_t new_vector;
     new_vector.size = size;
     new_vector.capacity = new_vector.size > DEFAULT_CAPACITY_SIZE ? new_vector.size + DEFAULT_CAPACITY_SIZE : DEFAULT_CAPACITY_SIZE;
     new_vector.T = T;
@@ -358,7 +265,7 @@ Vector_T VectorInit(Type T, void *array, int size)
     return new_vector;
 }
 
-void VectorPush(Vector_T *vec_data, Type T, void *value)
+void VectorPush(Vector_t *vec_data, Template T, void *value)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_TYPE, "VectorPush", T))
     {
@@ -374,7 +281,7 @@ void VectorPush(Vector_T *vec_data, Type T, void *value)
     vec_data->size++;
 }
 
-void VectorInsert(Vector_T *vec_data, Type T, void *value, int index)
+void VectorInsert(Vector_t *vec_data, Template T, void *value, int index)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_TYPE, "VectorInsert", T)
         || CheckWarnings(vec_data, VEC_SIZE_G, "VectorInsert", index))
@@ -396,7 +303,7 @@ void VectorInsert(Vector_T *vec_data, Type T, void *value, int index)
     vec_data->data[index] = NewIndex(vec_data, value);
 }
 
-void VectorExtend(Vector_T *vec_data, Type T, void *array, int size_array)
+void VectorExtend(Vector_t *vec_data, Template T, void *array, int size_array)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_TYPE, "VectorExtened", T))
     {
@@ -494,7 +401,7 @@ void VectorExtend(Vector_T *vec_data, Type T, void *array, int size_array)
     vec_data->size = total_size;
 }
 
-void VectorPop(Vector_T *vec_data)
+void VectorPop(Vector_t *vec_data)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "VectorPop", -1))
     {
@@ -507,7 +414,7 @@ void VectorPop(Vector_T *vec_data)
     CheckCapacityReallocation(vec_data);
 }
 
-void VectorPopIndex(Vector_T *vec_data, int index)
+void VectorPopIndex(Vector_t *vec_data, int index)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_SIZE_ZERO | VEC_SIZE_GE, "VectorPopIndex", index))
     {
@@ -532,7 +439,7 @@ void VectorPopIndex(Vector_T *vec_data, int index)
     CheckCapacityReallocation(vec_data);
 }
 
-void VectorRemoveValue(Vector_T *vec_data, Type T, void *value)
+void VectorRemoveValue(Vector_t *vec_data, Template T, void *value)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_TYPE | VEC_SIZE_ZERO, "VectorRemoveValue", T))
     {
@@ -551,7 +458,7 @@ void VectorRemoveValue(Vector_T *vec_data, Type T, void *value)
     printf("Warning in VectorRemoveValue: Value could not be found in the vector.\n");
 }
 
-void VectorReverse(Vector_T *vec_data)
+void VectorReverse(Vector_t *vec_data)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "VectorReverse", -1))
     {
@@ -568,7 +475,7 @@ void VectorReverse(Vector_T *vec_data)
     }
 }
 
-void VectorSort(Vector_T *vec_data)
+void VectorSort(Vector_t *vec_data)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "VectorSort", -1))
     {
@@ -578,7 +485,7 @@ void VectorSort(Vector_T *vec_data)
     InsertionSort(vec_data->T, vec_data->data, vec_data->size);
 }
 
-void VectorClear(Vector_T *vec_data)
+void VectorClear(Vector_t *vec_data)
 {
     if (CheckWarnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "VectorClear", -1))
     {
@@ -594,7 +501,7 @@ void VectorClear(Vector_T *vec_data)
     vec_data->size = 0;
 }
 
-void VectorFree(Vector_T *vec_data)
+void VectorFree(Vector_t *vec_data)
 {
     if (CheckWarnings(vec_data, VEC_FREE, "VectorFree", -1))
     {
@@ -610,7 +517,7 @@ void VectorFree(Vector_T *vec_data)
     vec_data->T = -1;
 }
 
-void VectorPrint(Vector_T *vec_data)
+void VectorPrint(Vector_t *vec_data)
 {
     if (CheckWarnings(vec_data, VEC_SIZE_ZERO, "VectorPrint", -1))
     {

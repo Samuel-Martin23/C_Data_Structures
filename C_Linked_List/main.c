@@ -3,7 +3,7 @@
 
 int main()
 {
-    Linked_List_T scores = InitLinkedListInt(23, 54, 876, 234, 77);     // 23-->54-->876-->234-->77-->NULL
+    Linked_List_t scores = LinkedListInitInt(23, 54, 876, 234, 77);     // 23-->54-->876-->234-->77-->NULL
     LinkedListAppend(&scores, IntCastVoid(12));                         // 23-->54-->876-->234-->77-->12-->NULL
     LinkedListRemoveValue(&scores, IntCastVoid(54));                    // 23-->876-->234-->77-->12-->NULL
     LinkedListExtend(&scores, IntCastVoidArray(45, 495, 177));          // 23-->876-->234-->77-->12-->45-->495-->177-->NULL
@@ -15,7 +15,7 @@ int main()
     LinkedListExtend(&scores, IntCastVoidArray(1, 2, 3));               // 1-->2-->3-->NULL
     LinkedListPrint(&scores);
     LinkedListFree(&scores);
-    PrintAllocatedMemory(&scores);
+    PrintAllocatedMemList(&scores);
 
     return 0;
 }
