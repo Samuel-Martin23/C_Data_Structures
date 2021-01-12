@@ -176,13 +176,21 @@ Hash_Table_t HashTableInit(int size)
 
 void HashTableInsert(Hash_Table_t *inventory, Template T_Key, void *key, Template T_Value, void *value)
 {
+    int index = GenerateHashCode(T_Key, key, inventory->size);
+
+    if (inventory->hash_table[index] != NULL)
+    {
+        if (CheckTwoEqualValue(inventory->hash_table[index]->T_Key, inventory->hash_table[index]->key, T_Key, key))
+        {
+            return;
+        }
+    }
+
     key = NewBucketElement(inventory, T_Key, key);
     value = NewBucketElement(inventory, T_Value, value);
 
     Bucket_t *container = NewBucket(T_Key, key, T_Value, value);
     inventory->allocated_mem += (int)sizeof(Bucket_t);
-
-    int index = GenerateHashCode(container->T_Key, container->key, inventory->size);
 
     if (inventory->number_of_buckets == 0)
     {
@@ -193,10 +201,6 @@ void HashTableInsert(Hash_Table_t *inventory, Template T_Key, void *key, Templat
     if (inventory->hash_table[index] == NULL)
     {
         inventory->hash_table[index] = container;
-    }
-    else if (CheckTwoEqualValue(inventory->hash_table[index]->T_Key, inventory->hash_table[index]->key, T_Key, key))
-    {
-        return;
     }
     else
     {

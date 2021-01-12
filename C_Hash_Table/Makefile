@@ -2,7 +2,7 @@
 CC = clang
 name_of_executable = program
 
-object_files=main.o hash_table.o
+object_files = main.o hash_table.o
 template_dir = ../Template/
 
 $(name_of_executable): $(object_files)
