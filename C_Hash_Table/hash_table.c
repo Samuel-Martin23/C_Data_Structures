@@ -1,7 +1,7 @@
 
 #include "hash_table.h"
 
-bool CheckTwoEqualValue(Template T_Key_1, void *key_1, Template T_Key_2, void *key_2)
+bool check_two_equal_value(template_t T_Key_1, void *key_1, template_t T_Key_2, void *key_2)
 {
     if (T_Key_1 != T_Key_2)
     {
@@ -11,35 +11,33 @@ bool CheckTwoEqualValue(Template T_Key_1, void *key_1, Template T_Key_2, void *k
     switch (T_Key_1)
     {
         case INT:
-            return (VoidCastInt(key_1) == VoidCastInt(key_2));
+            return (void_cast_int(key_1) == void_cast_int(key_2));
         case DOUBLE:
-            return (VoidCastDouble(key_1) == VoidCastDouble(key_2));
+            return (check_double_equal(void_cast_double(key_1), void_cast_double(key_2)));
         case FLOAT:
-            return (VoidCastFloat(key_1) == VoidCastFloat(key_2));
+            return (check_float_equal(void_cast_float(key_1), void_cast_float(key_2)));
         case CHAR:
-            return (VoidCastChar(key_1) == VoidCastChar(key_2));
+            return (void_cast_char(key_1) == void_cast_char(key_2));
         case STR:
-            return (!(strcmp(VoidCastStr(key_1), VoidCastStr(key_2))));
-        default:
-            break;
+            return (!(strcmp(void_cast_str(key_1), void_cast_str(key_2))));
     }
 
     return false;
 }
 
-Bucket_t *NewBucket(Template T_Key, void *key, Template T_Value, void *value)
+bucket_t *new_bucket(template_t T_Key, void *key, template_t T_Value, void *value)
 {
-    Bucket_t *container = malloc(sizeof(Bucket_t));
-    container->T_Key = T_Key;
+    bucket_t *container = malloc(sizeof(bucket_t));
+    container->T_key = T_Key;
     container->key = key;
-    container->T_Value = T_Value;
+    container->T_value = T_Value;
     container->value = value;
     container->next = NULL;
 
     return container;
 }
 
-void FreeBucket(Bucket_t *container)
+void free_bucket(bucket_t *container)
 {
     free(container->key);
     free(container->value);
@@ -47,7 +45,7 @@ void FreeBucket(Bucket_t *container)
     container = NULL;
 }
 
-void *NewBucketElement(Hash_Table_t *inventory, Template T, void *element)
+void *new_bucket_element(hash_table_t *inventory, template_t T, void *element)
 {
     switch (T)
     {
@@ -55,7 +53,7 @@ void *NewBucketElement(Hash_Table_t *inventory, Template T, void *element)
             {
                 int *allocated_value = malloc(sizeof(int));
                 inventory->allocated_mem += (int)sizeof(int);
-                *allocated_value = VoidCastInt(element);
+                *allocated_value = void_cast_int(element);
                 element = allocated_value;
             }
             break;
@@ -63,7 +61,7 @@ void *NewBucketElement(Hash_Table_t *inventory, Template T, void *element)
             {
                 double *allocated_value = malloc(sizeof(double));
                 inventory->allocated_mem += (int)sizeof(double);
-                *allocated_value = VoidCastDouble(element);
+                *allocated_value = void_cast_double(element);
                 element = allocated_value;
             }
             break;
@@ -71,16 +69,16 @@ void *NewBucketElement(Hash_Table_t *inventory, Template T, void *element)
             {
                 float *allocated_key = malloc(sizeof(float));
                 inventory->allocated_mem += (int)sizeof(float);
-                *allocated_key = VoidCastFloat(element);
+                *allocated_key = void_cast_float(element);
                 element = allocated_key;
             }
             break;
         case CHAR:
             {
-                char key_data = VoidCastChar(element);
-                const char *allocated_value = malloc(sizeof(char) * 2);
+                char key_data = void_cast_char(element);
+                const char *allocated_value = malloc(sizeof(char) + 1);
 
-                inventory->allocated_mem += (int)(sizeof(char) * 2);
+                inventory->allocated_mem += (int)(sizeof(char) + 1);
                 memcpy((char*)allocated_value, &key_data, 1);
                 *((char*)allocated_value + 1) = '\0';
 
@@ -89,8 +87,8 @@ void *NewBucketElement(Hash_Table_t *inventory, Template T, void *element)
             break;
         case STR:
             {
-                const char *key_data = VoidCastStr(element);
-                int str_length = (int)strlen(key_data);
+                const char *key_data = void_cast_str(element);
+                size_t str_length = strlen(key_data);
                 const char *allocated_value = malloc(sizeof(char) * (str_length + 1));
 
                 inventory->allocated_mem += (int)(sizeof(char) * (str_length + 1));
@@ -100,71 +98,67 @@ void *NewBucketElement(Hash_Table_t *inventory, Template T, void *element)
                 element = (char*)allocated_value;
             }
             break;
-        default:
-            break;
     }
 
     return element;
 }
 
-int GenerateHashCode(Template T_Key, void *key, int hash_table_size)
+int generate_hash_code(template_t T_Key, void *key, int hash_table_size)
 {
     int hash_code = 0;
 
     switch (T_Key)
     {
         case INT:
-            hash_code = (VoidCastInt(key) % hash_table_size);
+            hash_code = (void_cast_int(key) % hash_table_size);
             break;
         case DOUBLE:
-            hash_code = (int)(fmod(VoidCastDouble(key), (double)hash_table_size));
+            hash_code = (int)(fmod(void_cast_double(key), (double)hash_table_size));
             break;
         case FLOAT:
-            hash_code = (int)(fmod(VoidCastFloat(key), (double)hash_table_size));
+            hash_code = (int)(fmod(void_cast_float(key), (double)hash_table_size));
             break;
         case CHAR:
-            hash_code = (VoidCastChar(key) % hash_table_size);
+            hash_code = (void_cast_char(key) % hash_table_size);
             break;
         case STR:
             {
                 int i;
-                const char *word = VoidCastStr(key);
+                const char *word = void_cast_str(key);
                 int str_length = (int)strlen(word);
 
                 for (i = 0; i < str_length; i++)
                 {
-                    hash_code += word[i] * (int) pow(31, str_length - (i + 1));
+                    hash_code += word[i] * (int)pow(31, str_length - (i + 1));
                 }
 
                 hash_code = (hash_code + word[i]) % hash_table_size;
             }
-            break;
-        default:
             break;
     }
 
     return hash_code;
 }
 
-void PrintAllocatedMemHT(Hash_Table_t *inventory)
+void print_allocated_mem_ht(hash_table_t *inventory)
 {
     printf("Bytes Allocated: %d\n", inventory->allocated_mem);
 }
 
-void PrintHashTableSize(Hash_Table_t *inventory)
+void print_num_of_buckets(hash_table_t *inventory)
 {
     printf("Hash Table Size: %d\n", inventory->number_of_buckets);
 }
 
-Hash_Table_t HashTableInit(int size)
+hash_table_t hash_table_init(int size)
 {
-    Hash_Table_t curr_table;
+    hash_table_t curr_table;
     curr_table.size = size;
     curr_table.number_of_buckets = 0;
-    curr_table.hash_table = malloc(sizeof(Bucket_t*) * curr_table.size);
+    curr_table.hash_table = malloc(sizeof(bucket_t*) * (size_t)curr_table.size);
     curr_table.first_index = 0;
     curr_table.last_index = 0;
-    curr_table.allocated_mem = (int)sizeof(Bucket_t*) * curr_table.size;
+    curr_table.allocated_mem = (int)(sizeof(bucket_t*) * (size_t)curr_table.size);
 
     for (int i = 0; i < curr_table.size; i++)
     {
@@ -174,23 +168,23 @@ Hash_Table_t HashTableInit(int size)
     return curr_table;
 }
 
-void HashTableInsert(Hash_Table_t *inventory, Template T_Key, void *key, Template T_Value, void *value)
+void hash_table_insert(hash_table_t *inventory, template_t T_key, void *key, template_t T_value, void *value)
 {
-    int index = GenerateHashCode(T_Key, key, inventory->size);
+    int index = generate_hash_code(T_key, key, inventory->size);
 
     if (inventory->hash_table[index] != NULL)
     {
-        if (CheckTwoEqualValue(inventory->hash_table[index]->T_Key, inventory->hash_table[index]->key, T_Key, key))
+        if (check_two_equal_value(inventory->hash_table[index]->T_key, inventory->hash_table[index]->key, T_key, key))
         {
             return;
         }
     }
 
-    key = NewBucketElement(inventory, T_Key, key);
-    value = NewBucketElement(inventory, T_Value, value);
+    key = new_bucket_element(inventory, T_key, key);
+    value = new_bucket_element(inventory, T_value, value);
 
-    Bucket_t *container = NewBucket(T_Key, key, T_Value, value);
-    inventory->allocated_mem += (int)sizeof(Bucket_t);
+    bucket_t *container = new_bucket(T_key, key, T_value, value);
+    inventory->allocated_mem += sizeof(bucket_t);
 
     if (inventory->number_of_buckets == 0)
     {
@@ -220,12 +214,12 @@ void HashTableInsert(Hash_Table_t *inventory, Template T_Key, void *key, Templat
     inventory->number_of_buckets++;
 }
 
-Bucket_t *HashTableLookup(Hash_Table_t *inventory, Template T_Key, void *key)
+bucket_t *hash_table_lookup(hash_table_t *inventory, template_t T_key, void *key)
 {
-    int index = GenerateHashCode(T_Key, key, inventory->size);
-    Bucket_t *temp = inventory->hash_table[index];
+    int index = generate_hash_code(T_key, key, inventory->size);
+    bucket_t *temp = inventory->hash_table[index];
 
-    while (temp != NULL && !(CheckTwoEqualValue(temp->T_Key, temp->key, T_Key, key)))
+    while (temp != NULL && !(check_two_equal_value(temp->T_key, temp->key, T_key, key)))
     {
         temp = temp->next;
     }
@@ -233,14 +227,14 @@ Bucket_t *HashTableLookup(Hash_Table_t *inventory, Template T_Key, void *key)
     return temp;
 }
 
- void HashTableDeleteBucket(Hash_Table_t *inventory, Template T_Key, void *key)
+ void hash_table_delete_bucket(hash_table_t *inventory, template_t T_key, void *key)
  {
-     int index = GenerateHashCode(T_Key, key, inventory->size);
+     int index = generate_hash_code(T_key, key, inventory->size);
 
-     Bucket_t *prev = NULL;
-     Bucket_t *curr = inventory->hash_table[index];
+     bucket_t *prev = NULL;
+     bucket_t *curr = inventory->hash_table[index];
 
-     while (curr != NULL && !(CheckTwoEqualValue(curr->T_Key, curr->key, T_Key, key)))
+     while (curr != NULL && !(check_two_equal_value(curr->T_key, curr->key, T_key, key)))
      {
          prev = curr;
          curr = curr->next;
@@ -255,16 +249,16 @@ Bucket_t *HashTableLookup(Hash_Table_t *inventory, Template T_Key, void *key)
          prev->next = curr->next;
      }
 
-     inventory->allocated_mem -= (SizeOfType(curr->T_Key, curr->key) +
-                                  SizeOfType(curr->T_Value,  curr->value));
-     FreeBucket(curr);
-     inventory->allocated_mem -= sizeof(Bucket_t);
+     inventory->allocated_mem -= (get_bytes(curr->T_key, curr->key) +
+                                  get_bytes(curr->T_value,  curr->value));
+     free_bucket(curr);
+     inventory->allocated_mem -= (int)sizeof(bucket_t);
  }
 
-void HashTableClear(Hash_Table_t *inventory)
+void hash_table_clear(hash_table_t *inventory)
 {
-    Bucket_t **curr = NULL;
-    Bucket_t **curr_next = NULL;
+    bucket_t **curr = NULL;
+    bucket_t **curr_next = NULL;
 
     for (int i = inventory->first_index; i <= inventory->last_index; i++)
     {
@@ -278,26 +272,26 @@ void HashTableClear(Hash_Table_t *inventory)
         while ((*curr)->next != NULL)
         {
             curr_next = &((*curr)->next);
-            inventory->allocated_mem -= (SizeOfType((*curr)->T_Key, (*curr)->key) +
-                                         SizeOfType((*curr)->T_Value,  (*curr)->value));
-            FreeBucket(*curr);
-            inventory->allocated_mem -= (int)sizeof(Bucket_t);
+            inventory->allocated_mem -= (get_bytes((*curr)->T_key, (*curr)->key) +
+                                         get_bytes((*curr)->T_value,  (*curr)->value));
+            free_bucket(*curr);
+            inventory->allocated_mem -= (int)sizeof(bucket_t);
             curr = curr_next;
         }
 
-        inventory->allocated_mem -= (SizeOfType((*curr)->T_Key, (*curr)->key) +
-                                     SizeOfType((*curr)->T_Value,  (*curr)->value));
-        FreeBucket(*curr);
-        inventory->allocated_mem -= (int)sizeof(Bucket_t);
+        inventory->allocated_mem -= (get_bytes((*curr)->T_key, (*curr)->key) +
+                                     get_bytes((*curr)->T_value,  (*curr)->value));
+        free_bucket(*curr);
+        inventory->allocated_mem -= (int)sizeof(bucket_t);
     }
 }
 
-void HashTableFree(Hash_Table_t *inventory)
+void hash_table_free(hash_table_t *inventory)
 {
-    HashTableClear(inventory);
+    hash_table_clear(inventory);
     free(inventory->hash_table);
 
-    inventory->allocated_mem -= (int)sizeof(Bucket_t*) * inventory->size;
+    inventory->allocated_mem -= (int)sizeof(bucket_t*) * (size_t)inventory->size;
     inventory->size = -1;
     inventory->number_of_buckets = -1;
     inventory->hash_table = NULL;
@@ -305,7 +299,7 @@ void HashTableFree(Hash_Table_t *inventory)
     inventory->last_index = -1;
 }
 
-void HashTablePrint(Hash_Table_t *inventory, const char *beginning, const char *end)
+void hash_table_print(hash_table_t *inventory, const char *beginning, const char *end)
 {
     if (inventory->hash_table == NULL)
     {
@@ -313,7 +307,7 @@ void HashTablePrint(Hash_Table_t *inventory, const char *beginning, const char *
     }
 
     int i;
-    Bucket_t *temp = NULL;
+    bucket_t *temp = NULL;
 
     printf("%s|", beginning);
     for (i = inventory->first_index; i < inventory->last_index; i++)
@@ -323,8 +317,8 @@ void HashTablePrint(Hash_Table_t *inventory, const char *beginning, const char *
         while (temp != NULL)
         {
             printf("(%d) ", i);
-            PrintT(temp->T_Key, temp->key, "", ":");
-            PrintT(temp->T_Value, temp->value, " ", ", ");
+            print_t(temp->T_key, temp->key, "", ":");
+            print_t(temp->T_value, temp->value, " ", ", ");
             temp = temp->next;
         }
     }
@@ -340,13 +334,13 @@ void HashTablePrint(Hash_Table_t *inventory, const char *beginning, const char *
     while (temp->next != NULL)
     {
         printf("(%d) ", i);
-        PrintT(temp->T_Key, temp->key, "", ":");
-        PrintT(temp->T_Value, temp->value, " ", ", ");
+        print_t(temp->T_key, temp->key, "", ":");
+        print_t(temp->T_value, temp->value, " ", ", ");
         temp = temp->next;
     }
 
     printf("(%d) ", i);
-    PrintT(temp->T_Key, temp->key, "", ":");
-    PrintT(temp->T_Value, temp->value, " ", "|");
+    print_t(temp->T_key, temp->key, "", ":");
+    print_t(temp->T_value, temp->value, " ", "|");
     printf("%s", end);
 }

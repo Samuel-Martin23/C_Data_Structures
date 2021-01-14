@@ -3,19 +3,19 @@
 
 int main()
 {
-    Linked_List_t scores = LinkedListInitInt(23, 54, 876, 234, 77);     // 23-->54-->876-->234-->77-->NULL
-    LinkedListAppend(&scores, IntCastVoid(12));                         // 23-->54-->876-->234-->77-->12-->NULL
-    LinkedListRemoveValue(&scores, IntCastVoid(54));                    // 23-->876-->234-->77-->12-->NULL
-    LinkedListExtend(&scores, IntCastVoidArray(45, 495, 177));          // 23-->876-->234-->77-->12-->45-->495-->177-->NULL
-    LinkedListInsert(&scores, 5, IntCastVoid(711));                     // 23-->876-->234-->77-->12-->711-->45-->495-->177-->NULL
-    LinkedListRemoveIndex(&scores, 1);                                  // 23-->234-->77-->12-->711-->45-->495-->177-->NULL
-    LinkedListReverse(&scores);                                         // 177-->495-->45-->711-->12-->77-->234-->23-->NULL
-    LinkedListSort(&scores);                                            // 12-->23-->45-->77-->177-->234-->495-->711-->NULL
-    LinkedListFree(&scores);
-    LinkedListExtend(&scores, IntCastVoidArray(1, 2, 3));               // 1-->2-->3-->NULL
-    LinkedListPrint(&scores);
-    LinkedListFree(&scores);
-    PrintAllocatedMemList(&scores);
+    linked_list_t scores = linked_list_init_int(23, 54, 876, 234, 77);      // 23-->54-->876-->234-->77-->NULL
+    linked_list_append(&scores, int_cast_void(12));                         // 23-->54-->876-->234-->77-->12-->NULL
+    linked_list_remove_value(&scores, int_cast_void(54));                   // 23-->876-->234-->77-->12-->NULL
+    linked_list_extend(&scores, int_array_cast_void(45, 495, 177));         // 23-->876-->234-->77-->12-->45-->495-->177-->NULL
+    linked_list_insert(&scores, 5, int_cast_void(711));                     // 23-->876-->234-->77-->12-->711-->45-->495-->177-->NULL
+    linked_list_remove_index(&scores, 1);                                   // 23-->234-->77-->12-->711-->45-->495-->177-->NULL
+    linked_list_reverse(&scores);                                           // 177-->495-->45-->711-->12-->77-->234-->23-->NULL
+    linked_list_sort(&scores);                                              // 12-->23-->45-->77-->177-->234-->495-->711-->NULL
+    linked_list_free(&scores);
+    linked_list_extend(&scores, int_array_cast_void(1, 2, 3));              // 1-->2-->3-->NULL
+    linked_list_print(&scores);
+    linked_list_free(&scores);
+    print_allocated_mem_list(&scores);
 
     return 0;
 }

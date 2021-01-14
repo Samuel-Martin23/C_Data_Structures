@@ -11,7 +11,8 @@ static:
 shared:
 	$(CC) -dynamiclib $(file_to_compile).c -o lib$(name_of_lib).dylib -install_name @rpath/lib$(name_of_lib).dylib
 
-
+clean:
+	rm *.dylib *.a
 
 # Building all the files
 # files = main vector linked_list hash_table

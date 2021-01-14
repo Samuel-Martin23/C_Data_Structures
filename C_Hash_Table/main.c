@@ -3,25 +3,25 @@
 
 int main()
 {
-    Hash_Table_t names = HashTableInit(10);
+    hash_table_t names = hash_table_init(10);
 
-    HashTableInsert(&names, StrCastVoid("sam"), IntCastVoid(18));
-    HashTableInsert(&names, CharCastVoid('S'), StrCastVoid("vader"));
-    HashTableInsert(&names, StrCastVoid("luke skywalker"), IntCastVoid(85));
-    HashTableInsert(&names, FloatCastVoid(12.12f), StrCastVoid("temp"));
-    HashTableInsert(&names, IntCastVoid(89), StrCastVoid("help!"));
-    HashTableInsert(&names, DoubleCastVoid(511.21), FloatCastVoid(90.12));
-    HashTablePrint(&names, "", "\n");
+    hash_table_insert(&names, str_cast_void("sam"), int_cast_void(18));
+    hash_table_insert(&names, char_cast_void('S'), str_cast_void("vader"));
+    hash_table_insert(&names, str_cast_void("luke skywalker"), int_cast_void(85));
+    hash_table_insert(&names, float_cast_void(12.12f), str_cast_void("temp"));
+    hash_table_insert(&names, int_cast_void(89), str_cast_void("help!"));
+    hash_table_insert(&names, double_cast_void(511.21), float_cast_void(90.12f));
+    hash_table_print(&names, "", "\n");
 
-    Bucket_t *age = HashTableLookup(&names, StrCastVoid("sam"));
-    PrintT(age->T_Value, age->value, "", "\n");
+    bucket_t *age = hash_table_lookup(&names, str_cast_void("sam"));
+    print_t(age->T_value, age->value, "", "\n");
 
-    HashTableDeleteBucket(&names, CharCastVoid('S'));
-    HashTablePrint(&names, "", "\n");
+    hash_table_delete_bucket(&names, char_cast_void('S'));
+    hash_table_print(&names, "", "\n");
 
-    PrintAllocatedMemHT(&names);
-    HashTableFree(&names);
-    PrintAllocatedMemHT(&names);
+    print_allocated_mem_ht(&names);
+    hash_table_free(&names);
+    print_allocated_mem_ht(&names);
 
     return 0;
 }

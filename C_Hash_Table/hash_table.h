@@ -7,37 +7,37 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
-#include "../Template/template.h"
+#include "../C_Template/template.h"
 
-typedef struct Bucket
+typedef struct bucket
 {
-    Template T_Key;
+    template_t T_key;
     void *key;
-    Template T_Value;
+    template_t T_value;
     void *value;
-    struct Bucket *next;
-} Bucket_t;
+    struct bucket *next;
+} bucket_t;
 
-typedef struct Hash_Table
+typedef struct hash_table
 {
     int size;
     int number_of_buckets;
-    Bucket_t **hash_table;
+    bucket_t **hash_table;
     int first_index;
     int last_index;
     int allocated_mem;
-} Hash_Table_t;
+} hash_table_t;
 
-void PrintAllocatedMemHT(Hash_Table_t *inventory);
-void PrintHashTableSize(Hash_Table_t *inventory);
+void print_allocated_mem_ht(hash_table_t *inventory);
+void print_num_of_buckets(hash_table_t *inventory);
 
-Hash_Table_t HashTableInit(int size);
-void HashTableInsert(Hash_Table_t *inventory, Template T_Key, void *key, Template T_Value, void *value);
-Bucket_t *HashTableLookup(Hash_Table_t *inventory, Template T_Key, void *key);
-void HashTableDeleteBucket(Hash_Table_t *inventory, Template T_Key, void *key);
-void HashTableClear(Hash_Table_t *inventory);
-void HashTableFree(Hash_Table_t *inventory);
-void HashTablePrint(Hash_Table_t *inventory, const char *beginning, const char *end);
+hash_table_t hash_table_init(int size);
+void hash_table_insert(hash_table_t *inventory, template_t T_key, void *key, template_t T_value, void *value);
+bucket_t *hash_table_lookup(hash_table_t *inventory, template_t T_key, void *key);
+void hash_table_delete_bucket(hash_table_t *inventory, template_t T_key, void *key);
+void hash_table_clear(hash_table_t *inventory);
+void hash_table_free(hash_table_t *inventory);
+void hash_table_print(hash_table_t *inventory, const char *beginning, const char *end);
 
 
-#endif //HASH_TABLE_H
+#endif /* HASH_TABLE_H */
