@@ -460,7 +460,10 @@ void vector_remove_value(vector_t *vec_data, template_t T, void *value)
         }
     }
 
-    printf("Warning in vector_remove_value: Value could not be found in the vector.\n");
+    const char *purple = "\033[1;95m";
+    const char *white = "\033[1;97m";
+    const char *reset = "\033[0m";
+    printf("vector_remove_value: %swarning:%s value could not be found in the vector%s\n", purple, white, reset);
 }
 
 void vector_reverse(vector_t *vec_data)

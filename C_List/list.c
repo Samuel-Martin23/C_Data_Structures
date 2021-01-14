@@ -1,41 +1,41 @@
 
-#include "linked_list.h"
+#include "list.h"
 
-#define LINKED_LIST_TYPE            0x00000001
-#define LINKED_LIST_HEAD_NULL       0x00000002
-#define LINKED_LIST_INDEX_LGE       0x00000004
+#define LIST_TYPE            0x00000001
+#define LIST_HEAD_NULL       0x00000002
+#define LIST_INDEX_LGE       0x00000004
 
-static bool check_warnings(linked_list_t *list, int warning_code, const char *function_name, int check_value)
+static bool check_warnings(list_t *data_set, int warning_code, const char *function_name, int check_value)
 {
     const char *purple = "\033[1;95m";
     const char *white = "\033[1;97m";
     const char *reset = "\033[0m";
 
-    if (warning_code & LINKED_LIST_TYPE)
+    if (warning_code & LIST_TYPE)
     {
         template_t T = (template_t)check_value;
 
-        if (list->T != T)
+        if (data_set->T != T)
         {
-            printf("%s: %swarning:%s linked list type does not equal the new value type%s\n", function_name, purple, white, reset);
+            printf("%s: %swarning:%s list type does not equal the new value type%s\n", function_name, purple, white, reset);
             return true;
         }
     }
 
-    if (warning_code & LINKED_LIST_HEAD_NULL)
+    if (warning_code & LIST_HEAD_NULL)
     {
-        if (list->head == NULL)
+        if (data_set->head == NULL)
         {
-            printf("%s: %swarning:%s linked list head is NULL%s\n", function_name, purple, white, reset);
+            printf("%s: %swarning:%s list head is NULL%s\n", function_name, purple, white, reset);
             return true;
         }
     }
 
-    if (warning_code & LINKED_LIST_INDEX_LGE)
+    if (warning_code & LIST_INDEX_LGE)
     {
         int index = check_value;
 
-        if (index < 0 || index >= list->size)
+        if (index < 0 || index >= data_set->size)
         {
             printf("%s: %swarning:%s index out of range%s\n", function_name, purple, white, reset);
             return true;
@@ -123,15 +123,15 @@ void sort_data_values(node_t **head, template_t T)
     *head = merge_lists(split_left, split_right, T);
 }
 
-void *new_value(linked_list_t *list, void *value)
+void *new_value(list_t *data_set, void *value)
 {
-    switch (list->T)
+    switch (data_set->T)
     {
         case INT:
             {
                 int *allocated_value = malloc(sizeof(int));
                 *allocated_value = void_cast_int(value);
-                list->allocated_mem += (int)sizeof(int);
+                data_set->allocated_mem += (int)sizeof(int);
                 value = allocated_value;
             }
             break;
@@ -139,7 +139,7 @@ void *new_value(linked_list_t *list, void *value)
             {
                 double *allocated_value = malloc(sizeof(double));
                 *allocated_value = void_cast_double(value);
-                list->allocated_mem += (int)sizeof(double);
+                data_set->allocated_mem += (int)sizeof(double);
                 value = allocated_value;
             }
             break;
@@ -147,7 +147,7 @@ void *new_value(linked_list_t *list, void *value)
             {
                 float *allocated_value = malloc(sizeof(float));
                 *allocated_value = void_cast_float(value);
-                list->allocated_mem += (int)sizeof(float);
+                data_set->allocated_mem += (int)sizeof(float);
                 value = allocated_value;
             }
             break;
@@ -156,7 +156,7 @@ void *new_value(linked_list_t *list, void *value)
                 char data = void_cast_char(value);
                 const char *allocated_value = malloc(sizeof(char) + 1);
 
-                list->allocated_mem += (int)(sizeof(char) + 1);
+                data_set->allocated_mem += (int)(sizeof(char) + 1);
                 memcpy((char*)allocated_value, &data, 1);
                 *((char*)allocated_value + 1) = '\0';
 
@@ -169,7 +169,7 @@ void *new_value(linked_list_t *list, void *value)
                 size_t str_length = strlen(data);
                 const char *allocated_value = malloc(sizeof(char) * (str_length + 1));
 
-                list->allocated_mem += (int)(sizeof(char) * (str_length + 1));
+                data_set->allocated_mem += (int)(sizeof(char) * (str_length + 1));
                 memcpy((char*)allocated_value, data, str_length);
                 *((char*)allocated_value + str_length) = '\0';
 
@@ -181,48 +181,48 @@ void *new_value(linked_list_t *list, void *value)
     return value;
 }
 
-void free_value(linked_list_t *list, node_t**curr)
+void free_value(list_t *data_set, node_t**curr)
 {
-    list->allocated_mem -= get_bytes(list->T, (*curr)->data);
+    data_set->allocated_mem -= get_bytes(data_set->T, (*curr)->data);
     free((*curr)->data);
 }
 
-node_t *new_node(linked_list_t *list, void *data)
+node_t *new_node(list_t *data_set, void *data)
 {
     node_t *curr = malloc(sizeof(node_t));
-    curr->data = new_value(list, data);
+    curr->data = new_value(data_set, data);
     curr->next = NULL;
-    list->allocated_mem += (int)sizeof(node_t);
+    data_set->allocated_mem += (int)sizeof(node_t);
     return curr;
 }
 
-void free_node(linked_list_t *list, node_t **curr)
+void free_node(list_t *data_set, node_t **curr)
 {
-    free_value(list, curr);
+    free_value(data_set, curr);
     free(*curr);
     *curr = NULL;
-    list->allocated_mem -= (int)sizeof(node_t);
+    data_set->allocated_mem -= (int)sizeof(node_t);
 }
 
-void print_allocated_mem_list(linked_list_t *list)
+void print_allocated_mem_list(list_t *data_set)
 {
-    printf("Bytes Allocated: %d\n", list->allocated_mem);
+    printf("Bytes Allocated: %d\n", data_set->allocated_mem);
 }
 
-void print_list_size(linked_list_t *list)
+void print_list_size(list_t *data_set)
 {
-    if (check_warnings(list, LINKED_LIST_HEAD_NULL, "PrintListSize", -1))
+    if (check_warnings(data_set, LIST_HEAD_NULL, "print_list_size", -1))
     {
         return;
     }
 
-    printf("Linked List Size: %d\n", list->size);
+    printf("List Size: %d\n", data_set->size);
 }
 
 
-linked_list_t linked_list_init(template_t T, void *data, int size)
+list_t list_init(template_t T, void *data, int size)
 {
-    linked_list_t new_list;
+    list_t new_list;
     node_t *top = NULL;
     node_t *curr = NULL;
 
@@ -323,54 +323,54 @@ linked_list_t linked_list_init(template_t T, void *data, int size)
     return new_list;
 }
 
-void linked_list_append(linked_list_t *list, template_t T, void *data)
+void list_append(list_t *data_set, template_t T, void *data)
 {
-    if (list->head == NULL)
+    if (data_set->head == NULL)
     {
-        *list = linked_list_init(T, data, 1);
+        *data_set = list_init(T, data, 1);
         return;
     }
 
-    if (check_warnings(list, LINKED_LIST_TYPE, "linked_list_append", (int)T))
+    if (check_warnings(data_set, LIST_TYPE, "list_append", (int)T))
     {
         return;
     }
 
-    node_t **tail = &(list->tail);
-    node_t *curr = new_node(list, data);
+    node_t **tail = &(data_set->tail);
+    node_t *curr = new_node(data_set, data);
 
     (*tail)->next = curr;
     *tail = (*tail)->next;
-    list->size++;
+    data_set->size++;
 }
 
-void linked_list_insert(linked_list_t *list, int index, template_t T, void *data)
+void list_insert(list_t *data_set, int index, template_t T, void *data)
 {
-    if (list->head == NULL && index == 0)
+    if (data_set->head == NULL && index == 0)
     {
-        *list = linked_list_init(T, data, 1);
+        *data_set = list_init(T, data, 1);
         return;
     }
 
-    if (check_warnings(list, LINKED_LIST_TYPE | LINKED_LIST_HEAD_NULL, "linked_list_insert", (int)T)
-        || check_warnings(list, LINKED_LIST_INDEX_LGE, "linked_list_insert", index))
+    if (check_warnings(data_set, LIST_TYPE | LIST_HEAD_NULL, "list_insert", (int)T)
+        || check_warnings(data_set, LIST_INDEX_LGE, "list_insert", index))
     {
         return;
     }
 
-    node_t **head = &(list->head);
+    node_t **head = &(data_set->head);
 
     if (index == 0)
     {
-        node_t *temp = new_node(list, data);
+        node_t *temp = new_node(data_set, data);
         temp->next = *head;
         *head = temp;
-        list->size++;
+        data_set->size++;
         return;
     }
-    else if (index == list->size-1)
+    else if (index == data_set->size-1)
     {
-        linked_list_append(list, T, data);
+        list_append(data_set, T, data);
         return;
     }
 
@@ -383,27 +383,27 @@ void linked_list_insert(linked_list_t *list, int index, template_t T, void *data
         curr = curr->next;
     }
 
-    node_t *temp = new_node(list, data);
+    node_t *temp = new_node(data_set, data);
     prev->next = temp;
     temp->next = curr;
-    list->size++;
+    data_set->size++;
 }
 
-void linked_list_extend(linked_list_t *list, template_t T, void *data, int size)
+void list_extend(list_t *data_set, template_t T, void *data, int size)
 {
-    if (list->head == NULL)
+    if (data_set->head == NULL)
     {
-        *list = linked_list_init(T, data, size);
+        *data_set = list_init(T, data, size);
         return;
     }
 
-    if (check_warnings(list, LINKED_LIST_TYPE, "linked_list_extend", (int)T))
+    if (check_warnings(data_set, LIST_TYPE, "list_extend", (int)T))
     {
         return;
     }
 
     node_t *curr = NULL;
-    node_t **tail = &(list->tail);
+    node_t **tail = &(data_set->tail);
 
     switch (T)
     {
@@ -413,46 +413,46 @@ void linked_list_extend(linked_list_t *list, template_t T, void *data, int size)
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = new_node(list, data_array);
+                    curr = new_node(data_set, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
                 }
 
-                list->tail = curr;
-                list->size += size;
+                data_set->tail = curr;
+                data_set->size += size;
             }
             break;
         case DOUBLE:
             {
-                double *data_array= ((double*)data);
+                double *data_array = ((double*)data);
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = new_node(list, data_array);
+                    curr = new_node(data_set, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
                 }
 
-                list->tail = curr;
-                list->size += size;
+                data_set->tail = curr;
+                data_set->size += size;
             }
             break;
         case FLOAT:
             {
-                float *data_array= ((float*)data);
+                float *data_array = ((float*)data);
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = new_node(list, data_array);
+                    curr = new_node(data_set, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
                 }
 
-                list->tail = curr;
-                list->size += size;
+                data_set->tail = curr;
+                data_set->size += size;
             }
             break;
         case CHAR:
@@ -461,14 +461,14 @@ void linked_list_extend(linked_list_t *list, template_t T, void *data, int size)
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = new_node(list, data_array);
+                    curr = new_node(data_set, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
                 }
 
-                list->tail = curr;
-                list->size += size;
+                data_set->tail = curr;
+                data_set->size += size;
             }
             break;
         case STR:
@@ -477,34 +477,34 @@ void linked_list_extend(linked_list_t *list, template_t T, void *data, int size)
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = new_node(list, data_array);
+                    curr = new_node(data_set, data_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
                     data_array++;
                 }
 
-                list->tail = curr;
-                list->size += size;
+                data_set->tail = curr;
+                data_set->size += size;
             }
             break;
     }
 }
 
-void linked_list_remove_index(linked_list_t *list, int index)
+void list_remove_index(list_t *data_set, int index)
 {
-    if (check_warnings(list, LINKED_LIST_HEAD_NULL | LINKED_LIST_INDEX_LGE, "linked_list_remove_index", index))
+    if (check_warnings(data_set, LIST_HEAD_NULL | LIST_INDEX_LGE, "list_remove_index", index))
     {
         return;
     }
 
-    node_t **head = &(list->head);
+    node_t **head = &(data_set->head);
 
     if (index == 0) 
     {
         node_t* next = (*head)->next;
-        free_node(list, head);
+        free_node(data_set, head);
         *head = next;
-        list->size--;
+        data_set->size--;
         return;
     }
 
@@ -518,25 +518,25 @@ void linked_list_remove_index(linked_list_t *list, int index)
     }
 
     prev->next = curr->next;
-    free_node(list, &curr);
-    list->size--;
+    free_node(data_set, &curr);
+    data_set->size--;
 }
 
-void linked_list_remove_value(linked_list_t *list, template_t T, void *value)
+void list_remove_value(list_t *data_set, template_t T, void *value)
 {
-    if (check_warnings(list, LINKED_LIST_TYPE | LINKED_LIST_HEAD_NULL, "linked_list_remove_value", (int)T))
+    if (check_warnings(data_set, LIST_TYPE | LIST_HEAD_NULL, "list_remove_value", (int)T))
     {
         return;
     }
 
-    node_t **head = &(list->head);
+    node_t **head = &(data_set->head);
 
     if (check_equal_value(T, (*head)->data, value))
     {
         node_t *next = (*head)->next;
-        free_node(list, head);
+        free_node(data_set, head);
         *head = next;
-        list->size--;
+        data_set->size--;
         return;
     }
 
@@ -549,12 +549,12 @@ void linked_list_remove_value(linked_list_t *list, template_t T, void *value)
         {
             if (curr->next == NULL)
             {
-                list->tail = prev;
+                data_set->tail = prev;
             }
 
             prev->next = curr->next;
-            free_node(list, &curr);
-            list->size--;
+            free_node(data_set, &curr);
+            data_set->size--;
             break;
         }
 
@@ -563,14 +563,14 @@ void linked_list_remove_value(linked_list_t *list, template_t T, void *value)
     }
 }
 
-node_t *linked_list_get_value(linked_list_t *list, int index)
+node_t *list_get_value(list_t *data_set, int index)
 {
-    if (check_warnings(list, LINKED_LIST_HEAD_NULL | LINKED_LIST_INDEX_LGE, "linked_list_get_value", index))
+    if (check_warnings(data_set, LIST_HEAD_NULL | LIST_INDEX_LGE, "list_get_value", index))
     {
         return NULL;
     }
 
-    node_t *top = list->head;
+    node_t *top = data_set->head;
 
     for (int i = 0; i < index; i++)
     {
@@ -585,14 +585,14 @@ node_t *linked_list_get_value(linked_list_t *list, int index)
     return top;
 }
 
-bool linked_list_check_value(linked_list_t *list, template_t T, void *data)
+bool list_check_value(list_t *data_set, template_t T, void *data)
 {
-    if (check_warnings(list, LINKED_LIST_TYPE | LINKED_LIST_HEAD_NULL, "linked_list_check_value", (int)T))
+    if (check_warnings(data_set, LIST_TYPE | LIST_HEAD_NULL, "list_check_value", (int)T))
     {
         return false;
     }
 
-    node_t *top = list->head;
+    node_t *top = data_set->head;
 
     while (top != NULL)
     {
@@ -607,14 +607,14 @@ bool linked_list_check_value(linked_list_t *list, template_t T, void *data)
     return false;
 }
 
-void linked_list_reverse(linked_list_t *list)
+void list_reverse(list_t *data_set)
 {
-    if (check_warnings(list, LINKED_LIST_HEAD_NULL, "linked_list_reverse", -1))
+    if (check_warnings(data_set, LIST_HEAD_NULL, "list_reverse", -1))
     {
         return;
     }
   
-    node_t *curr = list->head;
+    node_t *curr = data_set->head;
     node_t *prev = NULL;
     node_t *next = NULL;
 
@@ -626,65 +626,65 @@ void linked_list_reverse(linked_list_t *list)
         curr = next;
     }
 
-    list->head = prev;
+    data_set->head = prev;
 }
 
-void linked_list_sort(linked_list_t *list)
+void list_sort(list_t *data_set)
 {
-    if (check_warnings(list, LINKED_LIST_HEAD_NULL, "linked_list_sort", -1))
+    if (check_warnings(data_set, LIST_HEAD_NULL, "list_sort", -1))
     {
         return;
     }
 
-    sort_data_values(&(list->head), list->T);
+    sort_data_values(&(data_set->head), data_set->T);
     
-    if (list->tail != NULL)
+    if (data_set->tail != NULL)
     {
-        node_t *tail = list->tail;
+        node_t *tail = data_set->tail;
 
         while (tail->next != NULL)
         {
             tail = tail->next;
         }
 
-        list->tail = tail;
+        data_set->tail = tail;
     }
 }
 
-void linked_list_free(linked_list_t *list)
+void list_free(list_t *data_set)
 {
-    if (check_warnings(list, LINKED_LIST_HEAD_NULL, "linked_list_free", -1))
+    if (check_warnings(data_set, LIST_HEAD_NULL, "list_free", -1))
     {
         return;
     }
 
-    node_t **head = &(list->head);
+    node_t **head = &(data_set->head);
     node_t *succeeding = (*head)->next;
 
     while (succeeding != NULL)
     {
-        free_node(list, head);
+        free_node(data_set, head);
         *head = succeeding;
         succeeding = succeeding->next;
     }
 
-    free_node(list, head);
-    list->tail = NULL;
-    list->size = -1;
+    free_node(data_set, head);
+    data_set->tail = NULL;
+    data_set->size = -1;
 }
 
-void linked_list_print(linked_list_t *list)
+void list_print(list_t *data_set)
 {
-    if (check_warnings(list, LINKED_LIST_HEAD_NULL, "linked_list_print", -1))
+    if (check_warnings(data_set, LIST_HEAD_NULL, "list_print", -1))
     {
         return;
     }
 
-    node_t *top = list->head;
+    node_t *top = data_set->head;
 
     while (top != NULL)
     {
-        print_t(list->T, top->data, "", "");
+        print_t(data_set->T, top->data, "", "");
         printf("-->");
         top = top->next;
     }
