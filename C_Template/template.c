@@ -6,6 +6,7 @@ double void_cast_double(void *value) {return (*(double*)value);}
 float void_cast_float(void *value) {return (*(float*)value);}
 char void_cast_char(void *value) {return (*(const char*)value);}
 const char *void_cast_str(void *value) {return ((const char*)value);}
+bool void_cast_bool(void *value) {return (*(bool*)value);}
 
 void print_t(template_t T, void *value, const char *beginning, const char *end)
 {
@@ -25,6 +26,13 @@ void print_t(template_t T, void *value, const char *beginning, const char *end)
             break;
         case STR:
             printf("%s\"%s\"%s", beginning, void_cast_str(value), end);
+            break;
+        case BOOL:
+            {
+                bool condition = void_cast_bool(value);
+                const char *state = condition ? "true" : "false";
+                printf("%s%s%s", beginning, state, end);
+            }
             break;
     }
 }
@@ -67,6 +75,8 @@ bool check_less_equal_value(template_t T, void *value1, void *value2)
             return (void_cast_char(value1) <= void_cast_char(value2));
         case STR:
             return (strlen(void_cast_str(value1)) <= strlen(void_cast_str(value2)));
+        case BOOL:
+            return (void_cast_bool(value1) <= void_cast_bool(value2));
     }
 
     return false;
@@ -86,6 +96,8 @@ bool check_greater_value(template_t T, void *value1, void *value2)
             return (void_cast_char(value1) > void_cast_char(value2));
         case STR:
             return (strlen(void_cast_str(value1)) > strlen(void_cast_str(value2)));
+        case BOOL:
+            return (void_cast_bool(value1) > void_cast_bool(value2));
     }
 
     return false;
@@ -105,6 +117,8 @@ bool check_equal_value(template_t T, void *value1, void *value2)
             return (void_cast_char(value1) == void_cast_char(value2));
         case STR:
             return (strlen(void_cast_str(value1)) == strlen(void_cast_str(value2)));
+        case BOOL:
+            return (void_cast_bool(value1) == void_cast_bool(value2));
     }
 
     return false;
@@ -117,22 +131,25 @@ int get_bytes(template_t T, void *value)
     switch (T)
     {
         case INT:
-            size = sizeof(int);
+            size = (int)sizeof(int);
             break;
         case DOUBLE:
-            size = sizeof(double);
+            size = (int)sizeof(double);
             break;
         case FLOAT:
-            size = sizeof(float);
+            size = (int)sizeof(float);
             break;
         case CHAR:
-            size = sizeof(char) + 1;
+            size = (int)sizeof(char) + 1;
             break;
         case STR:
             {
                 const char *str_value = void_cast_str(value);
                 size = (int)(sizeof(char) * strlen(str_value) + 1);
             }
+            break;
+        case BOOL:
+            size = (int)sizeof(bool);
             break;
     }
 

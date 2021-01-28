@@ -161,6 +161,14 @@ void *new_index(vector_t *vec_data, void *index_value)
                 index_value = (char*)allocated_value;
             }
             break;
+         case BOOL:
+            {
+                bool *allocated_value = malloc(sizeof(bool));
+                *allocated_value = void_cast_bool(index_value);
+                vec_data->allocated_mem += (int)sizeof(bool);
+                index_value = allocated_value;
+            }
+            break;
     }
 
     return index_value;
@@ -176,6 +184,28 @@ void null_index(vector_t *vec_data)
 {
     vec_data->size--;
     vec_data->data[vec_data->size] = NULL;
+}
+
+void null_all_indices(vector_t *vec_data)
+{
+    for (int i = 0; i < vec_data->size; i++)
+    {
+        free_index(vec_data, i);
+        vec_data->data[i] = NULL;
+    }
+
+    vec_data->size = 0;
+}
+
+bool check_vector_null_init(vector_t *vec_data, template_t T, void *value, int size)
+{
+    if (vec_data->data == NULL)
+    {
+        *vec_data = vector_init(T, value, size);
+        return true;
+    }
+
+    return false;
 }
 
 void print_allocated_mem_vector(vector_t *vec_data)
@@ -250,11 +280,22 @@ vector_t vector_init(template_t T, void *array, int size)
             break;
         case STR:
             {
-                char **data_array= (char**)((char*)array);
+                char **data_array = ((char**)array);
 
                 for (int i = 0; i < new_vector.size; i++)
                 {
                     new_vector.data[i] = new_index(&new_vector, *data_array);
+                    data_array++;
+                }
+            }
+            break;
+        case BOOL:
+            {
+                bool *data_array = ((bool*)array);
+
+                for (int i = 0; i < new_vector.size; i++)
+                {
+                    new_vector.data[i] = new_index(&new_vector, data_array);
                     data_array++;
                 }
             }
@@ -266,7 +307,12 @@ vector_t vector_init(template_t T, void *array, int size)
 
 void vector_push(vector_t *vec_data, template_t T, void *value)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_TYPE, "vector_push", (int)T))
+    if (check_vector_null_init(vec_data, T, value, 1))
+    {
+        return;
+    }
+
+    if (check_warnings(vec_data, VEC_TYPE, "vector_push", (int)T))
     {
         return;
     }
@@ -282,7 +328,15 @@ void vector_push(vector_t *vec_data, template_t T, void *value)
 
 void vector_insert(vector_t *vec_data, template_t T, void *value, int index)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_TYPE, "vector_insert", (int)T)
+    if (index == 0)
+    {
+        if (check_vector_null_init(vec_data, T, value, 1))
+        {
+            return;
+        }
+    }
+
+    if (check_warnings(vec_data, VEC_TYPE, "vector_insert", (int)T)
         || check_warnings(vec_data, VEC_SIZE_G, "vector_insert", index))
     {
         return;
@@ -304,7 +358,12 @@ void vector_insert(vector_t *vec_data, template_t T, void *value, int index)
 
 void vector_extend(vector_t *vec_data, template_t T, void *array, int size_array)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_TYPE, "vector_extend", (int)T))
+    if (check_vector_null_init(vec_data, T, array, size_array))
+    {
+        return;
+    }
+
+    if (check_warnings(vec_data, VEC_TYPE, "vector_extend", (int)T))
     {
         return;
     }
@@ -403,6 +462,24 @@ void vector_extend(vector_t *vec_data, template_t T, void *array, int size_array
                 vec_data->size = total_size;
             }
             break;
+        case BOOL:
+            {
+                bool *data_array = (bool*)array;
+
+                for (int i = vec_data->size; i < total_size; i++)
+                {
+                    if (i == vec_data->capacity)
+                    {
+                        vec_data->data = realloc_void_elements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
+                    }
+
+                    vec_data->data[i] = new_index(vec_data, data_array);
+                    data_array++;
+                }
+
+                vec_data->size = total_size;
+            }
+            break;
     }
 }
 
@@ -459,11 +536,6 @@ void vector_remove_value(vector_t *vec_data, template_t T, void *value)
             return;
         }
     }
-
-    const char *purple = "\033[1;95m";
-    const char *white = "\033[1;97m";
-    const char *reset = "\033[0m";
-    printf("vector_remove_value: %swarning:%s value could not be found in the vector%s\n", purple, white, reset);
 }
 
 void vector_reverse(vector_t *vec_data)
@@ -477,7 +549,7 @@ void vector_reverse(vector_t *vec_data)
 
     for (int i = 0; i < half_size; i++)
     {
-        void* temp = vec_data->data[i];
+        void *temp = vec_data->data[i];
         vec_data->data[i] = vec_data->data[(vec_data->size - 1) - i];
         vec_data->data[(vec_data->size - 1) - i] = temp;
     }
@@ -500,13 +572,7 @@ void vector_clear(vector_t *vec_data)
         return;
     }
 
-    for (int i = 0; i < vec_data->size; i++)
-    {
-        free_index(vec_data, i);
-        vec_data->data[i] = NULL;
-    }
-
-    vec_data->size = 0;
+    null_all_indices(vec_data);
 }
 
 void vector_free(vector_t *vec_data)
@@ -516,7 +582,7 @@ void vector_free(vector_t *vec_data)
         return;
     }
 
-    vector_clear(vec_data);
+    null_all_indices(vec_data);
     vec_data->allocated_mem -= (int)((size_t)vec_data->capacity * sizeof(void*));
     vec_data->size = -1;
     vec_data->capacity = -1;

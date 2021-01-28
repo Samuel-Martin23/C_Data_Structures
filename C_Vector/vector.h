@@ -16,6 +16,7 @@
 #define vector_init_float(...)      vector_init(float_array_cast_void(__VA_ARGS__))
 #define vector_init_char(...)       vector_init(char_array_cast_void(__VA_ARGS__))
 #define vector_init_str(...)        vector_init(str_array_cast_void(__VA_ARGS__))
+#define vector_init_bool(...)       vector_init(bool_array_cast_void(__VA_ARGS__))
 
 typedef struct vector
 {

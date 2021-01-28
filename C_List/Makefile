@@ -7,7 +7,7 @@ template_dir = ../C_Template/
 name_of_executable = program
 
 $(name_of_executable): $(object_files)
-	$(CC) $^ -Wall -Wl,-rpath,$(template_dir) -L$(template_dir) -ltemplate -o $@
+	$(CC) $^ -Wl,-rpath,$(template_dir) -L$(template_dir) -ltemplate -o $@
 
 main.o: main.c
 	$(CC) $(flags) -c main.c -o main.o

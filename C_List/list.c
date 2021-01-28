@@ -77,8 +77,8 @@ void partition_list(node_t *head, node_t **front, node_t **back)
     node_t *slow = NULL;
     node_t *fast = NULL;
 
-    if (head == NULL || head->next == NULL){
-
+    if (head == NULL || head->next == NULL)
+    {
         *front = head;
         *back = NULL;
     }
@@ -176,12 +176,20 @@ void *new_value(list_t *data_set, void *value)
                 value = (char*)allocated_value;
             }
             break;
+        case BOOL:
+            {
+                bool *allocated_value = malloc(sizeof(bool));
+                *allocated_value = void_cast_bool(value);
+                data_set->allocated_mem += (int)sizeof(bool);
+                value = allocated_value;
+            }
+            break;
     }
 
     return value;
 }
 
-void free_value(list_t *data_set, node_t**curr)
+void free_value(list_t *data_set, node_t **curr)
 {
     data_set->allocated_mem -= get_bytes(data_set->T, (*curr)->data);
     free((*curr)->data);
@@ -219,7 +227,6 @@ void print_list_size(list_t *data_set)
     printf("List Size: %d\n", data_set->size);
 }
 
-
 list_t list_init(template_t T, void *data, int size)
 {
     list_t new_list;
@@ -229,6 +236,13 @@ list_t list_init(template_t T, void *data, int size)
     new_list.size = size;
     new_list.T = T;
     new_list.allocated_mem = 0;
+    new_list.head = NULL;
+    new_list.tail = NULL;
+
+    if (new_list.size == 0)
+    {
+        return new_list;
+    }
 
     switch (T)
     {
@@ -268,7 +282,7 @@ list_t list_init(template_t T, void *data, int size)
             break;
         case FLOAT:
             {
-                float *data_array= ((float*)data);
+                float *data_array = ((float*)data);
 
                 new_list.head = new_node(&new_list, data_array);
                 top = new_list.head;
@@ -302,7 +316,7 @@ list_t list_init(template_t T, void *data, int size)
             break;
         case STR:
             {
-                char **data_array = (char**)((char*)data);
+                char **data_array = ((char**)data);
 
                 new_list.head = new_node(&new_list, *data_array);
                 top = new_list.head;
@@ -311,6 +325,23 @@ list_t list_init(template_t T, void *data, int size)
                 for (int i = 1; i < new_list.size; i++)
                 {
                     curr = new_node(&new_list, *data_array);
+                    top->next = curr;
+                    top = top->next;
+                    data_array++;
+                }
+            }
+            break;
+         case BOOL:
+            {
+                bool *data_array = ((bool*)data);
+
+                new_list.head = new_node(&new_list, data_array);
+                top = new_list.head;
+                data_array++;
+
+                for (int i = 1; i < new_list.size; i++)
+                {
+                    curr = new_node(&new_list, data_array);
                     top->next = curr;
                     top = top->next;
                     data_array++;
@@ -336,7 +367,7 @@ void list_append(list_t *data_set, template_t T, void *data)
         return;
     }
 
-    node_t **tail = &(data_set->tail);
+    node_t **tail = &data_set->tail;
     node_t *curr = new_node(data_set, data);
 
     (*tail)->next = curr;
@@ -344,7 +375,7 @@ void list_append(list_t *data_set, template_t T, void *data)
     data_set->size++;
 }
 
-void list_insert(list_t *data_set, int index, template_t T, void *data)
+void list_insert(list_t *data_set, template_t T, void *data, int index)
 {
     if (data_set->head == NULL && index == 0)
     {
@@ -358,7 +389,7 @@ void list_insert(list_t *data_set, int index, template_t T, void *data)
         return;
     }
 
-    node_t **head = &(data_set->head);
+    node_t **head = &data_set->head;
 
     if (index == 0)
     {
@@ -403,7 +434,7 @@ void list_extend(list_t *data_set, template_t T, void *data, int size)
     }
 
     node_t *curr = NULL;
-    node_t **tail = &(data_set->tail);
+    node_t **tail = &data_set->tail;
 
     switch (T)
     {
@@ -487,6 +518,22 @@ void list_extend(list_t *data_set, template_t T, void *data, int size)
                 data_set->size += size;
             }
             break;
+        case BOOL:
+            {
+                bool *data_array = ((bool*)data);
+
+                for (int i = 0; i < size; i++)
+                {
+                    curr = new_node(data_set, data_array);
+                    (*tail)->next = curr;
+                    *tail = (*tail)->next;
+                    data_array++;
+                }
+
+                data_set->tail = curr;
+                data_set->size += size;
+            }
+            break;
     }
 }
 
@@ -497,7 +544,7 @@ void list_remove_index(list_t *data_set, int index)
         return;
     }
 
-    node_t **head = &(data_set->head);
+    node_t **head = &data_set->head;
 
     if (index == 0) 
     {
@@ -529,7 +576,7 @@ void list_remove_value(list_t *data_set, template_t T, void *value)
         return;
     }
 
-    node_t **head = &(data_set->head);
+    node_t **head = &data_set->head;
 
     if (check_equal_value(T, (*head)->data, value))
     {
@@ -636,7 +683,7 @@ void list_sort(list_t *data_set)
         return;
     }
 
-    sort_data_values(&(data_set->head), data_set->T);
+    sort_data_values(&data_set->head, data_set->T);
     
     if (data_set->tail != NULL)
     {
@@ -658,7 +705,7 @@ void list_free(list_t *data_set)
         return;
     }
 
-    node_t **head = &(data_set->head);
+    node_t **head = &data_set->head;
     node_t *succeeding = (*head)->next;
 
     while (succeeding != NULL)
@@ -685,7 +732,7 @@ void list_print(list_t *data_set)
     while (top != NULL)
     {
         print_t(data_set->T, top->data, "", "");
-        printf("-->");
+        printf(" ==> ");
         top = top->next;
     }
 

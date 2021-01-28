@@ -14,6 +14,7 @@
 #define list_init_float(...)     list_init(float_array_cast_void(__VA_ARGS__))
 #define list_init_char(...)      list_init(char_array_cast_void(__VA_ARGS__))
 #define list_init_str(...)       list_init(str_array_cast_void(__VA_ARGS__))
+#define list_init_bool(...)      list_init(bool_array_cast_void(__VA_ARGS__))
 
 typedef struct node
 {
@@ -35,7 +36,7 @@ void print_list_size(list_t *data_set);
 
 list_t list_init(template_t T, void *data, int data_len);
 void list_append(list_t *data_set, template_t T, void *data);
-void list_insert(list_t *data_set, int index, template_t T, void *data);
+void list_insert(list_t *data_set, template_t T, void *data, int index);
 void list_extend(list_t *data_set, template_t T, void *data, int data_len);
 void list_remove_index(list_t *data_set, int index);
 void list_remove_value(list_t *data_set, template_t T, void *value);

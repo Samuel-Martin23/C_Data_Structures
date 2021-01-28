@@ -184,7 +184,7 @@ void hash_table_insert(hash_table_t *inventory, template_t T_key, void *key, tem
     value = new_bucket_element(inventory, T_value, value);
 
     bucket_t *container = new_bucket(T_key, key, T_value, value);
-    inventory->allocated_mem += sizeof(bucket_t);
+    inventory->allocated_mem += (int)sizeof(bucket_t);
 
     if (inventory->number_of_buckets == 0)
     {
