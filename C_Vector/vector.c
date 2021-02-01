@@ -7,7 +7,7 @@
 #define VEC_SIZE_G                  0x00000008
 #define VEC_SIZE_GE                 0x00000010
 
-static bool check_warnings(vector_t *vec_data, int warning_code, const char *function_name, int check_value)
+static bool check_warnings(vector_t *vec, int warning_code, const char *function_name, int check_value)
 {
     const char *purple = "\033[1;95m";
     const char *white = "\033[1;97m";
@@ -15,7 +15,7 @@ static bool check_warnings(vector_t *vec_data, int warning_code, const char *fun
 
     if (warning_code & VEC_FREE)
     {
-        if (vec_data->data == NULL)
+        if (vec->data == NULL)
         {
             printf("%s: %swarning:%s vector data is freed%s\n", function_name, purple, white, reset);
             return true;
@@ -24,7 +24,7 @@ static bool check_warnings(vector_t *vec_data, int warning_code, const char *fun
 
     if (warning_code & VEC_SIZE_ZERO)
     {
-        if (vec_data->size == 0)
+        if (vec->size == 0)
         {
             printf("%s: %swarning:%s vector size is 0%s\n", function_name, purple, white, reset);
             return true;
@@ -35,7 +35,7 @@ static bool check_warnings(vector_t *vec_data, int warning_code, const char *fun
     {
         template_t T = (template_t)check_value;
 
-        if (vec_data->T != T)
+        if (vec->T != T)
         {
             printf("%s: %swarning:%s vector type does not equal the type of the new value%s\n", function_name, purple, white, reset);
             return true;
@@ -46,7 +46,7 @@ static bool check_warnings(vector_t *vec_data, int warning_code, const char *fun
     {
         int index = check_value;
 
-        if (index < 0 || index > vec_data->size)
+        if (index < 0 || index > vec->size)
         {
             printf("%s: %swarning:%s index out of range%s\n", function_name, purple, white, reset);
             return true;
@@ -57,7 +57,7 @@ static bool check_warnings(vector_t *vec_data, int warning_code, const char *fun
     {
         int index = check_value;
 
-        if (index < 0 || index >= vec_data->size)
+        if (index < 0 || index >= vec->size)
         {
             printf("%s: %swarning:%s index out of range%s\n", function_name, purple, white, reset);
             return true;
@@ -87,140 +87,161 @@ void insertion_sort(template_t T, void **array, int array_size)
     }
 }
 
-void *new_void_elements(vector_t *vec_data)
+void new_void_elements(vector_t *vec)
 {
-    vec_data->allocated_mem += (int)(sizeof(void *) * (size_t)vec_data->capacity);
-    return malloc(sizeof(void *) * (size_t)vec_data->capacity);
+    size_t number_of_bytes = sizeof(void*);
+
+    vec->allocated_mem += (int)(number_of_bytes * (size_t)vec->capacity);
+    vec->data = malloc(number_of_bytes * (size_t)vec->capacity);
 }
 
-void *realloc_void_elements(vector_t *vec_data, int new_vector_capacity)
+void realloc_void_elements(vector_t *vec, int new_capacity)
 {
-    vec_data->allocated_mem += (int)(sizeof(void *) * (size_t)(new_vector_capacity - vec_data->capacity));
-    vec_data->capacity = new_vector_capacity;
-    return realloc(vec_data->data, sizeof(void*) * (size_t)(new_vector_capacity));
+    size_t number_of_bytes = sizeof(void*);
+
+    vec->allocated_mem += (int)(number_of_bytes * (size_t)(new_capacity - vec->capacity));
+    vec->capacity = new_capacity;
+    vec->data = realloc(vec->data, number_of_bytes * (size_t)(new_capacity));
 }
 
-void check_capacity_reallocation(vector_t *vec_data)
+void capacity_reallocation(vector_t *vec, int size)
 {
-    if (vec_data->size % DEFAULT_CAPACITY_SIZE == 0 && vec_data->capacity != DEFAULT_CAPACITY_SIZE)
+    if (vec->capacity == size)
     {
-        vec_data->data = realloc_void_elements(vec_data, vec_data->size);
+        realloc_void_elements(vec, vec->capacity + DEFAULT_CAPACITY_SIZE);
+    }
+    else if (size % DEFAULT_CAPACITY_SIZE == 0 && vec->capacity != DEFAULT_CAPACITY_SIZE)
+    {
+        realloc_void_elements(vec, size);
     }
 }
 
-void *new_index(vector_t *vec_data, void *index_value)
+void new_index(vector_t *vec, int i, void *index_value)
 {
-    switch (vec_data->T)
+    size_t number_of_bytes = 0;
+
+    switch (vec->T)
     {
         case INT:
             {
-                int *allocated_value = malloc(sizeof(int));
+                number_of_bytes = sizeof(int);
+                int *allocated_value = malloc(number_of_bytes);
                 *allocated_value = void_cast_int(index_value);
-                vec_data->allocated_mem += (int)sizeof(int);
-                index_value = allocated_value;
+                vec->allocated_mem += (int)number_of_bytes;
+                vec->data[i] = allocated_value;
             }
             break;
         case DOUBLE:
             {
-                double *allocated_value = malloc(sizeof(double));
+                number_of_bytes = sizeof(double);
+                double *allocated_value = malloc(number_of_bytes);
                 *allocated_value = void_cast_double(index_value);
-                vec_data->allocated_mem += (int)sizeof(double);
-                index_value = allocated_value;
+                vec->allocated_mem += (int)number_of_bytes;
+                vec->data[i] = allocated_value;
             }
             break;
         case FLOAT:
             {
-                float *allocated_value = malloc(sizeof(float));
+                number_of_bytes = sizeof(float);
+                float *allocated_value = malloc(number_of_bytes);
                 *allocated_value = void_cast_float(index_value);
-                vec_data->allocated_mem += (int)sizeof(float);
-                index_value = allocated_value;
+                vec->allocated_mem += (int)number_of_bytes;
+                vec->data[i] = allocated_value;
             }
             break;
         case CHAR:
              {
+                number_of_bytes = sizeof(char) + 1;
                 char key_data = void_cast_char(index_value);
-                const char *allocated_value = malloc(sizeof(char) + 1);
+                const char *allocated_value = malloc(number_of_bytes);
 
-                vec_data->allocated_mem += (int)(sizeof(char) + 1);
+                vec->allocated_mem += (int)(number_of_bytes);
                 memcpy((char*)allocated_value, &key_data, 1);
                 *((char*)allocated_value + 1) = '\0';
 
-                index_value = (char*)allocated_value;
+                vec->data[i] = (char*)allocated_value;
             }
             break;
         case STR:
             {
                 const char *str_value = void_cast_str(index_value);
                 size_t str_length = strlen(str_value);
-                const char *allocated_value = malloc(sizeof(char) * (str_length + 1));
+                number_of_bytes = sizeof(char) * (str_length + 1);
+                const char *allocated_value = malloc(number_of_bytes);
 
-                vec_data->allocated_mem += (int)(sizeof(char) * (str_length + 1));
+                vec->allocated_mem += (int)(number_of_bytes);
                 memcpy((char*)allocated_value, str_value, str_length);
                 *((char*)allocated_value + str_length) = '\0';
 
-                index_value = (char*)allocated_value;
+                vec->data[i] = (char*)allocated_value;
             }
             break;
          case BOOL:
             {
-                bool *allocated_value = malloc(sizeof(bool));
+                number_of_bytes = sizeof(bool);
+                bool *allocated_value = malloc(number_of_bytes);
                 *allocated_value = void_cast_bool(index_value);
-                vec_data->allocated_mem += (int)sizeof(bool);
-                index_value = allocated_value;
+                vec->allocated_mem += (int)number_of_bytes;
+                vec->data[i] = allocated_value;
             }
             break;
     }
-
-    return index_value;
 }
 
-void free_index(vector_t *vec_data, int index)
+void free_index(vector_t *vec, int index)
 {
-    vec_data->allocated_mem -= get_bytes(vec_data->T, vec_data->data[index]);
-    free(vec_data->data[index]);
+    vec->allocated_mem -= get_bytes(vec->T, vec->data[index]);
+    free(vec->data[index]);
 }
 
-void null_index(vector_t *vec_data)
+void free_indices(vector_t *vec)
 {
-    vec_data->size--;
-    vec_data->data[vec_data->size] = NULL;
-}
-
-void null_all_indices(vector_t *vec_data)
-{
-    for (int i = 0; i < vec_data->size; i++)
+    for (int i = 0; i < vec->size; i++)
     {
-        free_index(vec_data, i);
-        vec_data->data[i] = NULL;
+        free_index(vec, i);
+        vec->data[i] = NULL;
     }
 
-    vec_data->size = 0;
+    vec->size = 0;
 }
 
-bool check_vector_null_init(vector_t *vec_data, template_t T, void *value, int size)
+void null_index(vector_t *vec)
 {
-    if (vec_data->data == NULL)
+    vec->size--;
+    vec->data[vec->size] = NULL;
+}
+
+bool check_vector_null_init(vector_t *vec, template_t T, void *value, int size)
+{
+    if (vec->data == NULL)
     {
-        *vec_data = vector_init(T, value, size);
+        *vec = vector_init(T, value, size);
         return true;
     }
 
     return false;
 }
 
-void print_allocated_mem_vector(vector_t *vec_data)
+void pop_last_index(vector_t *vec)
 {
-    printf("Bytes Allocated: %d\n", vec_data->allocated_mem);
+    free_index(vec, vec->size-1);
+    null_index(vec);
+    capacity_reallocation(vec, vec->size);
 }
 
-void print_vector_size(vector_t *vec_data)
+void print_allocated_mem_vector(vector_t *vec)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "print_vector_size", -1))
+    printf("Bytes Allocated: %d\n", vec->allocated_mem);
+}
+
+void print_vector_size(vector_t *vec)
+{
+    if (check_warnings(vec, VEC_FREE, "print_vector_size", -1))
     {
         return;
     }
 
-    printf("Vector Size: %d\n", vec_data->size);
+    printf("Vector Size: %d\n", vec->size);
 }
 
 vector_t vector_init(template_t T, void *array, int size)
@@ -230,7 +251,13 @@ vector_t vector_init(template_t T, void *array, int size)
     new_vector.capacity = new_vector.size > DEFAULT_CAPACITY_SIZE ? new_vector.size + DEFAULT_CAPACITY_SIZE : DEFAULT_CAPACITY_SIZE;
     new_vector.T = T;
     new_vector.allocated_mem = 0;
-    new_vector.data = new_void_elements(&new_vector);
+
+    if (new_vector.size == 0)
+    {
+        return new_vector;
+    }
+
+    new_void_elements(&new_vector);
 
     switch (new_vector.T)
     {
@@ -240,7 +267,7 @@ vector_t vector_init(template_t T, void *array, int size)
 
                 for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = new_index(&new_vector, data_array);
+                    new_index(&new_vector, i, data_array);
                     data_array++;
                 }
             }
@@ -251,7 +278,7 @@ vector_t vector_init(template_t T, void *array, int size)
 
                 for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = new_index(&new_vector, data_array);
+                    new_index(&new_vector, i, data_array);
                     data_array++;
                 }
             }
@@ -262,7 +289,7 @@ vector_t vector_init(template_t T, void *array, int size)
 
                 for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = new_index(&new_vector, data_array);
+                    new_index(&new_vector, i, data_array);
                     data_array++;
                 }
             }
@@ -273,7 +300,7 @@ vector_t vector_init(template_t T, void *array, int size)
 
                 for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = new_index(&new_vector, data_array);
+                    new_index(&new_vector, i, data_array);
                     data_array++;
                 }
             }
@@ -284,7 +311,7 @@ vector_t vector_init(template_t T, void *array, int size)
 
                 for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = new_index(&new_vector, *data_array);
+                    new_index(&new_vector, i, *data_array);
                     data_array++;
                 }
             }
@@ -295,7 +322,7 @@ vector_t vector_init(template_t T, void *array, int size)
 
                 for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_vector.data[i] = new_index(&new_vector, data_array);
+                    new_index(&new_vector, i, data_array);
                     data_array++;
                 }
             }
@@ -305,70 +332,63 @@ vector_t vector_init(template_t T, void *array, int size)
     return new_vector;
 }
 
-void vector_push(vector_t *vec_data, template_t T, void *value)
+void vector_push(vector_t *vec, template_t T, void *value)
 {
-    if (check_vector_null_init(vec_data, T, value, 1))
+    if (check_vector_null_init(vec, T, value, 1))
     {
         return;
     }
 
-    if (check_warnings(vec_data, VEC_TYPE, "vector_push", (int)T))
+    if (check_warnings(vec, VEC_TYPE, "vector_push", (int)T))
     {
         return;
     }
 
-    if (vec_data->capacity == vec_data->size)
-    {
-        vec_data->data = realloc_void_elements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
-    }
-
-    vec_data->data[vec_data->size] = new_index(vec_data, value);
-    vec_data->size++;
+    capacity_reallocation(vec, vec->size);
+    new_index(vec, vec->size, value);
+    vec->size++;
 }
 
-void vector_insert(vector_t *vec_data, template_t T, void *value, int index)
+void vector_insert(vector_t *vec, template_t T, void *value, int index)
 {
     if (index == 0)
     {
-        if (check_vector_null_init(vec_data, T, value, 1))
+        if (check_vector_null_init(vec, T, value, 1))
         {
             return;
         }
     }
 
-    if (check_warnings(vec_data, VEC_TYPE, "vector_insert", (int)T)
-        || check_warnings(vec_data, VEC_SIZE_G, "vector_insert", index))
+    if (check_warnings(vec, VEC_TYPE, "vector_insert", (int)T)
+        || check_warnings(vec, VEC_SIZE_G, "vector_insert", index))
     {
         return;
     }
 
-    if (vec_data->capacity == vec_data->size)
+    capacity_reallocation(vec, vec->size);
+
+    for (int i = vec->size; i > index; i--)
     {
-        vec_data->data = realloc_void_elements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
+        vec->data[i] = vec->data[i - 1];
     }
 
-    for (int i = vec_data->size; i >= index; i--)
-    {
-        vec_data->data[i] = vec_data->data[i - 1];
-    }
-
-    vec_data->size++;
-    vec_data->data[index] = new_index(vec_data, value);
+    vec->size++;
+    new_index(vec, index, value);
 }
 
-void vector_extend(vector_t *vec_data, template_t T, void *array, int size_array)
+void vector_extend(vector_t *vec, template_t T, void *array, int size_array)
 {
-    if (check_vector_null_init(vec_data, T, array, size_array))
+    if (check_vector_null_init(vec, T, array, size_array))
     {
         return;
     }
 
-    if (check_warnings(vec_data, VEC_TYPE, "vector_extend", (int)T))
+    if (check_warnings(vec, VEC_TYPE, "vector_extend", (int)T))
     {
         return;
     }
 
-    int total_size = vec_data->size + size_array;
+    int total_size = vec->size + size_array;
 
     switch (T)
     {
@@ -376,233 +396,235 @@ void vector_extend(vector_t *vec_data, template_t T, void *array, int size_array
             {
                 int *data_array = (int*)array;
 
-                for (int i = vec_data->size; i < total_size; i++)
+                for (int i = vec->size; i < total_size; i++)
                 {
-                    if (i == vec_data->capacity)
-                    {
-                        vec_data->data = realloc_void_elements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
-                    }
-
-                    vec_data->data[i] = new_index(vec_data, data_array);
+                    capacity_reallocation(vec, i);
+                    new_index(vec, i, data_array);
                     data_array++;
                 }
 
-                vec_data->size = total_size;
+                vec->size = total_size;
             }
             break;
         case DOUBLE:
             {
                 double *data_array = ((double*)array);
 
-                for (int i = vec_data->size; i < total_size; i++)
+                for (int i = vec->size; i < total_size; i++)
                 {
-                    if (i == vec_data->capacity)
-                    {
-                        vec_data->data = realloc_void_elements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
-                    }
-
-                    vec_data->data[i] = new_index(vec_data, data_array);
+                    capacity_reallocation(vec, i);
+                    new_index(vec, i, data_array);
                     data_array++;
                 }
 
-                vec_data->size = total_size;
+                vec->size = total_size;
             }
             break;
         case FLOAT:
             {
                 float *data_array = ((float*)array);
 
-                for (int i = vec_data->size; i < total_size; i++)
+                for (int i = vec->size; i < total_size; i++)
                 {
-                    if (i == vec_data->capacity)
-                    {
-                        vec_data->data = realloc_void_elements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
-                    }
-
-                    vec_data->data[i] = new_index(vec_data, data_array);
+                    capacity_reallocation(vec, i);
+                    new_index(vec, i, data_array);
                     data_array++;
                 }
 
-                vec_data->size = total_size;
+                vec->size = total_size;
             }
             break;
         case CHAR:
             {
                 char *data_array = ((char*)array);
 
-                for (int i = vec_data->size; i < total_size; i++)
+                for (int i = vec->size; i < total_size; i++)
                 {
-                    if (i == vec_data->capacity)
-                    {
-                        vec_data->data = realloc_void_elements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
-                    }
-
-                    vec_data->data[i] = new_index(vec_data, data_array);
+                    capacity_reallocation(vec, i);
+                    new_index(vec, i, data_array);
                     data_array++;
                 }
 
-                vec_data->size = total_size;
+                vec->size = total_size;
             }
             break;
         case STR:
             {
                 char **data_array= (char**)((char*)array);
 
-                for (int i = vec_data->size; i < total_size; i++)
+                for (int i = vec->size; i < total_size; i++)
                 {
-                    if (i == vec_data->capacity)
-                    {
-                        vec_data->data = realloc_void_elements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
-                    }
-
-                    vec_data->data[i] = new_index(vec_data, *data_array);
+                    capacity_reallocation(vec, i);
+                    new_index(vec, i, *data_array);
                     data_array++;
                 }
 
-                vec_data->size = total_size;
+                vec->size = total_size;
             }
             break;
         case BOOL:
             {
                 bool *data_array = (bool*)array;
 
-                for (int i = vec_data->size; i < total_size; i++)
+                for (int i = vec->size; i < total_size; i++)
                 {
-                    if (i == vec_data->capacity)
-                    {
-                        vec_data->data = realloc_void_elements(vec_data, vec_data->capacity + DEFAULT_CAPACITY_SIZE);
-                    }
-
-                    vec_data->data[i] = new_index(vec_data, data_array);
+                    capacity_reallocation(vec, i);
+                    new_index(vec, i, data_array);
                     data_array++;
                 }
 
-                vec_data->size = total_size;
+                vec->size = total_size;
             }
             break;
     }
 }
 
-void vector_pop(vector_t *vec_data)
+void vector_pop(vector_t *vec)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "vector_pop", -1))
+    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO, "vector_pop", -1))
     {
         return;
     }
 
-    free_index(vec_data, vec_data->size-1);
-    null_index(vec_data);
-
-    check_capacity_reallocation(vec_data);
+    pop_last_index(vec);
 }
 
-void vector_pop_index(vector_t *vec_data, int index)
+void vector_pop_index(vector_t *vec, int index)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_SIZE_ZERO | VEC_SIZE_GE, "vector_pop_index", index))
+    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO | VEC_SIZE_GE, "vector_pop_index", index))
     {
         return;
     }
 
-    if (index == vec_data->size-1)
+    if (index == vec->size-1)
     {
-        vector_pop(vec_data);
+        pop_last_index(vec);
         return;
     }
 
-    free_index(vec_data, index);
+    free_index(vec, index);
 
-    for (int i = index; i < vec_data->size-1; i++)
+    for (int i = index; i < vec->size-1; i++)
     {
-        vec_data->data[i] = vec_data->data[i + 1];
+        vec->data[i] = vec->data[i + 1];
     }
 
-    null_index(vec_data);
+    null_index(vec);
 
-    check_capacity_reallocation(vec_data);
+    capacity_reallocation(vec, vec->size);
 }
 
-void vector_remove_value(vector_t *vec_data, template_t T, void *value)
+void vector_remove_value(vector_t *vec, template_t T, void *value)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_TYPE | VEC_SIZE_ZERO, "vector_remove_value", (int)T))
+    if (check_warnings(vec, VEC_FREE | VEC_TYPE | VEC_SIZE_ZERO, "vector_remove_value", (int)T))
     {
         return;
     }
 
-    for (int i = 0; i < vec_data->size; i++)
+    for (int i = 0; i < vec->size; i++)
     {
-        if (check_equal_value(vec_data->T, vec_data->data[i], value))
+        if (check_equal_value(vec->T, vec->data[i], value))
         {
-            vector_pop_index(vec_data, i);
+            vector_pop_index(vec, i);
             return;
         }
     }
 }
 
-void vector_reverse(vector_t *vec_data)
+void *vector_at(vector_t *vec, int index)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "vector_reverse", -1))
+    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO | VEC_SIZE_GE, "vector_at", index))
+    {
+        return NULL;
+    }
+
+    return vec->data[index];
+}
+
+bool vector_check_value(vector_t *vec, template_t T, void *value)
+{
+    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO | VEC_TYPE, "vector_check_value", (int)T))
+    {
+        return false;
+    }
+
+    for (int i = 0; i < vec->size; i++)
+    {
+        if (check_equal_value(T, value, vec->data[i]))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void vector_reverse(vector_t *vec)
+{
+    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO, "vector_reverse", -1))
     {
         return;
     }
 
-    int half_size = vec_data->size / 2;
+    void *temp = NULL;
+    int half_size = vec->size / 2;
 
     for (int i = 0; i < half_size; i++)
     {
-        void *temp = vec_data->data[i];
-        vec_data->data[i] = vec_data->data[(vec_data->size - 1) - i];
-        vec_data->data[(vec_data->size - 1) - i] = temp;
+        temp = vec->data[i];
+        vec->data[i] = vec->data[(vec->size - 1) - i];
+        vec->data[(vec->size - 1) - i] = temp;
     }
 }
 
-void vector_sort(vector_t *vec_data)
+void vector_sort(vector_t *vec)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "vector_sort", -1))
+    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO, "vector_sort", -1))
     {
         return;
     }
 
-    insertion_sort(vec_data->T, vec_data->data, vec_data->size);
+    insertion_sort(vec->T, vec->data, vec->size);
 }
 
-void vector_clear(vector_t *vec_data)
+void vector_clear(vector_t *vec)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "vector_clear", -1))
+    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO, "vector_clear", -1))
     {
         return;
     }
 
-    null_all_indices(vec_data);
+    free_indices(vec);
 }
 
-void vector_free(vector_t *vec_data)
+void vector_free(vector_t *vec)
 {
-    if (check_warnings(vec_data, VEC_FREE, "vector_free", -1))
+    if (check_warnings(vec, VEC_FREE, "vector_free", -1))
     {
         return;
     }
 
-    null_all_indices(vec_data);
-    vec_data->allocated_mem -= (int)((size_t)vec_data->capacity * sizeof(void*));
-    vec_data->size = -1;
-    vec_data->capacity = -1;
-    free(vec_data->data);
-    vec_data->data = NULL;
+    free_indices(vec);
+    vec->allocated_mem -= (vec->capacity * (int)sizeof(void*));
+    vec->size = -1;
+    vec->capacity = -1;
+    free(vec->data);
+    vec->data = NULL;
 }
 
-void vector_print(vector_t *vec_data)
+void vector_print(vector_t *vec)
 {
-    if (check_warnings(vec_data, VEC_FREE | VEC_SIZE_ZERO, "vector_print", -1))
+    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO, "vector_print", -1))
     {
         return;
     }
 
     int i;
 
-    for (i = 0; i < vec_data->size-1; i++)
+    for (i = 0; i < vec->size-1; i++)
     {
-        print_t(vec_data->T, vec_data->data[i], "|", "| ");
+        print_t(vec->T, vec->data[i], "|", "| ");
     }
 
-    print_t(vec_data->T, vec_data->data[i], "|", "|\n");
+    print_t(vec->T, vec->data[i], "|", "|\n");
 }

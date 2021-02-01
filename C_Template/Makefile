@@ -5,7 +5,7 @@ name_of_lib = template
 
 static:
 	$(CC) -c $(file_to_compile).c -o $(file_to_compile).o
-	ar -r lib$(name_of_lib).a $(file_to_compile).o
+	ar -rcs lib$(name_of_lib).a $(file_to_compile).o
 	rm $(file_to_compile).o
 
 shared:

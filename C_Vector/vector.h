@@ -37,6 +37,8 @@ void vector_extend(vector_t *vec_data, template_t T, void *array, int size_array
 void vector_pop(vector_t *vec_data);
 void vector_pop_index(vector_t *vec_data, int index);
 void vector_remove_value(vector_t *vec_data, template_t T, void *value);
+void *vector_at(vector_t *vec, int index);
+bool vector_check_value(vector_t *vec, template_t T, void *value);
 void vector_reverse(vector_t *vec_data);
 void vector_sort(vector_t *vec_data);
 void vector_clear(vector_t *vec_data);
