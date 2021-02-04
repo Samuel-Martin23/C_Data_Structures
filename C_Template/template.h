@@ -21,7 +21,7 @@
 #define str_array_cast_void(...)        STR, (char*[]){__VA_ARGS__}, sizeof((char*[]){__VA_ARGS__})/sizeof((char*[]){__VA_ARGS__}[0])
 #define bool_array_cast_void(...)       BOOL, (bool[]){__VA_ARGS__}, sizeof((bool[]){__VA_ARGS__})/sizeof((bool[]){__VA_ARGS__}[0])
 
-typedef enum template {INT, DOUBLE, FLOAT, CHAR, STR, BOOL} template_t;
+typedef enum template {NONE, INT, DOUBLE, FLOAT, CHAR, STR, BOOL} template_t;
 
 int void_cast_int(void *value);
 double void_cast_double(void *value);
@@ -42,8 +42,8 @@ int get_bytes(template_t T, void *value);
 
 /*
 By default, STR type casts the void* into a 2d string array.
-If we perform an append function on an empty string vector, we are going to get a seg fault
-as we try and type cast a single string into a 2d string array. So for the str_cast_void macro,
+If we perform an append function on an empty string init, we are going to get a seg fault
+as we can not cast a single string into a 2d string array. So for the str_cast_void macro,
 we need to treat the single string as a 2d string array to avoid the seg fault.
 
 After this fix, however, if we perform an append function again, we need to convert the

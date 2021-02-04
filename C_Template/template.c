@@ -34,6 +34,8 @@ void print_t(template_t T, void *value, const char *beginning, const char *end)
                 printf("%s%s%s", beginning, state, end);
             }
             break;
+        case NONE: // default:
+            break;
     }
 }
 
@@ -77,6 +79,8 @@ bool check_less_equal_value(template_t T, void *value1, void *value2)
             return (strlen(void_cast_str(value1)) <= strlen(void_cast_str(value2)));
         case BOOL:
             return (void_cast_bool(value1) <= void_cast_bool(value2));
+        case NONE: // default:
+            break;
     }
 
     return false;
@@ -98,6 +102,8 @@ bool check_greater_value(template_t T, void *value1, void *value2)
             return (strlen(void_cast_str(value1)) > strlen(void_cast_str(value2)));
         case BOOL:
             return (void_cast_bool(value1) > void_cast_bool(value2));
+        case NONE: // default:
+            break;
     }
 
     return false;
@@ -119,6 +125,8 @@ bool check_equal_value(template_t T, void *value1, void *value2)
             return (strlen(void_cast_str(value1)) == strlen(void_cast_str(value2)));
         case BOOL:
             return (void_cast_bool(value1) == void_cast_bool(value2));
+        case NONE: // default:
+            break;
     }
 
     return false;
@@ -150,6 +158,8 @@ int get_bytes(template_t T, void *value)
             break;
         case BOOL:
             size = (int)sizeof(bool);
+            break;
+        case NONE: // default:
             break;
     }
 

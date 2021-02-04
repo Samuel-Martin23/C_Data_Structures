@@ -219,7 +219,7 @@ void new_index(vector_t *vec, int index, void *value)
                 vec->data[index] = (char*)allocated_value;
             }
             break;
-         case BOOL:
+        case BOOL:
             {
                 size_t number_of_bytes = (size_t)get_bytes(vec->T, value);
                 bool *allocated_value = malloc(number_of_bytes);
@@ -228,6 +228,8 @@ void new_index(vector_t *vec, int index, void *value)
                 vec->allocated_mem += (int)number_of_bytes;
                 vec->data[index] = allocated_value;
             }
+            break;
+        case NONE: // default:
             break;
     }
 }
@@ -328,6 +330,8 @@ vector_t vector_init(template_t T, void *data, int size)
                 }
             }
             break;
+        case NONE: // default:
+            break;
     }
 
     return new_vector;
@@ -424,6 +428,8 @@ void vector_extend(vector_t *vec, template_t T, void *data, int size)
 
                 vec->size = total_size;
             }
+            break;
+        case NONE: // default:
             break;
     }
 }
@@ -579,6 +585,8 @@ void vector_copy(vector_t *vec_dest, vector_t *vec_src)
                 new_index(vec_dest, i, vec_src->data[i]);
             }
             break;
+        case NONE: // default:
+            break;
     }
 }
 
@@ -606,6 +614,7 @@ void vector_free(vector_t *vec)
     vec->capacity = 0;
     free(vec->data);
     vec->data = NULL;
+    vec->T = NONE;
 }
 
 void vector_print(vector_t *vec)

@@ -209,7 +209,7 @@ void *new_value(list_t *list, void *value)
                 memcpy((char*)allocated_value, cast_value, number_of_bytes);
                 *((char*)allocated_value + number_of_bytes) = '\0';
 
-                cast_value = (char*)allocated_value;
+                value = (char*)allocated_value;
             }
             break;
         case BOOL:
@@ -220,6 +220,8 @@ void *new_value(list_t *list, void *value)
                 list->allocated_mem += (int)(number_of_bytes);
                 value = allocated_value;
             }
+            break;
+        case NONE: // default:
             break;
     }
 
@@ -251,6 +253,17 @@ void free_node(list_t *list, node_t **curr)
     list->allocated_mem -= (int)sizeof(node_t);
 }
 
+bool check_list_null_init(list_t *list, template_t T, void *data, int size)
+{
+    if (list->head == NULL)
+    {
+        *list = list_init(T, data, size);
+        return true;
+    }
+
+    return false;
+}
+
 void print_allocated_mem_list(list_t *list)
 {
     printf("Bytes Allocated: %d\n", list->allocated_mem);
@@ -270,8 +283,6 @@ void print_list_size(list_t *list)
 list_t list_init(template_t T, void *data, int size)
 {
     list_t new_list;
-    node_t *top = NULL;
-    node_t *curr = NULL;
 
     new_list.size = size;
     new_list.T = T;
@@ -283,6 +294,9 @@ list_t list_init(template_t T, void *data, int size)
     {
         return new_list;
     }
+
+    node_t *top = NULL;
+    node_t *curr = NULL;
 
     switch (T)
     {
@@ -320,6 +334,8 @@ list_t list_init(template_t T, void *data, int size)
                 }
             }
             break;
+        case NONE: // default:
+            break;
     }
 
     new_list.tail = top;
@@ -328,9 +344,8 @@ list_t list_init(template_t T, void *data, int size)
 
 void list_append(list_t *list, template_t T, void *value)
 {
-    if (list->head == NULL)
+    if (check_list_null_init(list, T, value, 1))
     {
-        *list = list_init(T, value, 1);
         return;
     }
 
@@ -351,10 +366,12 @@ void list_append(list_t *list, template_t T, void *value)
 
 void list_insert(list_t *list, template_t T, void *value, int index)
 {
-    if (list->head == NULL && index == 0)
+    if (index == 0)
     {
-        *list = list_init(T, value, 1);
-        return;
+        if (check_list_null_init(list, T, value, 1))
+        {
+            return;
+        }
     }
 
     if (check_warnings(list, LIST_TYPE | LIST_HEAD_NULL, "list_insert", (int)T)
@@ -398,9 +415,8 @@ void list_insert(list_t *list, template_t T, void *value, int index)
 
 void list_extend(list_t *list, template_t T, void *data, int size)
 {
-    if (list->head == NULL)
+    if (check_list_null_init(list, T, data, size))
     {
-        *list = list_init(T, data, size);
         return;
     }
 
@@ -445,6 +461,8 @@ void list_extend(list_t *list, template_t T, void *data, int size)
                 list->tail = curr;
                 list->size += size;
             }
+            break;
+        case NONE: // default:
             break;
     }
 }
@@ -663,6 +681,8 @@ void list_copy(list_t *list_dest, list_t *list_src)
                 top_src = top_src->next;
             }
             break;
+        case NONE: // default:
+            break;
     }
 }
 
@@ -686,6 +706,7 @@ void list_free(list_t *list)
     free_node(list, head);
     list->tail = NULL;
     list->size = 0;
+    list->T = NONE;
 }
 
 void list_print(list_t *list)
