@@ -140,12 +140,12 @@ int get_bytes(template_t T, void *value)
             size = (int)sizeof(float);
             break;
         case CHAR:
-            size = (int)sizeof(char) + 1;
+            size = (int)sizeof(char);
             break;
         case STR:
             {
                 const char *str_value = void_cast_str(value);
-                size = (int)(sizeof(char) * strlen(str_value) + 1);
+                size = (int)(sizeof(char) * (strlen(str_value) + 1));
             }
             break;
         case BOOL:
@@ -154,4 +154,12 @@ int get_bytes(template_t T, void *value)
     }
 
     return size;
+}
+
+void convert_2d_str(template_t T, void **value)
+{
+    if (T == STR)
+    {
+        *value = *((char**)*value);
+    }
 }

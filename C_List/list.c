@@ -1,9 +1,13 @@
 
 #include "list.h"
 
-#define LIST_TYPE            0x00000001
-#define LIST_HEAD_NULL       0x00000002
-#define LIST_INDEX_LGE       0x00000004
+#define LIST_TYPE               0x00000001
+#define LIST_HEAD_NULL          0x00000002
+#define LIST_INDEX_LGE          0x00000004
+#define LIST_SIZE               0x00000008
+#define TURN_OFF_WARNING        0x00000010
+
+#define WARNING_PLACEHOLDER     -1
 
 static bool check_warnings(list_t *list, int warning_code, const char *function_name, int check_value)
 {
@@ -17,7 +21,11 @@ static bool check_warnings(list_t *list, int warning_code, const char *function_
 
         if (list->T != T)
         {
-            printf("%s: %swarning:%s list type does not equal the new value type%s\n", function_name, purple, white, reset);
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s list type does not equal the new data type%s\n", function_name, purple, white, reset);
+            }
+
             return true;
         }
     }
@@ -26,7 +34,11 @@ static bool check_warnings(list_t *list, int warning_code, const char *function_
     {
         if (list->head == NULL)
         {
-            printf("%s: %swarning:%s list head is NULL%s\n", function_name, purple, white, reset);
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s list head is NULL%s\n", function_name, purple, white, reset);
+            }
+
             return true;
         }
     }
@@ -37,7 +49,24 @@ static bool check_warnings(list_t *list, int warning_code, const char *function_
 
         if (index < 0 || index >= list->size)
         {
-            printf("%s: %swarning:%s index out of range%s\n", function_name, purple, white, reset);
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s index out of range%s\n", function_name, purple, white, reset);
+            }
+
+            return true;
+        }
+    }
+
+    if (warning_code & LIST_SIZE)
+    {
+        if (list->size)
+        {
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s list size is not zero%s\n", function_name, purple, white, reset);
+            }
+
             return true;
         }
     }
@@ -58,7 +87,7 @@ node_t *merge_lists(node_t *left, node_t *right, template_t T)
 
     node_t *merged_head = NULL;
 
-    if (check_less_equal_value(T, left->data, right->data))
+    if (check_less_equal_value(T, left->value, right->value))
     {
         merged_head = left;
         merged_head->next = merge_lists(left->next, right, T);
@@ -125,14 +154,13 @@ void sort_data_values(node_t **head, template_t T)
 
 void *new_value(list_t *list, void *value)
 {
-    size_t number_of_bytes = 0;
-
     switch (list->T)
     {
         case INT:
             {
-                number_of_bytes = sizeof(int);
+                size_t number_of_bytes = (size_t)get_bytes(list->T, value);
                 int *allocated_value = malloc(number_of_bytes);
+
                 *allocated_value = void_cast_int(value);
                 list->allocated_mem += (int)number_of_bytes;
                 value = allocated_value;
@@ -140,8 +168,9 @@ void *new_value(list_t *list, void *value)
             break;
         case DOUBLE:
             {
-                number_of_bytes = sizeof(double);
+                size_t number_of_bytes = (size_t)get_bytes(list->T, value);
                 double *allocated_value = malloc(number_of_bytes);
+
                 *allocated_value = void_cast_double(value);
                 list->allocated_mem += (int)number_of_bytes;
                 value = allocated_value;
@@ -149,8 +178,9 @@ void *new_value(list_t *list, void *value)
             break;
         case FLOAT:
             {
-                number_of_bytes = sizeof(float);
+                size_t number_of_bytes = (size_t)get_bytes(list->T, value);
                 float *allocated_value = malloc(number_of_bytes);
+
                 *allocated_value = void_cast_float(value);
                 list->allocated_mem += (int)number_of_bytes;
                 value = allocated_value;
@@ -158,34 +188,33 @@ void *new_value(list_t *list, void *value)
             break;
         case CHAR:
              {
-                number_of_bytes = sizeof(char) + 1;
-                char data = void_cast_char(value);
+                size_t number_of_bytes = (size_t)get_bytes(list->T, value);
+                char cast_value = void_cast_char(value);
                 const char *allocated_value = malloc(number_of_bytes);
 
                 list->allocated_mem += (int)(number_of_bytes);
-                memcpy((char*)allocated_value, &data, 1);
-                *((char*)allocated_value + 1) = '\0';
+                memcpy((char*)allocated_value, &cast_value, 1);
 
                 value = (char*)allocated_value;
             }
             break;
         case STR:
             {
-                const char *data = void_cast_str(value);
-                size_t str_length = strlen(data);
-                number_of_bytes = sizeof(char) * (str_length + 1);
+                const char *cast_value = void_cast_str(value);
+                size_t number_of_bytes = (size_t)get_bytes(list->T, (void*)cast_value);
                 const char *allocated_value = malloc(number_of_bytes);
 
                 list->allocated_mem += (int)(number_of_bytes);
-                memcpy((char*)allocated_value, data, str_length);
-                *((char*)allocated_value + str_length) = '\0';
+                number_of_bytes--;
+                memcpy((char*)allocated_value, cast_value, number_of_bytes);
+                *((char*)allocated_value + number_of_bytes) = '\0';
 
-                value = (char*)allocated_value;
+                cast_value = (char*)allocated_value;
             }
             break;
         case BOOL:
             {
-                number_of_bytes = sizeof(bool);
+                size_t number_of_bytes = sizeof(bool);
                 bool *allocated_value = malloc(number_of_bytes);
                 *allocated_value = void_cast_bool(value);
                 list->allocated_mem += (int)(number_of_bytes);
@@ -199,15 +228,16 @@ void *new_value(list_t *list, void *value)
 
 void free_value(list_t *list, node_t **curr)
 {
-    list->allocated_mem -= get_bytes(list->T, (*curr)->data);
-    free((*curr)->data);
+    list->allocated_mem -= get_bytes(list->T, (*curr)->value);
+    free((*curr)->value);
 }
 
-node_t *new_node(list_t *list, void *data)
+node_t *new_node(list_t *list, void *value)
 {
     size_t number_of_bytes = sizeof(node_t);
     node_t *curr = malloc(number_of_bytes);
-    curr->data = new_value(list, data);
+
+    curr->value = new_value(list, value);
     curr->next = NULL;
     list->allocated_mem += (int)number_of_bytes;
     return curr;
@@ -228,7 +258,8 @@ void print_allocated_mem_list(list_t *list)
 
 void print_list_size(list_t *list)
 {
-    if (check_warnings(list, LIST_HEAD_NULL, "print_list_size", -1))
+    if (check_warnings(list, LIST_HEAD_NULL,
+        "print_list_size", WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -256,104 +287,36 @@ list_t list_init(template_t T, void *data, int size)
     switch (T)
     {
         case INT:
-            {
-                int *data_array = ((int*)data);
-
-                new_list.head = new_node(&new_list, data_array);
-                top = new_list.head;
-                data_array++;
-
-                for (int i = 1; i < new_list.size; i++)
-                {
-                    curr = new_node(&new_list, data_array);
-                    top->next = curr;
-                    top = top->next;
-                    data_array++;
-                }
-            }
-            break;
         case DOUBLE:
-            {
-                double *data_array = ((double*)data);
-
-                new_list.head = new_node(&new_list, data_array);
-                top = new_list.head;
-                data_array++;
-
-                for (int i = 1; i < new_list.size; i++)
-                {
-                    curr = new_node(&new_list, data_array);
-                    top->next = curr;
-                    top = top->next;
-                    data_array++;
-                }
-            }
-            break;
         case FLOAT:
-            {
-                float *data_array = ((float*)data);
-
-                new_list.head = new_node(&new_list, data_array);
-                top = new_list.head;
-                data_array++;
-
-                for (int i = 1; i < new_list.size; i++)
-                {
-                    curr = new_node(&new_list, data_array);
-                    top->next = curr;
-                    top = top->next;
-                    data_array++;
-                }
-            }
-            break;
         case CHAR:
+        case BOOL:
+            new_list.head = new_node(&new_list, data);
+            top = new_list.head;
+            data += get_bytes(new_list.T, data);
+
+            for (int i = 1; i < new_list.size; i++)
             {
-                char *data_array = ((char*)data);
-
-                new_list.head = new_node(&new_list, data_array);
-                top = new_list.head;
-                data_array++;
-
-                for (int i = 1; i < new_list.size; i++)
-                {
-                    curr = new_node(&new_list, data_array);
-                    top->next = curr;
-                    top = top->next;
-                    data_array++;
-                }
+                curr = new_node(&new_list, data);
+                top->next = curr;
+                top = top->next;
+                data += get_bytes(new_list.T, data);
             }
             break;
         case STR:
             {
-                char **data_array = ((char**)data);
+                char **str_array = ((char**)data);
 
-                new_list.head = new_node(&new_list, *data_array);
+                new_list.head = new_node(&new_list, *str_array);
                 top = new_list.head;
-                data_array++;
+                str_array++;
 
                 for (int i = 1; i < new_list.size; i++)
                 {
-                    curr = new_node(&new_list, *data_array);
+                    curr = new_node(&new_list, *str_array);
                     top->next = curr;
                     top = top->next;
-                    data_array++;
-                }
-            }
-            break;
-         case BOOL:
-            {
-                bool *data_array = ((bool*)data);
-
-                new_list.head = new_node(&new_list, data_array);
-                top = new_list.head;
-                data_array++;
-
-                for (int i = 1; i < new_list.size; i++)
-                {
-                    curr = new_node(&new_list, data_array);
-                    top->next = curr;
-                    top = top->next;
-                    data_array++;
+                    str_array++;
                 }
             }
             break;
@@ -363,11 +326,11 @@ list_t list_init(template_t T, void *data, int size)
     return new_list;
 }
 
-void list_append(list_t *list, template_t T, void *data)
+void list_append(list_t *list, template_t T, void *value)
 {
     if (list->head == NULL)
     {
-        *list = list_init(T, data, 1);
+        *list = list_init(T, value, 1);
         return;
     }
 
@@ -376,19 +339,21 @@ void list_append(list_t *list, template_t T, void *data)
         return;
     }
 
+    convert_2d_str(list->T, &value);
+
     node_t **tail = &list->tail;
-    node_t *curr = new_node(list, data);
+    node_t *curr = new_node(list, value);
 
     (*tail)->next = curr;
     *tail = (*tail)->next;
     list->size++;
 }
 
-void list_insert(list_t *list, template_t T, void *data, int index)
+void list_insert(list_t *list, template_t T, void *value, int index)
 {
     if (list->head == NULL && index == 0)
     {
-        *list = list_init(T, data, 1);
+        *list = list_init(T, value, 1);
         return;
     }
 
@@ -398,11 +363,13 @@ void list_insert(list_t *list, template_t T, void *data, int index)
         return;
     }
 
+    convert_2d_str(list->T, &value);
+
     node_t **head = &list->head;
 
     if (index == 0)
     {
-        node_t *temp = new_node(list, data);
+        node_t *temp = new_node(list, value);
         temp->next = *head;
         *head = temp;
         list->size++;
@@ -410,7 +377,7 @@ void list_insert(list_t *list, template_t T, void *data, int index)
     }
     else if (index == list->size-1)
     {
-        list_append(list, T, data);
+        list_append(list, T, value);
         return;
     }
 
@@ -423,7 +390,7 @@ void list_insert(list_t *list, template_t T, void *data, int index)
         curr = curr->next;
     }
 
-    node_t *temp = new_node(list, data);
+    node_t *temp = new_node(list, value);
     prev->next = temp;
     temp->next = curr;
     list->size++;
@@ -448,95 +415,31 @@ void list_extend(list_t *list, template_t T, void *data, int size)
     switch (T)
     {
         case INT:
-            {
-                int *data_array = ((int*)data);
-
-                for (int i = 0; i < size; i++)
-                {
-                    curr = new_node(list, data_array);
-                    (*tail)->next = curr;
-                    *tail = (*tail)->next;
-                    data_array++;
-                }
-
-                list->tail = curr;
-                list->size += size;
-            }
-            break;
         case DOUBLE:
-            {
-                double *data_array = ((double*)data);
-
-                for (int i = 0; i < size; i++)
-                {
-                    curr = new_node(list, data_array);
-                    (*tail)->next = curr;
-                    *tail = (*tail)->next;
-                    data_array++;
-                }
-
-                list->tail = curr;
-                list->size += size;
-            }
-            break;
         case FLOAT:
-            {
-                float *data_array = ((float*)data);
-
-                for (int i = 0; i < size; i++)
-                {
-                    curr = new_node(list, data_array);
-                    (*tail)->next = curr;
-                    *tail = (*tail)->next;
-                    data_array++;
-                }
-
-                list->tail = curr;
-                list->size += size;
-            }
-            break;
         case CHAR:
+        case BOOL:
+            for (int i = 0; i < size; i++)
             {
-                char *data_array = ((char*)data);
-
-                for (int i = 0; i < size; i++)
-                {
-                    curr = new_node(list, data_array);
-                    (*tail)->next = curr;
-                    *tail = (*tail)->next;
-                    data_array++;
-                }
-
-                list->tail = curr;
-                list->size += size;
+                curr = new_node(list, data);
+                (*tail)->next = curr;
+                *tail = (*tail)->next;
+                data += get_bytes(list->T, data);
             }
+
+            list->tail = curr;
+            list->size += size;
             break;
         case STR:
             {
-                char **data_array = (char**)((char*)data);
+                char **str_array = ((char**)data);
 
                 for (int i = 0; i < size; i++)
                 {
-                    curr = new_node(list, data_array);
+                    curr = new_node(list, *str_array);
                     (*tail)->next = curr;
                     *tail = (*tail)->next;
-                    data_array++;
-                }
-
-                list->tail = curr;
-                list->size += size;
-            }
-            break;
-        case BOOL:
-            {
-                bool *data_array = ((bool*)data);
-
-                for (int i = 0; i < size; i++)
-                {
-                    curr = new_node(list, data_array);
-                    (*tail)->next = curr;
-                    *tail = (*tail)->next;
-                    data_array++;
+                    str_array++;
                 }
 
                 list->tail = curr;
@@ -548,7 +451,8 @@ void list_extend(list_t *list, template_t T, void *data, int size)
 
 void list_remove_index(list_t *list, int index)
 {
-    if (check_warnings(list, LIST_HEAD_NULL | LIST_INDEX_LGE, "list_remove_index", index))
+    if (check_warnings(list, LIST_HEAD_NULL | LIST_INDEX_LGE,
+        "list_remove_index", index))
     {
         return;
     }
@@ -580,14 +484,17 @@ void list_remove_index(list_t *list, int index)
 
 void list_remove_value(list_t *list, template_t T, void *value)
 {
-    if (check_warnings(list, LIST_TYPE | LIST_HEAD_NULL, "list_remove_value", (int)T))
+    if (check_warnings(list, LIST_TYPE | LIST_HEAD_NULL,
+        "list_remove_value", (int)T))
     {
         return;
     }
 
+    convert_2d_str(list->T, &value);
+
     node_t **head = &list->head;
 
-    if (check_equal_value(T, (*head)->data, value))
+    if (check_equal_value(T, (*head)->value, value))
     {
         node_t *next = (*head)->next;
         free_node(list, head);
@@ -601,7 +508,7 @@ void list_remove_value(list_t *list, template_t T, void *value)
 
     while (curr != NULL)
     {
-        if (check_equal_value(T, curr->data, value))
+        if (check_equal_value(T, curr->value, value))
         {
             if (curr->next == NULL)
             {
@@ -619,9 +526,10 @@ void list_remove_value(list_t *list, template_t T, void *value)
     }
 }
 
-node_t *list_get_value(list_t *list, int index)
+void *list_get_value(list_t *list, int index)
 {
-    if (check_warnings(list, LIST_HEAD_NULL | LIST_INDEX_LGE, "list_get_value", index))
+    if (check_warnings(list, LIST_HEAD_NULL | LIST_INDEX_LGE,
+        "list_get_value", index))
     {
         return NULL;
     }
@@ -632,27 +540,30 @@ node_t *list_get_value(list_t *list, int index)
     {
         if (top == NULL)
         {
-            return top;
+            return NULL;
         }
 
         top = top->next;
     }
 
-    return top;
+    return top->value;
 }
 
-bool list_check_value(list_t *list, template_t T, void *data)
+bool list_check_value(list_t *list, template_t T, void *value)
 {
-    if (check_warnings(list, LIST_TYPE | LIST_HEAD_NULL, "list_check_value", (int)T))
+    if (check_warnings(list, LIST_TYPE | LIST_HEAD_NULL,
+        "list_check_value", (int)T))
     {
         return false;
     }
+
+    convert_2d_str(list->T, &value);
 
     node_t *top = list->head;
 
     while (top != NULL)
     {
-        if (check_equal_value(T, top->data, data))
+        if (check_equal_value(T, top->value, value))
         {
             return true;
         }
@@ -665,7 +576,7 @@ bool list_check_value(list_t *list, template_t T, void *data)
 
 void list_reverse(list_t *list)
 {
-    if (check_warnings(list, LIST_HEAD_NULL, "list_reverse", -1))
+    if (check_warnings(list, LIST_HEAD_NULL, "list_reverse", WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -687,7 +598,7 @@ void list_reverse(list_t *list)
 
 void list_sort(list_t *list)
 {
-    if (check_warnings(list, LIST_HEAD_NULL, "list_sort", -1))
+    if (check_warnings(list, LIST_HEAD_NULL, "list_sort", WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -707,9 +618,57 @@ void list_sort(list_t *list)
     }
 }
 
+void list_copy(list_t *list_dest, list_t *list_src)
+{
+    if (check_warnings(list_src, LIST_HEAD_NULL | LIST_TYPE, 
+        "list_copy", (int)list_dest->T) || 
+        check_warnings(list_dest, LIST_SIZE, "list_copy", WARNING_PLACEHOLDER))
+    {
+        return;
+    }
+
+    list_dest->head = NULL;
+    list_dest->tail = NULL;
+    list_dest->size = list_src->size;
+    list_dest->T = list_src->T;
+    list_dest->allocated_mem = 0;
+
+    if (list_dest->size == 0)
+    {
+        return;
+    }
+
+    node_t *top_dest = NULL;
+    node_t *top_src = NULL;
+    node_t *curr = NULL;
+
+    switch (list_dest->T)
+    {
+        case INT:
+        case DOUBLE:
+        case FLOAT:
+        case CHAR:
+        case STR:
+        case BOOL:
+            top_src = list_src->head;
+            list_dest->head = new_node(list_dest, top_src->value);
+            top_dest = list_dest->head;
+            top_src = top_src->next;
+
+            for (int i = 1; i < list_dest->size; i++)
+            {
+                curr = new_node(list_dest, top_src->value);
+                top_dest->next = curr;
+                top_dest = top_dest->next;
+                top_src = top_src->next;
+            }
+            break;
+    }
+}
+
 void list_free(list_t *list)
 {
-    if (check_warnings(list, LIST_HEAD_NULL, "list_free", -1))
+    if (check_warnings(list, LIST_HEAD_NULL, "list_free", WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -726,12 +685,12 @@ void list_free(list_t *list)
 
     free_node(list, head);
     list->tail = NULL;
-    list->size = -1;
+    list->size = 0;
 }
 
 void list_print(list_t *list)
 {
-    if (check_warnings(list, LIST_HEAD_NULL, "list_print", -1))
+    if (check_warnings(list, LIST_HEAD_NULL, "list_print", WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -740,7 +699,7 @@ void list_print(list_t *list)
 
     while (top != NULL)
     {
-        print_t(list->T, top->data, "", "");
+        print_t(list->T, top->value, "", "");
         printf(" ==> ");
         top = top->next;
     }

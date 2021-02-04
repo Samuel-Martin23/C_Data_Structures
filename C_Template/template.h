@@ -11,7 +11,7 @@
 #define double_cast_void(value)         DOUBLE, &(double){value}
 #define float_cast_void(value)          FLOAT, &(float){value}
 #define char_cast_void(value)           CHAR, &(char){value}
-#define str_cast_void(value)            STR, (char*){value}
+#define str_cast_void(value)            STR, (char*[1]){value}
 #define bool_cast_void(value)           BOOL, &(bool){value}
 
 #define int_array_cast_void(...)        INT, (int[]){__VA_ARGS__}, sizeof((int[]){__VA_ARGS__})/sizeof((int[]){__VA_ARGS__}[0])
@@ -39,5 +39,17 @@ bool check_greater_value(template_t T, void *value1, void *value2);
 bool check_equal_value(template_t T, void *value1, void *value2);
 
 int get_bytes(template_t T, void *value);
+
+/*
+By default, STR type casts the void* into a 2d string array.
+If we perform an append function on an empty string vector, we are going to get a seg fault
+as we try and type cast a single string into a 2d string array. So for the str_cast_void macro,
+we need to treat the single string as a 2d string array to avoid the seg fault.
+
+After this fix, however, if we perform an append function again, we need to convert the
+2d string array back into a single string(aka convert_2d_str). The reason being is that we want the 
+address of the string and not the pointer to it.
+*/
+void convert_2d_str(template_t T, void **value);
 
 #endif /* TEMPLATE_H */

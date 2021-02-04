@@ -18,7 +18,7 @@
 
 typedef struct node
 {
-    void *data;
+    void *value;
     struct node *next;
 } node_t;
 
@@ -31,21 +31,22 @@ typedef struct list
     int allocated_mem;
 } list_t;
 
-void print_allocated_mem_list(list_t *data_set);
-void print_list_size(list_t *data_set);
+void print_allocated_mem_list(list_t *list);
+void print_list_size(list_t *list);
 
-list_t list_init(template_t T, void *data, int data_len);
-void list_append(list_t *data_set, template_t T, void *data);
-void list_insert(list_t *data_set, template_t T, void *data, int index);
-void list_extend(list_t *data_set, template_t T, void *data, int data_len);
-void list_remove_index(list_t *data_set, int index);
-void list_remove_value(list_t *data_set, template_t T, void *value);
-node_t *list_get_value(list_t *data_set, int index);
-bool list_check_value(list_t *data_set, template_t T, void *data);
-void list_reverse(list_t *data_set);
-void list_sort(list_t *data_set);
-void list_free(list_t *data_set);
-void list_print(list_t *data_set);
+list_t list_init(template_t T, void *data, int size);
+void list_append(list_t *list, template_t T, void *value);
+void list_insert(list_t *list, template_t T, void *value, int index);
+void list_extend(list_t *list, template_t T, void *data, int size);
+void list_remove_index(list_t *list, int index);
+void list_remove_value(list_t *list, template_t T, void *value);
+void *list_get_value(list_t *list, int index);
+bool list_check_value(list_t *list, template_t T, void *value);
+void list_reverse(list_t *list);
+void list_sort(list_t *list);
+void list_copy(list_t *list_dest, list_t *list_src);
+void list_free(list_t *list);
+void list_print(list_t *list);
 
 
 #endif /* LINKED_LIST_H */
