@@ -39,11 +39,11 @@ void print_t(template_t T, void *value, const char *beginning, const char *end)
     }
 }
 
-bool check_float_equal(float value1, float value2)
+bool check_float_equal(float value_1, float value_2)
 {
     float epsilon = 0.01f;
 
-    if (fabs(value1 - value2) < epsilon)
+    if (fabs(value_1 - value_2) < epsilon)
     {
         return true;
     }
@@ -51,11 +51,11 @@ bool check_float_equal(float value1, float value2)
     return false;
 }
 
-bool check_double_equal(double value1, double value2)
+bool check_double_equal(double value_1, double value_2)
 {
     double epsilon = 0.0000001f;
 
-    if (fabs(value1 - value2) < epsilon)
+    if (fabs(value_1 - value_2) < epsilon)
     {
         return true;
     }
@@ -63,22 +63,22 @@ bool check_double_equal(double value1, double value2)
     return false;
 }
 
-bool check_less_equal_value(template_t T, void *value1, void *value2)
+bool check_less_equal_value(template_t T, void *value_1, void *value_2)
 {
     switch (T)
     {
         case INT:
-            return (void_cast_int(value1) <= void_cast_int(value2));
+            return (void_cast_int(value_1) <= void_cast_int(value_2));
         case DOUBLE:
-            return (void_cast_double(value1) <= void_cast_double(value2));
+            return (void_cast_double(value_1) <= void_cast_double(value_2));
         case FLOAT:
-            return (void_cast_float(value1) <= void_cast_float(value2));
+            return (void_cast_float(value_1) <= void_cast_float(value_2));
         case CHAR:
-            return (void_cast_char(value1) <= void_cast_char(value2));
+            return (void_cast_char(value_1) <= void_cast_char(value_2));
         case STR:
-            return (strlen(void_cast_str(value1)) <= strlen(void_cast_str(value2)));
+            return (strlen(void_cast_str(value_1)) <= strlen(void_cast_str(value_2)));
         case BOOL:
-            return (void_cast_bool(value1) <= void_cast_bool(value2));
+            return (void_cast_bool(value_1) <= void_cast_bool(value_2));
         case NONE: // default:
             break;
     }
@@ -86,22 +86,22 @@ bool check_less_equal_value(template_t T, void *value1, void *value2)
     return false;
 }
 
-bool check_greater_value(template_t T, void *value1, void *value2)
+bool check_greater_value(template_t T, void *value_1, void *value_2)
 {
     switch (T)
     {
         case INT:
-            return (void_cast_int(value1) > void_cast_int(value2));
+            return (void_cast_int(value_1) > void_cast_int(value_2));
         case DOUBLE:
-            return (void_cast_double(value1) > void_cast_double(value2));
+            return (void_cast_double(value_1) > void_cast_double(value_2));
         case FLOAT:
-            return (void_cast_float(value1) > void_cast_float(value2));
+            return (void_cast_float(value_1) > void_cast_float(value_2));
         case CHAR:
-            return (void_cast_char(value1) > void_cast_char(value2));
+            return (void_cast_char(value_1) > void_cast_char(value_2));
         case STR:
-            return (strlen(void_cast_str(value1)) > strlen(void_cast_str(value2)));
+            return (strlen(void_cast_str(value_1)) > strlen(void_cast_str(value_2)));
         case BOOL:
-            return (void_cast_bool(value1) > void_cast_bool(value2));
+            return (void_cast_bool(value_1) > void_cast_bool(value_2));
         case NONE: // default:
             break;
     }
@@ -109,22 +109,22 @@ bool check_greater_value(template_t T, void *value1, void *value2)
     return false;
 }
 
-bool check_equal_value(template_t T, void *value1, void *value2)
+bool check_equal_value(template_t T, void *value_1, void *value_2)
 {
     switch (T)
     {
         case INT:
-            return (void_cast_int(value1) == void_cast_int(value2));
+            return (void_cast_int(value_1) == void_cast_int(value_2));
         case DOUBLE:
-            return (check_double_equal(void_cast_double(value1), void_cast_double(value2)));
+            return (check_double_equal(void_cast_double(value_1), void_cast_double(value_2)));
         case FLOAT:
-            return (check_float_equal(void_cast_float(value1), void_cast_float(value2)));
+            return (check_float_equal(void_cast_float(value_1), void_cast_float(value_2)));
         case CHAR:
-            return (void_cast_char(value1) == void_cast_char(value2));
+            return (void_cast_char(value_1) == void_cast_char(value_2));
         case STR:
-            return (strlen(void_cast_str(value1)) == strlen(void_cast_str(value2)));
+            return (!(strcmp(void_cast_str(value_1), void_cast_str(value_2))));
         case BOOL:
-            return (void_cast_bool(value1) == void_cast_bool(value2));
+            return (void_cast_bool(value_1) == void_cast_bool(value_2));
         case NONE: // default:
             break;
     }
@@ -132,32 +132,32 @@ bool check_equal_value(template_t T, void *value1, void *value2)
     return false;
 }
 
-int get_bytes(template_t T, void *value)
+size_t get_bytes(template_t T, void *value)
 {
-    int size = 0;
+    size_t size = 0;
 
     switch (T)
     {
         case INT:
-            size = (int)sizeof(int);
+            size = sizeof(int);
             break;
         case DOUBLE:
-            size = (int)sizeof(double);
+            size = sizeof(double);
             break;
         case FLOAT:
-            size = (int)sizeof(float);
+            size = sizeof(float);
             break;
         case CHAR:
-            size = (int)sizeof(char);
+            size = sizeof(char);
             break;
         case STR:
             {
                 const char *str_value = void_cast_str(value);
-                size = (int)(sizeof(char) * (strlen(str_value) + 1));
+                size = (sizeof(char) * (strlen(str_value) + 1));
             }
             break;
         case BOOL:
-            size = (int)sizeof(bool);
+            size = sizeof(bool);
             break;
         case NONE: // default:
             break;

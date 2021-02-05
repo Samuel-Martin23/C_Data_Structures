@@ -13,10 +13,10 @@ int main()
     hash_table_insert(&names, double_cast_void(511.21), float_cast_void(90.12f));
     hash_table_print(&names, "", "\n");
 
-    bucket_t *age = hash_table_lookup(&names, str_cast_void("sam"));
+    hash_elem_t *age = hash_table_lookup(&names, str_cast_void("sam"));
     print_t(age->T_value, age->value, "", "\n");
 
-    hash_table_delete_bucket(&names, char_cast_void('S'));
+    hash_table_delete_elem(&names, char_cast_void('S'));
     hash_table_print(&names, "", "\n");
 
     print_allocated_mem_ht(&names);

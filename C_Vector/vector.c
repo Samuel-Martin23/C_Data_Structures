@@ -104,12 +104,12 @@ static bool check_warnings(vector_t *vec, int warning_code, const char *function
     return false;
 }
 
-void insertion_sort(template_t T, void **array, int array_size)
+void insertion_sort(template_t T, void **array, int size)
 {
     int j = 0;
     void *key = NULL;
 
-    for (int i = 1; i < array_size; i++)
+    for (int i = 1; i < size; i++)
     {
         key = array[i];
         j = i - 1;
@@ -165,7 +165,7 @@ void new_index(vector_t *vec, int index, void *value)
     {
         case INT:
             {
-                size_t number_of_bytes = (size_t)get_bytes(vec->T, value);
+                size_t number_of_bytes = get_bytes(vec->T, value);
                 int *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_int(value);
@@ -175,7 +175,7 @@ void new_index(vector_t *vec, int index, void *value)
             break;
         case DOUBLE:
             {
-                size_t number_of_bytes = (size_t)get_bytes(vec->T, value);
+                size_t number_of_bytes = get_bytes(vec->T, value);
                 double *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_double(value);
@@ -185,7 +185,7 @@ void new_index(vector_t *vec, int index, void *value)
             break;
         case FLOAT:
             {
-                size_t number_of_bytes = (size_t)get_bytes(vec->T, value);
+                size_t number_of_bytes = get_bytes(vec->T, value);
                 float *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_float(value);
@@ -195,11 +195,11 @@ void new_index(vector_t *vec, int index, void *value)
             break;
         case CHAR:
              {
-                size_t number_of_bytes = (size_t)get_bytes(vec->T, value);
+                size_t number_of_bytes = get_bytes(vec->T, value);
                 char cast_value = void_cast_char(value);
                 const char *allocated_value = malloc(number_of_bytes);
 
-                vec->allocated_mem += (int)(number_of_bytes);
+                vec->allocated_mem += (int)number_of_bytes;
                 memcpy((char*)allocated_value, &cast_value, 1);
 
                 vec->data[index] = (char*)allocated_value;
@@ -208,10 +208,10 @@ void new_index(vector_t *vec, int index, void *value)
         case STR:
             {
                 const char *cast_value = void_cast_str(value);
-                size_t number_of_bytes = (size_t)get_bytes(vec->T, (void*)cast_value);
+                size_t number_of_bytes = get_bytes(vec->T, (void*)cast_value);
                 const char *allocated_value = malloc(number_of_bytes);
                 
-                vec->allocated_mem += (int)(number_of_bytes);
+                vec->allocated_mem += (int)number_of_bytes;
                 number_of_bytes--;
                 memcpy((char*)allocated_value, cast_value, number_of_bytes);
                 *((char*)allocated_value + number_of_bytes) = '\0';
@@ -221,7 +221,7 @@ void new_index(vector_t *vec, int index, void *value)
             break;
         case BOOL:
             {
-                size_t number_of_bytes = (size_t)get_bytes(vec->T, value);
+                size_t number_of_bytes = get_bytes(vec->T, value);
                 bool *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_bool(value);
@@ -236,7 +236,7 @@ void new_index(vector_t *vec, int index, void *value)
 
 void free_index(vector_t *vec, int index)
 {
-    vec->allocated_mem -= get_bytes(vec->T, vec->data[index]);
+    vec->allocated_mem -= (int)get_bytes(vec->T, vec->data[index]);
     free(vec->data[index]);
 }
 
@@ -316,7 +316,7 @@ vector_t vector_init(template_t T, void *data, int size)
             for (int i = 0; i < new_vector.size; i++)
             {
                 new_index(&new_vector, i, data);
-                data += get_bytes(new_vector.T, data);
+                data += (int)get_bytes(new_vector.T, data);
             }
             break;
         case STR:
@@ -411,7 +411,7 @@ void vector_extend(vector_t *vec, template_t T, void *data, int size)
             {
                 capacity_reallocation(vec, i);
                 new_index(vec, i, data);
-                data += get_bytes(vec->T, data);
+                data += (int)get_bytes(vec->T, data);
             }
             vec->size = total_size;
             break;

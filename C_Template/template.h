@@ -32,13 +32,13 @@ bool void_cast_bool(void *value);
 
 void print_t(template_t T, void *value, const char *beginning, const char *end);
 
-bool check_float_equal(float value1, float value2);
-bool check_double_equal(double value1, double value2);
-bool check_less_equal_value(template_t T, void *value1, void *value2);
-bool check_greater_value(template_t T, void *value1, void *value2);
-bool check_equal_value(template_t T, void *value1, void *value2);
+bool check_float_equal(float value_1, float value_2);
+bool check_double_equal(double value_1, double value_2);
+bool check_less_equal_value(template_t T, void *value_1, void *value_2);
+bool check_greater_value(template_t T, void *value_1, void *value_2);
+bool check_equal_value(template_t T, void *value_1, void *value_2);
 
-int get_bytes(template_t T, void *value);
+size_t get_bytes(template_t T, void *value);
 
 /*
 By default, STR type casts the void* into a 2d string array.

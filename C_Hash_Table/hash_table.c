@@ -20,249 +20,317 @@ bool check_two_equal_value(template_t T_Key_1, void *key_1, template_t T_Key_2, 
             return (void_cast_char(key_1) == void_cast_char(key_2));
         case STR:
             return (!(strcmp(void_cast_str(key_1), void_cast_str(key_2))));
+        case BOOL:
+            return (void_cast_bool(key_1) == void_cast_bool(key_2));
+        case NONE:
+            break;
     }
 
     return false;
 }
 
-bucket_t *new_bucket(template_t T_Key, void *key, template_t T_Value, void *value)
+hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *value, hash_table_t *ht)
 {
-    bucket_t *container = malloc(sizeof(bucket_t));
-    container->T_key = T_Key;
-    container->key = key;
-    container->T_value = T_Value;
-    container->value = value;
-    container->next = NULL;
+    size_t number_of_bytes = sizeof(hash_elem_t);
+    hash_elem_t *item = malloc(number_of_bytes);
 
-    return container;
+    item->T_key = T_Key;
+    item->key = key;
+    item->T_value = T_Value;
+    item->value = value;
+    item->next = NULL;
+
+    ht->allocated_mem += (int)number_of_bytes;
+
+    return item;
 }
 
-void free_bucket(bucket_t *container)
+void free_elem(hash_elem_t *item, hash_table_t *ht)
 {
-    free(container->key);
-    free(container->value);
-    free(container);
-    container = NULL;
+    free(item->key);
+    free(item->value);
+    free(item);
+    item = NULL;
+    ht->allocated_mem -= (int)sizeof(hash_elem_t);
 }
 
-void *new_bucket_element(hash_table_t *inventory, template_t T, void *element)
+void *new_element_value(hash_table_t *ht, template_t T, void **value)
 {
     switch (T)
     {
         case INT:
             {
-                int *allocated_value = malloc(sizeof(int));
-                inventory->allocated_mem += (int)sizeof(int);
-                *allocated_value = void_cast_int(element);
-                element = allocated_value;
+                size_t number_of_bytes = get_bytes(T, *value);
+                int *allocated_value = malloc(number_of_bytes);
+
+                ht->allocated_mem += (int)number_of_bytes;
+                *allocated_value = void_cast_int(*value);
+                *value = allocated_value;
             }
             break;
         case DOUBLE:
             {
-                double *allocated_value = malloc(sizeof(double));
-                inventory->allocated_mem += (int)sizeof(double);
-                *allocated_value = void_cast_double(element);
-                element = allocated_value;
+                size_t number_of_bytes = get_bytes(T, *value);
+                double *allocated_value = malloc(number_of_bytes);
+
+                ht->allocated_mem += (int)number_of_bytes;
+                *allocated_value = void_cast_double(*value);
+                *value = allocated_value;
             }
             break;
         case FLOAT:
             {
-                float *allocated_key = malloc(sizeof(float));
-                inventory->allocated_mem += (int)sizeof(float);
-                *allocated_key = void_cast_float(element);
-                element = allocated_key;
+                size_t number_of_bytes = get_bytes(T, *value);
+                float *allocated_key = malloc(number_of_bytes);
+
+                ht->allocated_mem += (int)number_of_bytes;
+                *allocated_key = void_cast_float(*value);
+                *value = allocated_key;
             }
             break;
         case CHAR:
             {
-                char key_data = void_cast_char(element);
-                const char *allocated_value = malloc(sizeof(char) + 1);
+                size_t number_of_bytes = get_bytes(T, *value);
+                char key_data = void_cast_char(*value);
+                const char *allocated_value = malloc(number_of_bytes);
 
-                inventory->allocated_mem += (int)(sizeof(char) + 1);
+                ht->allocated_mem += (int)number_of_bytes;
                 memcpy((char*)allocated_value, &key_data, 1);
-                *((char*)allocated_value + 1) = '\0';
 
-                element = (char*)allocated_value;
+                *value = (char*)allocated_value;
             }
             break;
         case STR:
             {
-                const char *key_data = void_cast_str(element);
-                size_t str_length = strlen(key_data);
-                const char *allocated_value = malloc(sizeof(char) * (str_length + 1));
+                const char *key_data = void_cast_str(*value);
+                size_t number_of_bytes = get_bytes(T, (void*)key_data);
+                const char *allocated_value = malloc(number_of_bytes);
 
-                inventory->allocated_mem += (int)(sizeof(char) * (str_length + 1));
-                memcpy((char*)allocated_value, key_data, str_length);
-                *((char*)allocated_value + str_length) = '\0';
+                ht->allocated_mem += (int)number_of_bytes;
+                number_of_bytes--;
 
-                element = (char*)allocated_value;
+                memcpy((char*)allocated_value, key_data, number_of_bytes);
+                *((char*)allocated_value + number_of_bytes) = '\0';
+
+                *value = (char*)allocated_value;
             }
+            break;
+        case BOOL:
+            {
+                size_t number_of_bytes = get_bytes(T, *value);
+                bool *allocated_value = malloc(number_of_bytes);
+            
+                ht->allocated_mem += number_of_bytes;
+                *allocated_value = void_cast_bool(*value);
+                *value = allocated_value;
+            }
+            break;
+        case NONE:
             break;
     }
 
-    return element;
+    return value;
 }
 
-int generate_hash_code(template_t T_Key, void *key, int hash_table_size)
+int generate_hash_code(template_t T_Key, void *key, int capacity)
 {
     int hash_code = 0;
 
     switch (T_Key)
     {
         case INT:
-            hash_code = (void_cast_int(key) % hash_table_size);
+            hash_code = (void_cast_int(key) % capacity);
             break;
         case DOUBLE:
-            hash_code = (int)(fmod(void_cast_double(key), (double)hash_table_size));
+            hash_code = (int)(fmod(void_cast_double(key), (double)capacity));
             break;
         case FLOAT:
-            hash_code = (int)(fmod(void_cast_float(key), (double)hash_table_size));
+            hash_code = (int)(fmod(void_cast_float(key), (double)capacity));
             break;
         case CHAR:
-            hash_code = (void_cast_char(key) % hash_table_size);
+            hash_code = (void_cast_char(key) % capacity);
             break;
         case STR:
             {
-                int i;
+                size_t temp_hash_code = 0;
                 const char *word = void_cast_str(key);
-                int str_length = (int)strlen(word);
+                int str_length = ((int)strlen(word)) / 2;
 
-                for (i = 0; i < str_length; i++)
+                for (int i = 0; i < str_length; i++)
                 {
-                    hash_code += word[i] * (int)pow(31, str_length - (i + 1));
+                    temp_hash_code = 31 * temp_hash_code + (size_t)word[i];
                 }
 
-                hash_code = (hash_code + word[i]) % hash_table_size;
+                temp_hash_code %= (size_t)capacity;
+                hash_code = (int)temp_hash_code;
             }
+            break;
+        case BOOL:
+            hash_code = (void_cast_bool(key) % capacity);
+            break;
+        case NONE:
             break;
     }
 
     return hash_code;
 }
 
-void print_allocated_mem_ht(hash_table_t *inventory)
+void table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_value, void *value)
 {
-    printf("Bytes Allocated: %d\n", inventory->allocated_mem);
-}
+    int index = generate_hash_code(T_key, key, ht->capacity);
 
-void print_num_of_buckets(hash_table_t *inventory)
-{
-    printf("Hash Table Size: %d\n", inventory->number_of_buckets);
-}
-
-hash_table_t hash_table_init(int size)
-{
-    hash_table_t curr_table;
-    curr_table.size = size;
-    curr_table.number_of_buckets = 0;
-    curr_table.hash_table = malloc(sizeof(bucket_t*) * (size_t)curr_table.size);
-    curr_table.first_index = 0;
-    curr_table.last_index = 0;
-    curr_table.allocated_mem = (int)(sizeof(bucket_t*) * (size_t)curr_table.size);
-
-    for (int i = 0; i < curr_table.size; i++)
+    if (ht->table[index] != NULL)
     {
-        curr_table.hash_table[i] = NULL;
-    }
-
-    return curr_table;
-}
-
-void hash_table_insert(hash_table_t *inventory, template_t T_key, void *key, template_t T_value, void *value)
-{
-    int index = generate_hash_code(T_key, key, inventory->size);
-
-    if (inventory->hash_table[index] != NULL)
-    {
-        if (check_two_equal_value(inventory->hash_table[index]->T_key, inventory->hash_table[index]->key, T_key, key))
+        if (check_two_equal_value(ht->table[index]->T_key, ht->table[index]->key, T_key, key))
         {
             return;
         }
     }
 
-    key = new_bucket_element(inventory, T_key, key);
-    value = new_bucket_element(inventory, T_value, value);
+    new_element_value(ht, T_key, &key);
+    new_element_value(ht, T_value, &value);
 
-    bucket_t *container = new_bucket(T_key, key, T_value, value);
-    inventory->allocated_mem += (int)sizeof(bucket_t);
+    hash_elem_t *item = new_element(T_key, key, T_value, value, ht);
 
-    if (inventory->number_of_buckets == 0)
+    if (ht->size == 0)
     {
-        inventory->first_index = index;
-        inventory->last_index = index;
+        ht->first_index = index;
+        ht->last_index = index;
     }
 
-    if (inventory->hash_table[index] == NULL)
+    if (ht->table[index] == NULL)
     {
-        inventory->hash_table[index] = container;
+        ht->table[index] = item;
     }
     else
     {
-        container->next = inventory->hash_table[index];
-        inventory->hash_table[index] = container;
+        item->next = ht->table[index];
+        ht->table[index] = item;
     }
 
-    if (index < inventory->first_index)
+    if (index < ht->first_index)
     {
-        inventory->first_index = index;
+        ht->first_index = index;
     }
-    else if (index > inventory->last_index)
+    else if (index > ht->last_index)
     {
-        inventory->last_index = index;
+        ht->last_index = index;
     }
 
-    inventory->number_of_buckets++;
+    ht->size++;
 }
 
-bucket_t *hash_table_lookup(hash_table_t *inventory, template_t T_key, void *key)
+void print_allocated_mem_ht(hash_table_t *ht)
 {
-    int index = generate_hash_code(T_key, key, inventory->size);
-    bucket_t *temp = inventory->hash_table[index];
-
-    while (temp != NULL && !(check_two_equal_value(temp->T_key, temp->key, T_key, key)))
-    {
-        temp = temp->next;
-    }
-
-    return temp;
+    printf("Bytes Allocated: %d\n", ht->allocated_mem);
 }
 
- void hash_table_delete_bucket(hash_table_t *inventory, template_t T_key, void *key)
- {
-     int index = generate_hash_code(T_key, key, inventory->size);
-
-     bucket_t *prev = NULL;
-     bucket_t *curr = inventory->hash_table[index];
-
-     while (curr != NULL && !(check_two_equal_value(curr->T_key, curr->key, T_key, key)))
-     {
-         prev = curr;
-         curr = curr->next;
-     }
-
-     if (prev == NULL)
-     {
-         inventory->hash_table[index] = curr->next;
-     }
-     else
-     {
-         prev->next = curr->next;
-     }
-
-     inventory->allocated_mem -= (get_bytes(curr->T_key, curr->key) +
-                                  get_bytes(curr->T_value,  curr->value));
-     free_bucket(curr);
-     inventory->allocated_mem -= (int)sizeof(bucket_t);
- }
-
-void hash_table_clear(hash_table_t *inventory)
+void print_ht_size(hash_table_t *ht)
 {
-    bucket_t **curr = NULL;
-    bucket_t **curr_next = NULL;
+    printf("Hash Table Size: %d\n", ht->size);
+}
 
-    for (int i = inventory->first_index; i <= inventory->last_index; i++)
+hash_table_t hash_table_init(int capacity)
+{
+    hash_table_t new_ht;
+    size_t number_of_bytes = sizeof(hash_elem_t*) * (size_t)capacity;
+
+    new_ht.capacity = capacity;
+    new_ht.size = 0;
+    new_ht.table = malloc(number_of_bytes);
+    new_ht.first_index = 0;
+    new_ht.last_index = 0;
+    new_ht.allocated_mem = (int)number_of_bytes;
+
+    for (int i = 0; i < new_ht.capacity; i++)
     {
-        curr = &inventory->hash_table[i];
+        new_ht.table[i] = NULL;
+    }
+
+    return new_ht;
+}
+
+void hash_table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_value, void *value)
+{
+    convert_2d_str(T_key, &key);
+    convert_2d_str(T_value, &value);
+    table_insert(ht, T_key, key, T_value, value);
+}
+
+hash_elem_t *hash_table_lookup(hash_table_t *ht, template_t T_key, void *key)
+{
+    convert_2d_str(T_key, &key);
+    int index = generate_hash_code(T_key, key, ht->capacity);
+    hash_elem_t *item = ht->table[index];
+
+    while (item != NULL && !(check_two_equal_value(item->T_key, item->key, T_key, key)))
+    {
+        item = item->next;
+    }
+
+    return item;
+}
+
+void hash_table_delete_elem(hash_table_t *ht, template_t T_key, void *key)
+{
+    convert_2d_str(T_key, &key);
+    int index = generate_hash_code(T_key, key, ht->capacity);
+
+    hash_elem_t *prev = NULL;
+    hash_elem_t *curr = ht->table[index];
+
+    while (curr != NULL && !(check_two_equal_value(curr->T_key, curr->key, T_key, key)))
+    {
+        prev = curr;
+        curr = curr->next;
+    }
+
+    if (prev == NULL)
+    {
+        ht->table[index] = curr->next;
+    }
+    else
+    {
+        prev->next = curr->next;
+    }
+
+    ht->allocated_mem -= ((int)get_bytes(curr->T_key, curr->key) +
+                                (int)get_bytes(curr->T_value,  curr->value));
+    free_elem(curr, ht);
+}
+
+void hash_table_copy(hash_table_t *ht_dest, hash_table_t *ht_src)
+{
+    if (ht_dest->capacity == 0)
+    {
+        const char *purple = "\033[1;95m";
+        const char *white = "\033[1;97m";
+        const char *reset = "\033[0m";
+
+        printf("hash_table_copy: %swarning:%s hash table is not initialized%s\n", purple, white, reset);
+    }
+
+    for (int i = ht_src->first_index; i <= ht_src->last_index; i++)
+    {
+        if (ht_src->table[i] == NULL)
+        {
+            continue;
+        }
+
+        table_insert(ht_dest, ht_src->table[i]->T_key,
+                    ht_src->table[i]->key,  ht_src->table[i]->T_value,
+                    ht_src->table[i]->value);
+    }
+}
+
+void hash_table_clear(hash_table_t *ht)
+{
+    hash_elem_t **curr = NULL;
+    hash_elem_t **curr_next = NULL;
+
+    for (int i = ht->first_index; i <= ht->last_index; i++)
+    {
+        curr = &ht->table[i];
 
         if (*curr == NULL)
         {
@@ -272,47 +340,45 @@ void hash_table_clear(hash_table_t *inventory)
         while ((*curr)->next != NULL)
         {
             curr_next = &((*curr)->next);
-            inventory->allocated_mem -= (get_bytes((*curr)->T_key, (*curr)->key) +
-                                         get_bytes((*curr)->T_value,  (*curr)->value));
-            free_bucket(*curr);
-            inventory->allocated_mem -= (int)sizeof(bucket_t);
+            ht->allocated_mem -= ((int)get_bytes((*curr)->T_key, (*curr)->key) +
+                                        (int)get_bytes((*curr)->T_value,  (*curr)->value));
+            free_elem(*curr, ht);
             curr = curr_next;
         }
 
-        inventory->allocated_mem -= (get_bytes((*curr)->T_key, (*curr)->key) +
-                                     get_bytes((*curr)->T_value,  (*curr)->value));
-        free_bucket(*curr);
-        inventory->allocated_mem -= (int)sizeof(bucket_t);
+        ht->allocated_mem -= ((int)get_bytes((*curr)->T_key, (*curr)->key) +
+                                    (int)get_bytes((*curr)->T_value,  (*curr)->value));
+        free_elem(*curr, ht);
     }
 }
 
-void hash_table_free(hash_table_t *inventory)
+void hash_table_free(hash_table_t *ht)
 {
-    hash_table_clear(inventory);
-    free(inventory->hash_table);
+    hash_table_clear(ht);
+    free(ht->table);
 
-    inventory->allocated_mem -= (int)sizeof(bucket_t*) * (size_t)inventory->size;
-    inventory->size = -1;
-    inventory->number_of_buckets = -1;
-    inventory->hash_table = NULL;
-    inventory->first_index = -1;
-    inventory->last_index = -1;
+    ht->allocated_mem -= (int)sizeof(hash_elem_t*) * (size_t)ht->capacity;
+    ht->capacity = 0;
+    ht->size = 0;
+    ht->table = NULL;
+    ht->first_index = 0;
+    ht->last_index = 0;
 }
 
-void hash_table_print(hash_table_t *inventory, const char *beginning, const char *end)
+void hash_table_print(hash_table_t *ht, const char *beginning, const char *end)
 {
-    if (inventory->hash_table == NULL)
+    if (ht->table == NULL || ht->size == 0)
     {
         return;
     }
 
     int i;
-    bucket_t *temp = NULL;
+    hash_elem_t *temp = NULL;
 
     printf("%s|", beginning);
-    for (i = inventory->first_index; i < inventory->last_index; i++)
+    for (i = ht->first_index; i < ht->last_index; i++)
     {
-        temp = inventory->hash_table[i];
+        temp = ht->table[i];
 
         while (temp != NULL)
         {
@@ -323,7 +389,7 @@ void hash_table_print(hash_table_t *inventory, const char *beginning, const char
         }
     }
 
-    temp = inventory->hash_table[i];
+    temp = ht->table[i];
 
     if (temp == NULL)
     {

@@ -158,7 +158,7 @@ void *new_value(list_t *list, void *value)
     {
         case INT:
             {
-                size_t number_of_bytes = (size_t)get_bytes(list->T, value);
+                size_t number_of_bytes = get_bytes(list->T, value);
                 int *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_int(value);
@@ -168,7 +168,7 @@ void *new_value(list_t *list, void *value)
             break;
         case DOUBLE:
             {
-                size_t number_of_bytes = (size_t)get_bytes(list->T, value);
+                size_t number_of_bytes = get_bytes(list->T, value);
                 double *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_double(value);
@@ -178,7 +178,7 @@ void *new_value(list_t *list, void *value)
             break;
         case FLOAT:
             {
-                size_t number_of_bytes = (size_t)get_bytes(list->T, value);
+                size_t number_of_bytes = get_bytes(list->T, value);
                 float *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_float(value);
@@ -188,7 +188,7 @@ void *new_value(list_t *list, void *value)
             break;
         case CHAR:
              {
-                size_t number_of_bytes = (size_t)get_bytes(list->T, value);
+                size_t number_of_bytes = get_bytes(list->T, value);
                 char cast_value = void_cast_char(value);
                 const char *allocated_value = malloc(number_of_bytes);
 
@@ -201,7 +201,7 @@ void *new_value(list_t *list, void *value)
         case STR:
             {
                 const char *cast_value = void_cast_str(value);
-                size_t number_of_bytes = (size_t)get_bytes(list->T, (void*)cast_value);
+                size_t number_of_bytes = get_bytes(list->T, (void*)cast_value);
                 const char *allocated_value = malloc(number_of_bytes);
 
                 list->allocated_mem += (int)(number_of_bytes);
@@ -214,8 +214,9 @@ void *new_value(list_t *list, void *value)
             break;
         case BOOL:
             {
-                size_t number_of_bytes = sizeof(bool);
+                size_t number_of_bytes = get_bytes(list->T, value);
                 bool *allocated_value = malloc(number_of_bytes);
+
                 *allocated_value = void_cast_bool(value);
                 list->allocated_mem += (int)(number_of_bytes);
                 value = allocated_value;
@@ -230,7 +231,7 @@ void *new_value(list_t *list, void *value)
 
 void free_value(list_t *list, node_t **curr)
 {
-    list->allocated_mem -= get_bytes(list->T, (*curr)->value);
+    list->allocated_mem -= (int)get_bytes(list->T, (*curr)->value);
     free((*curr)->value);
 }
 
@@ -307,14 +308,14 @@ list_t list_init(template_t T, void *data, int size)
         case BOOL:
             new_list.head = new_node(&new_list, data);
             top = new_list.head;
-            data += get_bytes(new_list.T, data);
+            data += (int)get_bytes(new_list.T, data);
 
             for (int i = 1; i < new_list.size; i++)
             {
                 curr = new_node(&new_list, data);
                 top->next = curr;
                 top = top->next;
-                data += get_bytes(new_list.T, data);
+                data += (int)get_bytes(new_list.T, data);
             }
             break;
         case STR:
@@ -440,7 +441,7 @@ void list_extend(list_t *list, template_t T, void *data, int size)
                 curr = new_node(list, data);
                 (*tail)->next = curr;
                 *tail = (*tail)->next;
-                data += get_bytes(list->T, data);
+                data += (int)get_bytes(list->T, data);
             }
 
             list->tail = curr;
