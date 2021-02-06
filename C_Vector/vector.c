@@ -130,17 +130,18 @@ void new_void_elements(vector_t *vec)
 
     vec->capacity = vec->size > DEFAULT_CAPACITY_SIZE ? vec->size + DEFAULT_CAPACITY_SIZE : DEFAULT_CAPACITY_SIZE;
     number_of_bytes = sizeof(void*) * (size_t)vec->capacity;
-    vec->allocated_mem += (int)(number_of_bytes);
     vec->data = malloc(number_of_bytes);
+
+    mem_usage.allocated += (u_int32_t)(number_of_bytes);
 }
 
 void realloc_void_elements(vector_t *vec, int new_capacity)
 {
     size_t number_of_bytes = sizeof(void*);
 
-    vec->allocated_mem += (int)(number_of_bytes * (size_t)(new_capacity - vec->capacity));
-    vec->capacity = new_capacity;
     vec->data = realloc(vec->data, number_of_bytes * (size_t)(new_capacity));
+    mem_usage.allocated += (u_int32_t)(number_of_bytes * (size_t)(new_capacity - vec->capacity));
+    vec->capacity = new_capacity;
 }
 
 void capacity_reallocation(vector_t *vec, int size)
@@ -153,7 +154,7 @@ void capacity_reallocation(vector_t *vec, int size)
     {
         realloc_void_elements(vec, size);
     }
-    else if (size == 0)
+    else if (vec->size == 0)
     {
         vector_free(vec);
     }
@@ -169,8 +170,9 @@ void new_index(vector_t *vec, int index, void *value)
                 int *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_int(value);
-                vec->allocated_mem += (int)number_of_bytes;
                 vec->data[index] = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case DOUBLE:
@@ -179,8 +181,9 @@ void new_index(vector_t *vec, int index, void *value)
                 double *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_double(value);
-                vec->allocated_mem += (int)number_of_bytes;
                 vec->data[index] = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case FLOAT:
@@ -189,8 +192,9 @@ void new_index(vector_t *vec, int index, void *value)
                 float *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_float(value);
-                vec->allocated_mem += (int)number_of_bytes;
                 vec->data[index] = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;;
             }
             break;
         case CHAR:
@@ -199,10 +203,10 @@ void new_index(vector_t *vec, int index, void *value)
                 char cast_value = void_cast_char(value);
                 const char *allocated_value = malloc(number_of_bytes);
 
-                vec->allocated_mem += (int)number_of_bytes;
                 memcpy((char*)allocated_value, &cast_value, 1);
-
                 vec->data[index] = (char*)allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case STR:
@@ -211,7 +215,8 @@ void new_index(vector_t *vec, int index, void *value)
                 size_t number_of_bytes = get_bytes(vec->T, (void*)cast_value);
                 const char *allocated_value = malloc(number_of_bytes);
                 
-                vec->allocated_mem += (int)number_of_bytes;
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
+
                 number_of_bytes--;
                 memcpy((char*)allocated_value, cast_value, number_of_bytes);
                 *((char*)allocated_value + number_of_bytes) = '\0';
@@ -225,8 +230,9 @@ void new_index(vector_t *vec, int index, void *value)
                 bool *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_bool(value);
-                vec->allocated_mem += (int)number_of_bytes;
                 vec->data[index] = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case NONE: // default:
@@ -236,7 +242,7 @@ void new_index(vector_t *vec, int index, void *value)
 
 void free_index(vector_t *vec, int index)
 {
-    vec->allocated_mem -= (int)get_bytes(vec->T, vec->data[index]);
+    mem_usage.freed += (u_int32_t)get_bytes(vec->T, vec->data[index]);
     free(vec->data[index]);
 }
 
@@ -275,11 +281,6 @@ void pop_last_index(vector_t *vec)
     capacity_reallocation(vec, vec->size);
 }
 
-void print_allocated_mem_vector(vector_t *vec)
-{
-    printf("Bytes Allocated: %d\n", vec->allocated_mem);
-}
-
 void print_vector_size(vector_t *vec)
 {
     if (check_warnings(vec, VEC_FREE, "print_vector_size", WARNING_PLACEHOLDER))
@@ -296,7 +297,6 @@ vector_t vector_init(template_t T, void *data, int size)
     new_vector.size = size;
     new_vector.data = NULL;
     new_vector.T = T;
-    new_vector.allocated_mem = 0;
 
     if (new_vector.size == 0)
     {
@@ -366,8 +366,8 @@ void vector_insert(vector_t *vec, template_t T, void *value, int index)
         }
     }
 
-    if (check_warnings(vec, VEC_TYPE, "vector_insert", (int)T)
-        || check_warnings(vec, VEC_SIZE_G, "vector_insert", index))
+    if (check_warnings(vec, VEC_SIZE_G, "vector_insert", index)
+        || check_warnings(vec, VEC_TYPE, "vector_insert", (int)T))
     {
         return;
     }
@@ -398,7 +398,8 @@ void vector_extend(vector_t *vec, template_t T, void *data, int size)
         return;
     }
 
-    int total_size = vec->size + size;
+    int original_size = vec->size;
+    vec->size += size;
 
     switch (T)
     {
@@ -407,26 +408,23 @@ void vector_extend(vector_t *vec, template_t T, void *data, int size)
         case FLOAT:
         case CHAR:
         case BOOL:
-            for (int i = vec->size; i < total_size; i++)
+            for (int i = original_size; i < vec->size; i++)
             {
                 capacity_reallocation(vec, i);
                 new_index(vec, i, data);
                 data += (int)get_bytes(vec->T, data);
             }
-            vec->size = total_size;
             break;
         case STR:
             {
                 char **str_array = ((char**)data);
 
-                for (int i = vec->size; i < total_size; i++)
+                for (int i = original_size; i < vec->size; i++)
                 {
                     capacity_reallocation(vec, i);
                     new_index(vec, i, *str_array);
                     str_array++;
                 }
-
-                vec->size = total_size;
             }
             break;
         case NONE: // default:
@@ -562,7 +560,6 @@ void vector_copy(vector_t *vec_dest, vector_t *vec_src)
     vec_dest->size = vec_src->size;
     vec_dest->data = NULL;
     vec_dest->T = vec_src->T;
-    vec_dest->allocated_mem = 0;
 
     if (vec_dest->size == 0)
     {
@@ -609,7 +606,7 @@ void vector_free(vector_t *vec)
     }
 
     free_indices(vec);
-    vec->allocated_mem -= (vec->capacity * (int)sizeof(void*));
+    mem_usage.freed += (u_int32_t)(vec->capacity * (int)sizeof(void*));
     vec->size = 0;
     vec->capacity = 0;
     free(vec->data);

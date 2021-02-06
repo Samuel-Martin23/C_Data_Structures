@@ -13,14 +13,16 @@ int main()
     vector_reverse(&scores);                                    // |6| |5| |4| |7| |2| |3| |1|
     vector_sort(&scores);                                       // |1| |2| |3| |4| |5| |6| |7|
 
-    vector_clear(&scores);
-    print_allocated_mem_vector(&scores);                        // Bytes Allocated: 800
+    print_total_mem();                                          // Total Memory: 828 Bytes
 
-    scores = vector_init_int(12, 2, 1);                         // |12| |2| |1|
-    print_allocated_mem_vector(&scores);                        // Bytes Allocated: 812
+    vector_clear(&scores);
+    print_total_mem();                                          // Total Memory: 800 Bytes
+
+    vector_extend(&scores, int_array_cast_void(12, 2, 1));      // |12| |2| |1|
+    print_total_mem();                                          // Total Memory: 812 Bytes
 
     vector_free(&scores);
-    print_allocated_mem_vector(&scores);                        // Bytes Allocated: 0
+    print_total_mem();                                          // Total Memory: 0 Bytes
 
     return 0;
 }

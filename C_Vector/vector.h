@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "../C_Template/template.h"
+#include "../C_Allocation_Metrics/allocation_metrics.h"
 
 #define DEFAULT_CAPACITY_SIZE       100
 
@@ -24,10 +25,8 @@ typedef struct vector
     int capacity;
     void **data;
     template_t T;
-    int allocated_mem;
 } vector_t;
 
-void print_allocated_mem_vector(vector_t *vec);
 void print_vector_size(vector_t *vec);
 
 vector_t vector_init(template_t T, void *data, int size);
