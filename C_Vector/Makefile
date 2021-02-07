@@ -11,7 +11,7 @@ template_lib = -Wl,-rpath,$(template_dir) -L$(template_dir) -ltemplate
 allocation_metrics_lib = -Wl,-rpath,$(allocation_metrics_dir) -L$(allocation_metrics_dir) -lallocation_metrics
 
 $(name_of_executable): $(object_files)
-	$(CC) $^  $(template_lib) $(allocation_metrics_lib) -o $@
+	$(CC) $^ $(template_lib) $(allocation_metrics_lib) -o $@
 
 main.o: main.c
 	$(CC) $(flags) -c main.c -o main.o

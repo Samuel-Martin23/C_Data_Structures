@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "../C_Template/template.h"
+#include "../C_Allocation_Metrics/allocation_metrics.h"
 
 #define list_init_int(...)       list_init(int_array_cast_void(__VA_ARGS__))
 #define list_init_double(...)    list_init(double_array_cast_void(__VA_ARGS__))
@@ -31,7 +32,6 @@ typedef struct list
     int allocated_mem;
 } list_t;
 
-void print_allocated_mem_list(list_t *list);
 void print_list_size(list_t *list);
 
 list_t list_init(template_t T, void *data, int size);

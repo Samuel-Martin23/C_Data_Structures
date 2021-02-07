@@ -4,10 +4,14 @@ flags = -std=c17 -Wall -Wextra -Wconversion -Wunreachable-code -Wnewline-eof -Wn
 
 object_files = main.o hash_table.o
 template_dir = ../C_Template/
+allocation_metrics_dir = ../C_Allocation_Metrics/
 name_of_executable = program
 
+template_lib = -Wl,-rpath,$(template_dir) -L$(template_dir) -ltemplate
+allocation_metrics_lib = -Wl,-rpath,$(allocation_metrics_dir) -L$(allocation_metrics_dir) -lallocation_metrics
+
 $(name_of_executable): $(object_files)
-	$(CC) $^ -Wl,-rpath,$(template_dir) -L$(template_dir) -ltemplate -o $@
+	$(CC) $^ $(template_lib) $(allocation_metrics_lib) -o $@
 
 main.o: main.c
 	$(CC) $(flags) -c main.c -o main.o

@@ -162,8 +162,9 @@ void *new_value(list_t *list, void *value)
                 int *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_int(value);
-                list->allocated_mem += (int)number_of_bytes;
                 value = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;;
             }
             break;
         case DOUBLE:
@@ -172,8 +173,9 @@ void *new_value(list_t *list, void *value)
                 double *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_double(value);
-                list->allocated_mem += (int)number_of_bytes;
                 value = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;;
             }
             break;
         case FLOAT:
@@ -182,8 +184,9 @@ void *new_value(list_t *list, void *value)
                 float *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_float(value);
-                list->allocated_mem += (int)number_of_bytes;
                 value = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;;
             }
             break;
         case CHAR:
@@ -192,10 +195,10 @@ void *new_value(list_t *list, void *value)
                 char cast_value = void_cast_char(value);
                 const char *allocated_value = malloc(number_of_bytes);
 
-                list->allocated_mem += (int)(number_of_bytes);
                 memcpy((char*)allocated_value, &cast_value, 1);
-
                 value = (char*)allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;;
             }
             break;
         case STR:
@@ -204,7 +207,8 @@ void *new_value(list_t *list, void *value)
                 size_t number_of_bytes = get_bytes(list->T, (void*)cast_value);
                 const char *allocated_value = malloc(number_of_bytes);
 
-                list->allocated_mem += (int)(number_of_bytes);
+                mem_usage.allocated += (u_int32_t)number_of_bytes;;
+
                 number_of_bytes--;
                 memcpy((char*)allocated_value, cast_value, number_of_bytes);
                 *((char*)allocated_value + number_of_bytes) = '\0';
@@ -218,8 +222,9 @@ void *new_value(list_t *list, void *value)
                 bool *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_bool(value);
-                list->allocated_mem += (int)(number_of_bytes);
                 value = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;;
             }
             break;
         case NONE: // default:
@@ -231,7 +236,7 @@ void *new_value(list_t *list, void *value)
 
 void free_value(list_t *list, node_t **curr)
 {
-    list->allocated_mem -= (int)get_bytes(list->T, (*curr)->value);
+    mem_usage.freed += (u_int32_t)get_bytes(list->T, (*curr)->value);
     free((*curr)->value);
 }
 
@@ -242,7 +247,7 @@ node_t *new_node(list_t *list, void *value)
 
     curr->value = new_value(list, value);
     curr->next = NULL;
-    list->allocated_mem += (int)number_of_bytes;
+    mem_usage.allocated += (u_int32_t)number_of_bytes;
     return curr;
 }
 
@@ -251,7 +256,7 @@ void free_node(list_t *list, node_t **curr)
     free_value(list, curr);
     free(*curr);
     *curr = NULL;
-    list->allocated_mem -= (int)sizeof(node_t);
+    mem_usage.freed += (u_int32_t)sizeof(node_t);
 }
 
 bool check_list_null_init(list_t *list, template_t T, void *data, int size)
@@ -263,11 +268,6 @@ bool check_list_null_init(list_t *list, template_t T, void *data, int size)
     }
 
     return false;
-}
-
-void print_allocated_mem_list(list_t *list)
-{
-    printf("Bytes Allocated: %d\n", list->allocated_mem);
 }
 
 void print_list_size(list_t *list)
@@ -287,7 +287,6 @@ list_t list_init(template_t T, void *data, int size)
 
     new_list.size = size;
     new_list.T = T;
-    new_list.allocated_mem = 0;
     new_list.head = NULL;
     new_list.tail = NULL;
 
@@ -650,7 +649,6 @@ void list_copy(list_t *list_dest, list_t *list_src)
     list_dest->tail = NULL;
     list_dest->size = list_src->size;
     list_dest->T = list_src->T;
-    list_dest->allocated_mem = 0;
 
     if (list_dest->size == 0)
     {

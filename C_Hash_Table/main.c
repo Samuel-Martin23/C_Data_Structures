@@ -19,9 +19,11 @@ int main()
     hash_table_delete_elem(&names, char_cast_void('S'));
     hash_table_print(&names, "", "\n");
 
-    print_allocated_mem_ht(&names);
+    print_total_mem();
+
     hash_table_free(&names);
-    print_allocated_mem_ht(&names);
+
+    print_total_mem();
 
     return 0;
 }

@@ -8,6 +8,7 @@
 #include <string.h>
 #include <math.h>
 #include "../C_Template/template.h"
+#include "../C_Allocation_Metrics/allocation_metrics.h"
 
 typedef struct hash_elem
 {
@@ -28,7 +29,6 @@ typedef struct hash_table
     int allocated_mem;
 } hash_table_t;
 
-void print_allocated_mem_ht(hash_table_t *ht);
 void print_ht_size(hash_table_t *ht);
 
 hash_table_t hash_table_init(int capacity);

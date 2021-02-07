@@ -29,7 +29,7 @@ bool check_two_equal_value(template_t T_Key_1, void *key_1, template_t T_Key_2, 
     return false;
 }
 
-hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *value, hash_table_t *ht)
+hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *value)
 {
     size_t number_of_bytes = sizeof(hash_elem_t);
     hash_elem_t *item = malloc(number_of_bytes);
@@ -40,21 +40,21 @@ hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *
     item->value = value;
     item->next = NULL;
 
-    ht->allocated_mem += (int)number_of_bytes;
+    mem_usage.allocated += (u_int32_t)number_of_bytes;
 
     return item;
 }
 
-void free_elem(hash_elem_t *item, hash_table_t *ht)
+void free_elem(hash_elem_t *item)
 {
     free(item->key);
     free(item->value);
     free(item);
     item = NULL;
-    ht->allocated_mem -= (int)sizeof(hash_elem_t);
+    mem_usage.freed += (u_int32_t)sizeof(hash_elem_t);
 }
 
-void *new_element_value(hash_table_t *ht, template_t T, void **value)
+void *new_element_value(template_t T, void **value)
 {
     switch (T)
     {
@@ -63,9 +63,10 @@ void *new_element_value(hash_table_t *ht, template_t T, void **value)
                 size_t number_of_bytes = get_bytes(T, *value);
                 int *allocated_value = malloc(number_of_bytes);
 
-                ht->allocated_mem += (int)number_of_bytes;
                 *allocated_value = void_cast_int(*value);
                 *value = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case DOUBLE:
@@ -73,9 +74,10 @@ void *new_element_value(hash_table_t *ht, template_t T, void **value)
                 size_t number_of_bytes = get_bytes(T, *value);
                 double *allocated_value = malloc(number_of_bytes);
 
-                ht->allocated_mem += (int)number_of_bytes;
                 *allocated_value = void_cast_double(*value);
                 *value = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case FLOAT:
@@ -83,9 +85,10 @@ void *new_element_value(hash_table_t *ht, template_t T, void **value)
                 size_t number_of_bytes = get_bytes(T, *value);
                 float *allocated_key = malloc(number_of_bytes);
 
-                ht->allocated_mem += (int)number_of_bytes;
                 *allocated_key = void_cast_float(*value);
                 *value = allocated_key;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case CHAR:
@@ -94,10 +97,10 @@ void *new_element_value(hash_table_t *ht, template_t T, void **value)
                 char key_data = void_cast_char(*value);
                 const char *allocated_value = malloc(number_of_bytes);
 
-                ht->allocated_mem += (int)number_of_bytes;
                 memcpy((char*)allocated_value, &key_data, 1);
-
                 *value = (char*)allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case STR:
@@ -106,7 +109,8 @@ void *new_element_value(hash_table_t *ht, template_t T, void **value)
                 size_t number_of_bytes = get_bytes(T, (void*)key_data);
                 const char *allocated_value = malloc(number_of_bytes);
 
-                ht->allocated_mem += (int)number_of_bytes;
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
+
                 number_of_bytes--;
 
                 memcpy((char*)allocated_value, key_data, number_of_bytes);
@@ -120,9 +124,10 @@ void *new_element_value(hash_table_t *ht, template_t T, void **value)
                 size_t number_of_bytes = get_bytes(T, *value);
                 bool *allocated_value = malloc(number_of_bytes);
             
-                ht->allocated_mem += number_of_bytes;
                 *allocated_value = void_cast_bool(*value);
                 *value = allocated_value;
+
+                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case NONE:
@@ -187,10 +192,10 @@ void table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_va
         }
     }
 
-    new_element_value(ht, T_key, &key);
-    new_element_value(ht, T_value, &value);
+    new_element_value(T_key, &key);
+    new_element_value(T_value, &value);
 
-    hash_elem_t *item = new_element(T_key, key, T_value, value, ht);
+    hash_elem_t *item = new_element(T_key, key, T_value, value);
 
     if (ht->size == 0)
     {
@@ -220,11 +225,6 @@ void table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_va
     ht->size++;
 }
 
-void print_allocated_mem_ht(hash_table_t *ht)
-{
-    printf("Bytes Allocated: %d\n", ht->allocated_mem);
-}
-
 void print_ht_size(hash_table_t *ht)
 {
     printf("Hash Table Size: %d\n", ht->size);
@@ -240,7 +240,7 @@ hash_table_t hash_table_init(int capacity)
     new_ht.table = malloc(number_of_bytes);
     new_ht.first_index = 0;
     new_ht.last_index = 0;
-    new_ht.allocated_mem = (int)number_of_bytes;
+    mem_usage.allocated += (u_int32_t)number_of_bytes;
 
     for (int i = 0; i < new_ht.capacity; i++)
     {
@@ -294,9 +294,9 @@ void hash_table_delete_elem(hash_table_t *ht, template_t T_key, void *key)
         prev->next = curr->next;
     }
 
-    ht->allocated_mem -= ((int)get_bytes(curr->T_key, curr->key) +
-                                (int)get_bytes(curr->T_value,  curr->value));
-    free_elem(curr, ht);
+    mem_usage.freed += ((u_int32_t)get_bytes(curr->T_key, curr->key) +
+                        (u_int32_t)get_bytes(curr->T_value, curr->value));
+    free_elem(curr);
 }
 
 void hash_table_copy(hash_table_t *ht_dest, hash_table_t *ht_src)
@@ -340,15 +340,15 @@ void hash_table_clear(hash_table_t *ht)
         while ((*curr)->next != NULL)
         {
             curr_next = &((*curr)->next);
-            ht->allocated_mem -= ((int)get_bytes((*curr)->T_key, (*curr)->key) +
-                                        (int)get_bytes((*curr)->T_value,  (*curr)->value));
-            free_elem(*curr, ht);
+            mem_usage.freed += ((u_int32_t)get_bytes((*curr)->T_key, (*curr)->key) +
+                                (u_int32_t)get_bytes((*curr)->T_value, (*curr)->value));
+            free_elem(*curr);
             curr = curr_next;
         }
 
-        ht->allocated_mem -= ((int)get_bytes((*curr)->T_key, (*curr)->key) +
-                                    (int)get_bytes((*curr)->T_value,  (*curr)->value));
-        free_elem(*curr, ht);
+        mem_usage.freed += ((u_int32_t)get_bytes((*curr)->T_key, (*curr)->key) +
+                            (u_int32_t)get_bytes((*curr)->T_value, (*curr)->value));
+        free_elem(*curr);
     }
 }
 
@@ -357,7 +357,7 @@ void hash_table_free(hash_table_t *ht)
     hash_table_clear(ht);
     free(ht->table);
 
-    ht->allocated_mem -= (int)sizeof(hash_elem_t*) * (size_t)ht->capacity;
+    mem_usage.freed += (u_int32_t)(sizeof(hash_elem_t*) * (size_t)ht->capacity);
     ht->capacity = 0;
     ht->size = 0;
     ht->table = NULL;

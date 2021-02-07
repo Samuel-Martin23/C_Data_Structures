@@ -15,7 +15,7 @@ int main()
     list_extend(&scores, int_array_cast_void(1, 2, 3));             // 1 ==> 2 ==> 3 ==> NULL
     list_print(&scores);
     list_free(&scores);
-    print_allocated_mem_list(&scores);
+    print_total_mem();
 
     return 0;
 }
