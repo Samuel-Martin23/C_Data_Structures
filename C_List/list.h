@@ -29,7 +29,6 @@ typedef struct list
     node_t *tail;
     int size;
     template_t T;
-    int allocated_mem;
 } list_t;
 
 void print_list_size(list_t *list);

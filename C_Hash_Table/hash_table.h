@@ -26,7 +26,6 @@ typedef struct hash_table
     hash_elem_t **table;
     int first_index;
     int last_index;
-    int allocated_mem;
 } hash_table_t;
 
 void print_ht_size(hash_table_t *ht);

@@ -154,10 +154,6 @@ void capacity_reallocation(vector_t *vec, int size)
     {
         realloc_void_elements(vec, size);
     }
-    else if (vec->size == 0)
-    {
-        vector_free(vec);
-    }
 }
 
 void new_index(vector_t *vec, int index, void *value)
