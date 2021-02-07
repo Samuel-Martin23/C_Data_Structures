@@ -152,100 +152,12 @@ void sort_data_values(node_t **head, template_t T)
     *head = merge_lists(split_left, split_right, T);
 }
 
-void *new_value(list_t *list, void *value)
-{
-    switch (list->T)
-    {
-        case INT:
-            {
-                size_t number_of_bytes = get_bytes(list->T, value);
-                int *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_int(value);
-                value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;;
-            }
-            break;
-        case DOUBLE:
-            {
-                size_t number_of_bytes = get_bytes(list->T, value);
-                double *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_double(value);
-                value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;;
-            }
-            break;
-        case FLOAT:
-            {
-                size_t number_of_bytes = get_bytes(list->T, value);
-                float *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_float(value);
-                value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;;
-            }
-            break;
-        case CHAR:
-             {
-                size_t number_of_bytes = get_bytes(list->T, value);
-                char cast_value = void_cast_char(value);
-                char *allocated_value = malloc(number_of_bytes);
-
-                memcpy(allocated_value, &cast_value, 1);
-                value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;;
-            }
-            break;
-        case STR:
-            {
-                char *cast_value = void_cast_str(value);
-                size_t number_of_bytes = get_bytes(list->T, cast_value);
-                char *allocated_value = malloc(number_of_bytes);
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;;
-
-                number_of_bytes--;
-                memcpy(allocated_value, cast_value, number_of_bytes);
-                allocated_value[number_of_bytes] = '\0';
-
-                value = (char*)allocated_value;
-            }
-            break;
-        case BOOL:
-            {
-                size_t number_of_bytes = get_bytes(list->T, value);
-                bool *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_bool(value);
-                value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;;
-            }
-            break;
-        case NONE: // default:
-            break;
-    }
-
-    return value;
-}
-
-void free_value(list_t *list, node_t **curr)
-{
-    mem_usage.freed += (u_int32_t)get_bytes(list->T, (*curr)->value);
-    free((*curr)->value);
-}
-
 node_t *new_node(list_t *list, void *value)
 {
     size_t number_of_bytes = sizeof(node_t);
     node_t *curr = malloc(number_of_bytes);
 
-    curr->value = new_value(list, value);
+    curr->value = new_T_value(list->T, value);
     curr->next = NULL;
     mem_usage.allocated += (u_int32_t)number_of_bytes;
     return curr;
@@ -253,7 +165,7 @@ node_t *new_node(list_t *list, void *value)
 
 void free_node(list_t *list, node_t **curr)
 {
-    free_value(list, curr);
+    free_T_value(list->T, (*curr)->value);
     free(*curr);
     *curr = NULL;
     mem_usage.freed += (u_int32_t)sizeof(node_t);

@@ -156,97 +156,16 @@ void capacity_reallocation(vector_t *vec, int size)
     }
 }
 
-void new_index(vector_t *vec, int index, void *value)
-{
-    switch (vec->T)
-    {
-        case INT:
-            {
-                size_t number_of_bytes = get_bytes(vec->T, value);
-                int *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_int(value);
-                vec->data[index] = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-            }
-            break;
-        case DOUBLE:
-            {
-                size_t number_of_bytes = get_bytes(vec->T, value);
-                double *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_double(value);
-                vec->data[index] = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-            }
-            break;
-        case FLOAT:
-            {
-                size_t number_of_bytes = get_bytes(vec->T, value);
-                float *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_float(value);
-                vec->data[index] = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;;
-            }
-            break;
-        case CHAR:
-             {
-                size_t number_of_bytes = get_bytes(vec->T, value);
-                char cast_value = void_cast_char(value);
-                char *allocated_value = malloc(number_of_bytes);
-
-                memcpy(allocated_value, &cast_value, 1);
-                vec->data[index] = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-            }
-            break;
-        case STR:
-            {
-                char *cast_value = void_cast_str(value);
-                size_t number_of_bytes = get_bytes(vec->T, cast_value);
-                char *allocated_value = malloc(number_of_bytes);
-                
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-
-                number_of_bytes--;
-                memcpy(allocated_value, cast_value, number_of_bytes);
-                allocated_value[number_of_bytes] = '\0';
-
-                vec->data[index] = (char*)allocated_value;
-            }
-            break;
-        case BOOL:
-            {
-                size_t number_of_bytes = get_bytes(vec->T, value);
-                bool *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_bool(value);
-                vec->data[index] = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-            }
-            break;
-        case NONE: // default:
-            break;
-    }
-}
-
 void free_index(vector_t *vec, int index)
 {
-    mem_usage.freed += (u_int32_t)get_bytes(vec->T, vec->data[index]);
-    free(vec->data[index]);
+    free_T_value(vec->T, vec->data[index]);
 }
 
 void free_indices(vector_t *vec)
 {
     for (int i = 0; i < vec->size; i++)
     {
-        free_index(vec, i);
+        free_T_value(vec->T, vec->data[i]);
         vec->data[i] = NULL;
     }
 
@@ -272,7 +191,7 @@ bool check_vector_null_init(vector_t *vec, template_t T, void *data, int size)
 
 void pop_last_index(vector_t *vec)
 {
-    free_index(vec, vec->size-1);
+    free_T_value(vec->T, vec->data[vec->size-1]);
     null_index(vec);
     capacity_reallocation(vec, vec->size);
 }
@@ -311,7 +230,7 @@ vector_t vector_init(template_t T, void *data, int size)
         case BOOL:
             for (int i = 0; i < new_vector.size; i++)
             {
-                new_index(&new_vector, i, data);
+                new_vector.data[i] = new_T_value(new_vector.T, data);
                 data += (int)get_bytes(new_vector.T, data);
             }
             break;
@@ -321,7 +240,7 @@ vector_t vector_init(template_t T, void *data, int size)
 
                 for (int i = 0; i < new_vector.size; i++)
                 {
-                    new_index(&new_vector, i, *str_array);
+                    new_vector.data[i] = new_T_value(new_vector.T, *str_array);
                     str_array++;
                 }
             }
@@ -348,7 +267,7 @@ void vector_push(vector_t *vec, template_t T, void *value)
     convert_2d_str(T, &value);
 
     capacity_reallocation(vec, vec->size);
-    new_index(vec, vec->size, value);
+    vec->data[vec->size] = new_T_value(vec->T, value);
     vec->size++;
 }
 
@@ -379,7 +298,7 @@ void vector_insert(vector_t *vec, template_t T, void *value, int index)
 
     convert_2d_str(T, &value);
 
-    new_index(vec, index, value);
+    vec->data[index] = new_T_value(vec->T, value);
 }
 
 void vector_extend(vector_t *vec, template_t T, void *data, int size)
@@ -407,7 +326,7 @@ void vector_extend(vector_t *vec, template_t T, void *data, int size)
             for (int i = original_size; i < vec->size; i++)
             {
                 capacity_reallocation(vec, i);
-                new_index(vec, i, data);
+                vec->data[i] = new_T_value(vec->T, data);
                 data += (int)get_bytes(vec->T, data);
             }
             break;
@@ -418,7 +337,7 @@ void vector_extend(vector_t *vec, template_t T, void *data, int size)
                 for (int i = original_size; i < vec->size; i++)
                 {
                     capacity_reallocation(vec, i);
-                    new_index(vec, i, *str_array);
+                    vec->data[i] = new_T_value(vec->T, *str_array);
                     str_array++;
                 }
             }
@@ -453,7 +372,7 @@ void vector_pop_index(vector_t *vec, int index)
         return;
     }
 
-    free_index(vec, index);
+    free_T_value(vec->T, vec->data[index]);
 
     for (int i = index; i < vec->size-1; i++)
     {
@@ -575,7 +494,7 @@ void vector_copy(vector_t *vec_dest, vector_t *vec_src)
         case BOOL:
             for (int i = 0; i < vec_dest->size; i++)
             {
-                new_index(vec_dest, i, vec_src->data[i]);
+                vec_dest->data[i] = new_T_value(vec_dest->T, vec_src->data[i]);
             }
             break;
         case NONE: // default:

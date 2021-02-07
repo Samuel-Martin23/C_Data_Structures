@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include "../C_Allocation_Metrics/allocation_metrics.h"
 
 #define int_cast_void(value)            INT, &(int){value}
 #define double_cast_void(value)         DOUBLE, &(double){value}
@@ -39,6 +40,8 @@ bool check_greater_value(template_t T, void *value_1, void *value_2);
 bool check_equal_value(template_t T, void *value_1, void *value_2);
 
 size_t get_bytes(template_t T, void *value);
+void *new_T_value(template_t T, void *value);
+void free_T_value(template_t T, void *value);
 
 /*
 By default, STR type casts the void* into a 2d string array.

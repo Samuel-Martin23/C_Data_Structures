@@ -45,95 +45,11 @@ hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *
     return item;
 }
 
-void free_elem(hash_elem_t *item)
+void free_elem(hash_elem_t **item)
 {
-    free(item->key);
-    free(item->value);
-    free(item);
-    item = NULL;
+    free(*item);
+    *item = NULL;
     mem_usage.freed += (u_int32_t)sizeof(hash_elem_t);
-}
-
-void *new_element_value(template_t T, void **value)
-{
-    switch (T)
-    {
-        case INT:
-            {
-                size_t number_of_bytes = get_bytes(T, *value);
-                int *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_int(*value);
-                *value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-            }
-            break;
-        case DOUBLE:
-            {
-                size_t number_of_bytes = get_bytes(T, *value);
-                double *allocated_value = malloc(number_of_bytes);
-
-                *allocated_value = void_cast_double(*value);
-                *value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-            }
-            break;
-        case FLOAT:
-            {
-                size_t number_of_bytes = get_bytes(T, *value);
-                float *allocated_key = malloc(number_of_bytes);
-
-                *allocated_key = void_cast_float(*value);
-                *value = allocated_key;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-            }
-            break;
-        case CHAR:
-            {
-                size_t number_of_bytes = get_bytes(T, *value);
-                char cast_value = void_cast_char(*value);
-                char *allocated_value = malloc(number_of_bytes);
-
-                memcpy(allocated_value, &cast_value, 1);
-                *value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-            }
-            break;
-        case STR:
-            {
-                char *cast_value = void_cast_str(*value);
-                size_t number_of_bytes = get_bytes(T, cast_value);
-                char *allocated_value = malloc(number_of_bytes);
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-
-                number_of_bytes--;
-                memcpy(allocated_value, cast_value, number_of_bytes);
-                allocated_value[number_of_bytes] = '\0';
-
-                *value = allocated_value;
-            }
-            break;
-        case BOOL:
-            {
-                size_t number_of_bytes = get_bytes(T, *value);
-                bool *allocated_value = malloc(number_of_bytes);
-            
-                *allocated_value = void_cast_bool(*value);
-                *value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
-            }
-            break;
-        case NONE:
-            break;
-    }
-
-    return value;
 }
 
 int generate_hash_code(template_t T_Key, void *key, int capacity)
@@ -191,8 +107,8 @@ void table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_va
         }
     }
 
-    new_element_value(T_key, &key);
-    new_element_value(T_value, &value);
+    key = new_T_value(T_key, key);
+    value = new_T_value(T_value, value);
 
     hash_elem_t *item = new_element(T_key, key, T_value, value);
 
@@ -295,7 +211,7 @@ void hash_table_delete_elem(hash_table_t *ht, template_t T_key, void *key)
 
     mem_usage.freed += ((u_int32_t)get_bytes(curr->T_key, curr->key) +
                         (u_int32_t)get_bytes(curr->T_value, curr->value));
-    free_elem(curr);
+    free_elem(&curr);
 }
 
 void hash_table_copy(hash_table_t *ht_dest, hash_table_t *ht_src)
@@ -325,7 +241,7 @@ void hash_table_copy(hash_table_t *ht_dest, hash_table_t *ht_src)
 void hash_table_clear(hash_table_t *ht)
 {
     hash_elem_t **curr = NULL;
-    hash_elem_t **curr_next = NULL;
+    hash_elem_t **curr_succeeding = NULL;
 
     for (int i = ht->first_index; i <= ht->last_index; i++)
     {
@@ -338,16 +254,16 @@ void hash_table_clear(hash_table_t *ht)
 
         while ((*curr)->next != NULL)
         {
-            curr_next = &((*curr)->next);
-            mem_usage.freed += ((u_int32_t)get_bytes((*curr)->T_key, (*curr)->key) +
-                                (u_int32_t)get_bytes((*curr)->T_value, (*curr)->value));
-            free_elem(*curr);
-            curr = curr_next;
+            curr_succeeding = &((*curr)->next);
+            free_T_value((*curr)->T_key, (*curr)->key);
+            free_T_value((*curr)->T_value, (*curr)->value);
+            free_elem(curr);
+            curr = curr_succeeding;
         }
 
-        mem_usage.freed += ((u_int32_t)get_bytes((*curr)->T_key, (*curr)->key) +
-                            (u_int32_t)get_bytes((*curr)->T_value, (*curr)->value));
-        free_elem(*curr);
+        free_T_value((*curr)->T_key, (*curr)->key);
+        free_T_value((*curr)->T_value, (*curr)->value);
+        free_elem(curr);
     }
 }
 
