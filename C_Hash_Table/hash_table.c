@@ -94,29 +94,28 @@ void *new_element_value(template_t T, void **value)
         case CHAR:
             {
                 size_t number_of_bytes = get_bytes(T, *value);
-                char key_data = void_cast_char(*value);
-                const char *allocated_value = malloc(number_of_bytes);
+                char cast_value = void_cast_char(*value);
+                char *allocated_value = malloc(number_of_bytes);
 
-                memcpy((char*)allocated_value, &key_data, 1);
-                *value = (char*)allocated_value;
+                memcpy(allocated_value, &cast_value, 1);
+                *value = allocated_value;
 
                 mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case STR:
             {
-                const char *key_data = void_cast_str(*value);
-                size_t number_of_bytes = get_bytes(T, (void*)key_data);
-                const char *allocated_value = malloc(number_of_bytes);
+                char *cast_value = void_cast_str(*value);
+                size_t number_of_bytes = get_bytes(T, cast_value);
+                char *allocated_value = malloc(number_of_bytes);
 
                 mem_usage.allocated += (u_int32_t)number_of_bytes;
 
                 number_of_bytes--;
+                memcpy(allocated_value, cast_value, number_of_bytes);
+                allocated_value[number_of_bytes] = '\0';
 
-                memcpy((char*)allocated_value, key_data, number_of_bytes);
-                *((char*)allocated_value + number_of_bytes) = '\0';
-
-                *value = (char*)allocated_value;
+                *value = allocated_value;
             }
             break;
         case BOOL:
@@ -158,7 +157,7 @@ int generate_hash_code(template_t T_Key, void *key, int capacity)
         case STR:
             {
                 size_t temp_hash_code = 0;
-                const char *word = void_cast_str(key);
+                char *word = void_cast_str(key);
                 int str_length = ((int)strlen(word)) / 2;
 
                 for (int i = 0; i < str_length; i++)

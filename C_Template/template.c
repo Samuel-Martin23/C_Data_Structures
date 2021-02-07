@@ -4,8 +4,8 @@
 int void_cast_int(void *value) {return (*(int*)value);}
 double void_cast_double(void *value) {return (*(double*)value);}
 float void_cast_float(void *value) {return (*(float*)value);}
-char void_cast_char(void *value) {return (*(const char*)value);}
-const char *void_cast_str(void *value) {return ((const char*)value);}
+char void_cast_char(void *value) {return (*(char*)value);}
+char *void_cast_str(void *value) {return ((char*)value);}
 bool void_cast_bool(void *value) {return (*(bool*)value);}
 
 void print_t(template_t T, void *value, const char *beginning, const char *end)
@@ -152,7 +152,7 @@ size_t get_bytes(template_t T, void *value)
             break;
         case STR:
             {
-                const char *str_value = void_cast_str(value);
+                char *str_value = void_cast_str(value);
                 size = (sizeof(char) * (strlen(str_value) + 1));
             }
             break;

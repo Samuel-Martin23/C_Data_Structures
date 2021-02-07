@@ -27,7 +27,7 @@ int void_cast_int(void *value);
 double void_cast_double(void *value);
 float void_cast_float(void *value);
 char void_cast_char(void *value);
-const char *void_cast_str(void *value);
+char *void_cast_str(void *value);
 bool void_cast_bool(void *value);
 
 void print_t(template_t T, void *value, const char *beginning, const char *end);

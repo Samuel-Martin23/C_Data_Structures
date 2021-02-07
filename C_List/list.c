@@ -193,25 +193,25 @@ void *new_value(list_t *list, void *value)
              {
                 size_t number_of_bytes = get_bytes(list->T, value);
                 char cast_value = void_cast_char(value);
-                const char *allocated_value = malloc(number_of_bytes);
+                char *allocated_value = malloc(number_of_bytes);
 
-                memcpy((char*)allocated_value, &cast_value, 1);
-                value = (char*)allocated_value;
+                memcpy(allocated_value, &cast_value, 1);
+                value = allocated_value;
 
                 mem_usage.allocated += (u_int32_t)number_of_bytes;;
             }
             break;
         case STR:
             {
-                const char *cast_value = void_cast_str(value);
-                size_t number_of_bytes = get_bytes(list->T, (void*)cast_value);
-                const char *allocated_value = malloc(number_of_bytes);
+                char *cast_value = void_cast_str(value);
+                size_t number_of_bytes = get_bytes(list->T, cast_value);
+                char *allocated_value = malloc(number_of_bytes);
 
                 mem_usage.allocated += (u_int32_t)number_of_bytes;;
 
                 number_of_bytes--;
-                memcpy((char*)allocated_value, cast_value, number_of_bytes);
-                *((char*)allocated_value + number_of_bytes) = '\0';
+                memcpy(allocated_value, cast_value, number_of_bytes);
+                allocated_value[number_of_bytes] = '\0';
 
                 value = (char*)allocated_value;
             }
