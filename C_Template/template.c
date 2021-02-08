@@ -63,27 +63,9 @@ bool check_double_equal(double value_1, double value_2)
     return false;
 }
 
-bool check_less_equal_value(template_t T, void *value_1, void *value_2)
+bool check_less_value(template_t T, void *value_1, void *value_2)
 {
-    switch (T)
-    {
-        case INT:
-            return (void_cast_int(value_1) <= void_cast_int(value_2));
-        case DOUBLE:
-            return (void_cast_double(value_1) <= void_cast_double(value_2));
-        case FLOAT:
-            return (void_cast_float(value_1) <= void_cast_float(value_2));
-        case CHAR:
-            return (void_cast_char(value_1) <= void_cast_char(value_2));
-        case STR:
-            return (strlen(void_cast_str(value_1)) <= strlen(void_cast_str(value_2)));
-        case BOOL:
-            return (void_cast_bool(value_1) <= void_cast_bool(value_2));
-        case NONE: // default:
-            break;
-    }
-
-    return false;
+    return check_greater_value(T, value_2, value_1);
 }
 
 bool check_greater_value(template_t T, void *value_1, void *value_2)
@@ -109,6 +91,34 @@ bool check_greater_value(template_t T, void *value_1, void *value_2)
     return false;
 }
 
+bool check_less_equal_value(template_t T, void *value_1, void *value_2)
+{
+    switch (T)
+    {
+        case INT:
+            return (void_cast_int(value_1) <= void_cast_int(value_2));
+        case DOUBLE:
+            return (void_cast_double(value_1) <= void_cast_double(value_2));
+        case FLOAT:
+            return (void_cast_float(value_1) <= void_cast_float(value_2));
+        case CHAR:
+            return (void_cast_char(value_1) <= void_cast_char(value_2));
+        case STR:
+            return (strlen(void_cast_str(value_1)) <= strlen(void_cast_str(value_2)));
+        case BOOL:
+            return (void_cast_bool(value_1) <= void_cast_bool(value_2));
+        case NONE: // default:
+            break;
+    }
+
+    return false;
+}
+
+bool check_greater_equal_value(template_t T, void *value_1, void *value_2)
+{
+    return check_less_equal_value(T, value_2, value_1);
+}
+
 bool check_equal_value(template_t T, void *value_1, void *value_2)
 {
     switch (T)
@@ -130,6 +140,11 @@ bool check_equal_value(template_t T, void *value_1, void *value_2)
     }
 
     return false;
+}
+
+bool check_not_equal_value(template_t T, void *value_1, void *value_2)
+{
+    return !(check_equal_value(T, value_1, value_2));
 }
 
 size_t get_bytes(template_t T, void *value)

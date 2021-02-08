@@ -35,9 +35,12 @@ void print_t(template_t T, void *value, const char *beginning, const char *end);
 
 bool check_float_equal(float value_1, float value_2);
 bool check_double_equal(double value_1, double value_2);
-bool check_less_equal_value(template_t T, void *value_1, void *value_2);
+bool check_less_value(template_t T, void *value_1, void *value_2);
 bool check_greater_value(template_t T, void *value_1, void *value_2);
+bool check_less_equal_value(template_t T, void *value_1, void *value_2);
+bool check_greater_equal_value(template_t T, void *value_1, void *value_2);
 bool check_equal_value(template_t T, void *value_1, void *value_2);
+bool check_not_equal_value(template_t T, void *value_1, void *value_2);
 
 size_t get_bytes(template_t T, void *value);
 void *new_T_value(template_t T, void *value);
