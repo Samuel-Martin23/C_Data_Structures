@@ -74,7 +74,7 @@ static bool check_warnings(list_t *list, int warning_code, const char *function_
     return false;
 }
 
-node_t *merge_lists(node_t *left, node_t *right, template_t T)
+static node_list_t *merge_lists(node_list_t *left, node_list_t *right, template_t T)
 {
     if (left == NULL)
     {
@@ -85,7 +85,7 @@ node_t *merge_lists(node_t *left, node_t *right, template_t T)
         return left;
     }
 
-    node_t *merged_head = NULL;
+    node_list_t *merged_head = NULL;
 
     if (check_less_equal_value(T, left->value, right->value))
     {
@@ -101,10 +101,10 @@ node_t *merge_lists(node_t *left, node_t *right, template_t T)
     return merged_head;
 }
 
-void partition_list(node_t *head, node_t **front, node_t **back)
+static void partition_list(node_list_t *head, node_list_t **front, node_list_t **back)
 {
-    node_t *slow = NULL;
-    node_t *fast = NULL;
+    node_list_t *slow = NULL;
+    node_list_t *fast = NULL;
 
     if (head == NULL || head->next == NULL)
     {
@@ -133,11 +133,11 @@ void partition_list(node_t *head, node_t **front, node_t **back)
     }
 }
 
-void sort_data_values(node_t **head, template_t T)
+static void sort_data_values(node_list_t **head, template_t T)
 {
-    node_t *top = *head;
-    node_t *split_left = NULL;
-    node_t *split_right = NULL;
+    node_list_t *top = *head;
+    node_list_t *split_left = NULL;
+    node_list_t *split_right = NULL;
 
     if (top == NULL || top->next == NULL)
     {
@@ -152,10 +152,10 @@ void sort_data_values(node_t **head, template_t T)
     *head = merge_lists(split_left, split_right, T);
 }
 
-node_t *new_node(list_t *list, void *value)
+static node_list_t *new_node(list_t *list, void *value)
 {
-    size_t number_of_bytes = sizeof(node_t);
-    node_t *curr = malloc(number_of_bytes);
+    size_t number_of_bytes = sizeof(node_list_t);
+    node_list_t *curr = malloc(number_of_bytes);
 
     curr->value = new_T_value(list->T, value);
     curr->next = NULL;
@@ -163,15 +163,15 @@ node_t *new_node(list_t *list, void *value)
     return curr;
 }
 
-void free_node(list_t *list, node_t **curr)
+static void free_node(list_t *list, node_list_t **curr)
 {
     free_T_value(list->T, (*curr)->value);
     free(*curr);
     *curr = NULL;
-    mem_usage.freed += (u_int32_t)sizeof(node_t);
+    mem_usage.freed += (u_int32_t)sizeof(node_list_t);
 }
 
-bool check_list_null_init(list_t *list, template_t T, void *data, int size)
+static bool check_list_null_init(list_t *list, template_t T, void *data, int size)
 {
     if (list->head == NULL)
     {
@@ -207,8 +207,8 @@ list_t list_init(template_t T, void *data, int size)
         return new_list;
     }
 
-    node_t *top = NULL;
-    node_t *curr = NULL;
+    node_list_t *top = NULL;
+    node_list_t *curr = NULL;
 
     switch (T)
     {
@@ -268,8 +268,8 @@ void list_append(list_t *list, template_t T, void *value)
 
     convert_2d_str(list->T, &value);
 
-    node_t **tail = &list->tail;
-    node_t *curr = new_node(list, value);
+    node_list_t **tail = &list->tail;
+    node_list_t *curr = new_node(list, value);
 
     (*tail)->next = curr;
     *tail = (*tail)->next;
@@ -294,11 +294,11 @@ void list_insert(list_t *list, template_t T, void *value, int index)
 
     convert_2d_str(list->T, &value);
 
-    node_t **head = &list->head;
+    node_list_t **head = &list->head;
 
     if (index == 0)
     {
-        node_t *temp = new_node(list, value);
+        node_list_t *temp = new_node(list, value);
         temp->next = *head;
         *head = temp;
         list->size++;
@@ -310,8 +310,8 @@ void list_insert(list_t *list, template_t T, void *value, int index)
         return;
     }
 
-    node_t *prev = NULL;
-    node_t *curr = *head;
+    node_list_t *prev = NULL;
+    node_list_t *curr = *head;
 
     for (int i = 0; i < index; i++)
     {
@@ -319,7 +319,7 @@ void list_insert(list_t *list, template_t T, void *value, int index)
         curr = curr->next;
     }
 
-    node_t *temp = new_node(list, value);
+    node_list_t *temp = new_node(list, value);
     prev->next = temp;
     temp->next = curr;
     list->size++;
@@ -337,8 +337,8 @@ void list_extend(list_t *list, template_t T, void *data, int size)
         return;
     }
 
-    node_t *curr = NULL;
-    node_t **tail = &list->tail;
+    node_list_t *curr = NULL;
+    node_list_t **tail = &list->tail;
 
     switch (T)
     {
@@ -387,19 +387,19 @@ void list_remove_index(list_t *list, int index)
         return;
     }
 
-    node_t **head = &list->head;
+    node_list_t **head = &list->head;
 
     if (index == 0) 
     {
-        node_t* next = (*head)->next;
+        node_list_t* next = (*head)->next;
         free_node(list, head);
         *head = next;
         list->size--;
         return;
     }
 
-    node_t *curr = *head;
-    node_t *prev = NULL;
+    node_list_t *curr = *head;
+    node_list_t *prev = NULL;
 
     for (int i = 0; i < index; i++)
     {
@@ -422,19 +422,19 @@ void list_remove_value(list_t *list, template_t T, void *value)
 
     convert_2d_str(list->T, &value);
 
-    node_t **head = &list->head;
+    node_list_t **head = &list->head;
 
     if (check_equal_value(T, (*head)->value, value))
     {
-        node_t *next = (*head)->next;
+        node_list_t *next = (*head)->next;
         free_node(list, head);
         *head = next;
         list->size--;
         return;
     }
 
-    node_t *curr = *head;
-    node_t *prev = NULL;
+    node_list_t *curr = *head;
+    node_list_t *prev = NULL;
 
     while (curr != NULL)
     {
@@ -464,7 +464,7 @@ void *list_get_value(list_t *list, int index)
         return NULL;
     }
 
-    node_t *top = list->head;
+    node_list_t *top = list->head;
 
     for (int i = 0; i < index; i++)
     {
@@ -489,7 +489,7 @@ bool list_check_value(list_t *list, template_t T, void *value)
 
     convert_2d_str(list->T, &value);
 
-    node_t *top = list->head;
+    node_list_t *top = list->head;
 
     while (top != NULL)
     {
@@ -511,9 +511,9 @@ void list_reverse(list_t *list)
         return;
     }
   
-    node_t *curr = list->head;
-    node_t *prev = NULL;
-    node_t *next = NULL;
+    node_list_t *curr = list->head;
+    node_list_t *prev = NULL;
+    node_list_t *next = NULL;
 
     while (curr != NULL)
     {
@@ -537,7 +537,7 @@ void list_sort(list_t *list)
     
     if (list->tail != NULL)
     {
-        node_t *tail = list->tail;
+        node_list_t *tail = list->tail;
 
         while (tail->next != NULL)
         {
@@ -567,9 +567,9 @@ void list_copy(list_t *list_dest, list_t *list_src)
         return;
     }
 
-    node_t *top_dest = NULL;
-    node_t *top_src = NULL;
-    node_t *curr = NULL;
+    node_list_t *top_dest = NULL;
+    node_list_t *top_src = NULL;
+    node_list_t *curr = NULL;
 
     switch (list_dest->T)
     {
@@ -604,8 +604,8 @@ void list_free(list_t *list)
         return;
     }
 
-    node_t **head = &list->head;
-    node_t *succeeding = (*head)->next;
+    node_list_t **head = &list->head;
+    node_list_t *succeeding = (*head)->next;
 
     while (succeeding != NULL)
     {
@@ -627,7 +627,7 @@ void list_print(list_t *list)
         return;
     }
 
-    node_t *top = list->head;
+    node_list_t *top = list->head;
 
     while (top != NULL)
     {

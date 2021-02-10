@@ -1,7 +1,7 @@
 
 #include "hash_table.h"
 
-bool check_two_equal_value(template_t T_Key_1, void *key_1, template_t T_Key_2, void *key_2)
+static bool check_two_equal_value(template_t T_Key_1, void *key_1, template_t T_Key_2, void *key_2)
 {
     if (T_Key_1 != T_Key_2)
     {
@@ -29,7 +29,7 @@ bool check_two_equal_value(template_t T_Key_1, void *key_1, template_t T_Key_2, 
     return false;
 }
 
-hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *value)
+static hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *value)
 {
     size_t number_of_bytes = sizeof(hash_elem_t);
     hash_elem_t *item = malloc(number_of_bytes);
@@ -45,14 +45,14 @@ hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *
     return item;
 }
 
-void free_elem(hash_elem_t **item)
+static void free_elem(hash_elem_t **item)
 {
     free(*item);
     *item = NULL;
     mem_usage.freed += (u_int32_t)sizeof(hash_elem_t);
 }
 
-int generate_hash_code(template_t T_Key, void *key, int capacity)
+static int generate_hash_code(template_t T_Key, void *key, int capacity)
 {
     int hash_code = 0;
 
@@ -95,7 +95,7 @@ int generate_hash_code(template_t T_Key, void *key, int capacity)
     return hash_code;
 }
 
-void table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_value, void *value)
+static void table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_value, void *value)
 {
     int index = generate_hash_code(T_key, key, ht->capacity);
 

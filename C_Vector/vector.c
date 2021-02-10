@@ -104,7 +104,7 @@ static bool check_warnings(vector_t *vec, int warning_code, const char *function
     return false;
 }
 
-void insertion_sort(template_t T, void **array, int size)
+static void insertion_sort(template_t T, void **array, int size)
 {
     int j = 0;
     void *key = NULL;
@@ -124,7 +124,7 @@ void insertion_sort(template_t T, void **array, int size)
     }
 }
 
-void new_void_elements(vector_t *vec)
+static void new_void_elements(vector_t *vec)
 {
     size_t number_of_bytes = 0;
 
@@ -135,7 +135,7 @@ void new_void_elements(vector_t *vec)
     mem_usage.allocated += (u_int32_t)(number_of_bytes);
 }
 
-void realloc_void_elements(vector_t *vec, int new_capacity)
+static void realloc_void_elements(vector_t *vec, int new_capacity)
 {
     size_t number_of_bytes = sizeof(void*);
 
@@ -144,7 +144,7 @@ void realloc_void_elements(vector_t *vec, int new_capacity)
     vec->capacity = new_capacity;
 }
 
-void capacity_reallocation(vector_t *vec, int size)
+static void capacity_reallocation(vector_t *vec, int size)
 {
     if (vec->capacity == size)
     {
@@ -156,12 +156,7 @@ void capacity_reallocation(vector_t *vec, int size)
     }
 }
 
-void free_index(vector_t *vec, int index)
-{
-    free_T_value(vec->T, vec->data[index]);
-}
-
-void free_indices(vector_t *vec)
+static void free_indices(vector_t *vec)
 {
     for (int i = 0; i < vec->size; i++)
     {
@@ -172,13 +167,13 @@ void free_indices(vector_t *vec)
     vec->size = 0;
 }
 
-void null_index(vector_t *vec)
+static void null_index(vector_t *vec)
 {
     vec->size--;
     vec->data[vec->size] = NULL;
 }
 
-bool check_vector_null_init(vector_t *vec, template_t T, void *data, int size)
+static bool check_vector_null_init(vector_t *vec, template_t T, void *data, int size)
 {
     if (vec->data == NULL)
     {
@@ -189,7 +184,7 @@ bool check_vector_null_init(vector_t *vec, template_t T, void *data, int size)
     return false;
 }
 
-void pop_last_index(vector_t *vec)
+static void pop_last_index(vector_t *vec)
 {
     free_T_value(vec->T, vec->data[vec->size-1]);
     null_index(vec);

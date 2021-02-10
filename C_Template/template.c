@@ -53,7 +53,7 @@ bool check_float_equal(float value_1, float value_2)
 
 bool check_double_equal(double value_1, double value_2)
 {
-    double epsilon = 0.0000001f;
+    double epsilon = 0.0000001;
 
     if (fabs(value_1 - value_2) < epsilon)
     {
@@ -181,7 +181,6 @@ size_t get_bytes(template_t T, void *value)
     return size;
 }
 
-
 void *new_T_value(template_t T, void *value)
 {
     switch (T)
@@ -243,7 +242,7 @@ void *new_T_value(template_t T, void *value)
                 memcpy(allocated_value, cast_value, number_of_bytes);
                 allocated_value[number_of_bytes] = '\0';
 
-                value = (char*)allocated_value;
+                value = allocated_value;
             }
             break;
         case BOOL:
@@ -263,7 +262,6 @@ void *new_T_value(template_t T, void *value)
 
     return value;
 }
-
 
 void free_T_value(template_t T, void *value)
 {

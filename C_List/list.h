@@ -17,16 +17,16 @@
 #define list_init_str(...)       list_init(str_array_cast_void(__VA_ARGS__))
 #define list_init_bool(...)      list_init(bool_array_cast_void(__VA_ARGS__))
 
-typedef struct node
+typedef struct node_list
 {
     void *value;
-    struct node *next;
-} node_t;
+    struct list_node *next;
+} node_list_t;
 
 typedef struct list
 {
-    node_t *head;
-    node_t *tail;
+    node_list_t *head;
+    node_list_t *tail;
     int size;
     template_t T;
 } list_t;
