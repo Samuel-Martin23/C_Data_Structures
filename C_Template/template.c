@@ -132,7 +132,7 @@ bool check_equal_value(template_t T, void *value_1, void *value_2)
         case CHAR:
             return (void_cast_char(value_1) == void_cast_char(value_2));
         case STR:
-            return (!(strcmp(void_cast_str(value_1), void_cast_str(value_2))));
+            return (strlen(void_cast_str(value_1)) == strlen(void_cast_str(value_2)));
         case BOOL:
             return (void_cast_bool(value_1) == void_cast_bool(value_2));
         case NONE: // default:
