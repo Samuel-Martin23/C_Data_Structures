@@ -335,11 +335,12 @@ static bool check_bst_root_null(bst_t *tree, template_t T, void *value)
     if (tree->root == NULL)
     {
         tree->root = new_node(T, value);
-        tree->size++;
+        tree->size = 1;
 
         if (tree->T == NONE)
         {
             tree->T = T;
+            tree->last_index = 0;
         }
 
         return true;
