@@ -9,7 +9,6 @@ typedef struct allocation_metrics
 {
     uint32_t allocated;
     uint32_t freed;
-
 } allocation_metrics_t;
 
 extern allocation_metrics_t mem_usage;

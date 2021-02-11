@@ -15,12 +15,12 @@
 #define str_cast_void(value)            STR, (char*[1]){value}
 #define bool_cast_void(value)           BOOL, &(bool){value}
 
-#define int_array_cast_void(...)        INT, (int[]){__VA_ARGS__}, sizeof((int[]){__VA_ARGS__})/sizeof((int[]){__VA_ARGS__}[0])
-#define double_array_cast_void(...)     DOUBLE, (double[]){__VA_ARGS__}, sizeof((double[]){__VA_ARGS__})/sizeof((double[]){__VA_ARGS__}[0])
-#define float_array_cast_void(...)      FLOAT, (float[]){__VA_ARGS__}, sizeof((float[]){__VA_ARGS__})/sizeof((float[]){__VA_ARGS__}[0])
-#define char_array_cast_void(...)       CHAR, (char[]){__VA_ARGS__}, sizeof((char[]){__VA_ARGS__})/sizeof((char[]){__VA_ARGS__}[0])
-#define str_array_cast_void(...)        STR, (char*[]){__VA_ARGS__}, sizeof((char*[]){__VA_ARGS__})/sizeof((char*[]){__VA_ARGS__}[0])
-#define bool_array_cast_void(...)       BOOL, (bool[]){__VA_ARGS__}, sizeof((bool[]){__VA_ARGS__})/sizeof((bool[]){__VA_ARGS__}[0])
+#define int_array_cast_void(...)        INT, (int[]){__VA_ARGS__}, sizeof((int[]){__VA_ARGS__})/sizeof(int)
+#define double_array_cast_void(...)     DOUBLE, (double[]){__VA_ARGS__}, sizeof((double[]){__VA_ARGS__})/sizeof(double)
+#define float_array_cast_void(...)      FLOAT, (float[]){__VA_ARGS__}, sizeof((float[]){__VA_ARGS__})/sizeof(float)
+#define char_array_cast_void(...)       CHAR, (char[]){__VA_ARGS__}, sizeof((char[]){__VA_ARGS__})/sizeof(char)
+#define str_array_cast_void(...)        STR, (char*[]){__VA_ARGS__}, sizeof((char*[]){__VA_ARGS__})/sizeof(char*)
+#define bool_array_cast_void(...)       BOOL, (bool[]){__VA_ARGS__}, sizeof((bool[]){__VA_ARGS__})/sizeof(bool)
 
 typedef enum template {NONE, INT, DOUBLE, FLOAT, CHAR, STR, BOOL} template_t;
 
