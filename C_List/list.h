@@ -20,7 +20,7 @@
 typedef struct node_list
 {
     void *value;
-    struct list_node *next;
+    struct node_list *next;
 } node_list_t;
 
 typedef struct list
