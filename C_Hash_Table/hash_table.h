@@ -31,9 +31,9 @@ typedef struct hash_table
 void print_ht_size(hash_table_t *ht);
 
 hash_table_t hash_table_init(int capacity);
-void hash_table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_value, void *value);
-hash_elem_t *hash_table_lookup(hash_table_t *ht, template_t T_key, void *key);
-void hash_table_delete_elem(hash_table_t *ht, template_t T_key, void *key);
+void hash_table_insert(hash_table_t *ht, template_t T_key, template_t T_value, ...);
+hash_elem_t *hash_table_lookup(hash_table_t *ht, template_t T_key, ...);
+void hash_table_delete_elem(hash_table_t *ht, template_t T_key, ...);
 void hash_table_copy(hash_table_t *ht_dest, hash_table_t *ht_src);
 void hash_table_clear(hash_table_t *ht);
 void hash_table_free(hash_table_t *ht);

@@ -67,20 +67,29 @@ static int generate_hash_code(template_t T_Key, void *key, int capacity)
     return hash_code;
 }
 
+static bool check_keys_equal(template_t T_key_1, void *key_1, template_t T_key_2, void *key_2)
+{
+    if (T_key_1 != T_key_2)
+    {
+        return false;
+    }
+
+    return check_equal_value(T_key_1, key_1, key_2, true);
+}
+
 static void table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_value, void *value)
 {
     int index = generate_hash_code(T_key, key, ht->capacity);
 
     if (ht->table[index] != NULL)
     {
-        if (check_two_equal_value(ht->table[index]->T_key, ht->table[index]->key, T_key, key))
+        if (check_keys_equal(ht->table[index]->T_key, ht->table[index]->key, T_key, key))
         {
+            free_T_value(T_key, key);
+            free_T_value(T_value, value);
             return;
         }
     }
-
-    key = new_T_value(T_key, key);
-    value = new_T_value(T_value, value);
 
     hash_elem_t *item = new_element(T_key, key, T_value, value);
 
@@ -137,36 +146,56 @@ hash_table_t hash_table_init(int capacity)
     return new_ht;
 }
 
-void hash_table_insert(hash_table_t *ht, template_t T_key, void *key, template_t T_value, void *value)
+void hash_table_insert(hash_table_t *ht, template_t T_key, template_t T_value, ...)
 {
-    convert_2d_str(T_key, &key);
-    convert_2d_str(T_value, &value);
+    va_list args;
+    va_start(args, T_value);
+
+    void *key = new_arg_T_value(T_key, args);
+    void *value = new_arg_T_value(T_value, args);
+
+    va_end(args);
+
     table_insert(ht, T_key, key, T_value, value);
+
 }
 
-hash_elem_t *hash_table_lookup(hash_table_t *ht, template_t T_key, void *key)
+hash_elem_t *hash_table_lookup(hash_table_t *ht, template_t T_key, ...)
 {
-    convert_2d_str(T_key, &key);
+    va_list args;
+    va_start(args, T_key);
+
+    void *key = new_arg_T_value(T_key, args);
+
+    va_end(args);
+
     int index = generate_hash_code(T_key, key, ht->capacity);
     hash_elem_t *item = ht->table[index];
 
-    while (item != NULL && !(check_two_equal_value(item->T_key, item->key, T_key, key)))
+    while (item != NULL && !(check_keys_equal(item->T_key, item->key, T_key, key)))
     {
         item = item->next;
     }
 
+    free_T_value(T_key, key);
     return item;
 }
 
-void hash_table_delete_elem(hash_table_t *ht, template_t T_key, void *key)
+void hash_table_delete_elem(hash_table_t *ht, template_t T_key, ...)
 {
-    convert_2d_str(T_key, &key);
+    va_list args;
+    va_start(args, T_key);
+
+    void *key = new_arg_T_value(T_key, args);
+
+    va_end(args);
+
     int index = generate_hash_code(T_key, key, ht->capacity);
 
     hash_elem_t *prev = NULL;
     hash_elem_t *curr = ht->table[index];
 
-    while (curr != NULL && !(check_two_equal_value(curr->T_key, curr->key, T_key, key)))
+    while (curr != NULL && !(check_keys_equal(curr->T_key, curr->key, T_key, key)))
     {
         prev = curr;
         curr = curr->next;
@@ -184,17 +213,15 @@ void hash_table_delete_elem(hash_table_t *ht, template_t T_key, void *key)
     mem_usage.freed += ((u_int32_t)get_bytes(curr->T_key, curr->key) +
                         (u_int32_t)get_bytes(curr->T_value, curr->value));
     free_elem(&curr);
+    free_T_value(T_key, key);
 }
 
 void hash_table_copy(hash_table_t *ht_dest, hash_table_t *ht_src)
 {
     if (ht_dest->capacity == 0)
     {
-        const char *purple = "\033[1;95m";
-        const char *white = "\033[1;97m";
-        const char *reset = "\033[0m";
-
-        printf("hash_table_copy: %swarning:%s hash table is not initialized%s\n", purple, white, reset);
+        printf("hash_table_copy: \033[1;95mwarning:\033[1;97m hash table is not initialized\033[0m\n");
+        return;
     }
 
     for (int i = ht_src->first_index; i <= ht_src->last_index; i++)
