@@ -1,34 +1,6 @@
 
 #include "hash_table.h"
 
-static bool check_two_equal_value(template_t T_Key_1, void *key_1, template_t T_Key_2, void *key_2)
-{
-    if (T_Key_1 != T_Key_2)
-    {
-        return false;
-    }
-
-    switch (T_Key_1)
-    {
-        case INT:
-            return (void_cast_int(key_1) == void_cast_int(key_2));
-        case DOUBLE:
-            return (check_double_equal(void_cast_double(key_1), void_cast_double(key_2)));
-        case FLOAT:
-            return (check_float_equal(void_cast_float(key_1), void_cast_float(key_2)));
-        case CHAR:
-            return (void_cast_char(key_1) == void_cast_char(key_2));
-        case STR:
-            return (!(strcmp(void_cast_str(key_1), void_cast_str(key_2))));
-        case BOOL:
-            return (void_cast_bool(key_1) == void_cast_bool(key_2));
-        case NONE:
-            break;
-    }
-
-    return false;
-}
-
 static hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *value)
 {
     size_t number_of_bytes = sizeof(hash_elem_t);

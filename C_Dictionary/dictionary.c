@@ -65,55 +65,6 @@ static void free_node(node_dict_t **curr, template_t T_key, template_t T_value)
     mem_usage.freed += (u_int32_t)sizeof(node_dict_t);
 }
 
-void *new_element(template_t T, va_list args)
-{
-    void *element = NULL;
-
-    switch (T)
-    {
-        case INT:
-            {
-                int value = va_arg(args, int);
-                element = new_T_value(T, &value);
-            }
-            break;
-        case DOUBLE:
-            {
-                double value = va_arg(args, double);
-                element = new_T_value(T, &value);
-            }
-            break;
-        case FLOAT:
-            {
-                float value = (float)va_arg(args, double);
-                element = new_T_value(T, &value);
-            }
-            break;
-        case CHAR:
-            {
-                char value = (char)va_arg(args, int);
-                element = new_T_value(T, &value);
-            }
-            break;
-        case STR:
-            {
-                char *value = va_arg(args, char*);
-                element = new_T_value(T, value);
-            }
-            break;
-        case BOOL:
-            {
-                bool value = (bool)va_arg(args, int);
-                element = new_T_value(T, &value);
-            }
-            break;
-        case NONE:
-            break;
-    }
-
-    return element;
-}
-
 static node_dict_t *lookup_node(node_dict_t *root, template_t T, void *key, node_dict_t **parent)
 {
     node_dict_t *top = root;
@@ -437,8 +388,8 @@ void dict_insert(dictionary_t *dict, ...)
     va_list args;
     va_start(args, dict);
 
-    void *key = new_element(dict->T_key, args);
-    void *value = new_element(dict->T_value, args);
+    void *key = new_arg_T_value(dict->T_key, args);
+    void *value = new_arg_T_value(dict->T_value, args);
 
     if (dict->root == NULL)
     {
@@ -502,7 +453,7 @@ void dict_remove_key(dictionary_t *dict, ...)
     va_list args;
     va_start(args, dict);
 
-    void *key = new_element(dict->T_key, args);
+    void *key = new_arg_T_value(dict->T_key, args);
 
     va_end(args);
 
@@ -524,7 +475,7 @@ void *dict_lookup(dictionary_t *dict, ...)
     va_list args;
     va_start(args, dict);
 
-    void *key = new_element(dict->T_key, args);
+    void *key = new_arg_T_value(dict->T_key, args);
 
     va_end(args);
 

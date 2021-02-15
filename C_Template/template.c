@@ -1,6 +1,20 @@
 
 #include "template.h"
 
+static int get_ascii_size(void *value)
+{
+    int ascii_size = 0;
+    char *cast_str = void_cast_str(value);
+
+    while (*cast_str != '\0')
+    {
+        ascii_size += *cast_str;
+        cast_str++;
+    }
+
+    return ascii_size;
+}
+
 int void_cast_int(void *value) {return (*(int*)value);}
 double void_cast_double(void *value) {return (*(double*)value);}
 float void_cast_float(void *value) {return (*(float*)value);}
@@ -63,12 +77,12 @@ bool check_double_equal(double value_1, double value_2)
     return false;
 }
 
-bool check_less_value(template_t T, void *value_1, void *value_2)
+bool check_less_value(template_t T, void *value_1, void *value_2, bool ascii)
 {
-    return check_greater_value(T, value_2, value_1);
+    return check_greater_value(T, value_2, value_1, ascii);
 }
 
-bool check_greater_value(template_t T, void *value_1, void *value_2)
+bool check_greater_value(template_t T, void *value_1, void *value_2, bool ascii)
 {
     switch (T)
     {
@@ -81,6 +95,10 @@ bool check_greater_value(template_t T, void *value_1, void *value_2)
         case CHAR:
             return (void_cast_char(value_1) > void_cast_char(value_2));
         case STR:
+            if (ascii)
+            {
+                return (get_ascii_size(value_1) > get_ascii_size(value_2));
+            }
             return (strlen(void_cast_str(value_1)) > strlen(void_cast_str(value_2)));
         case BOOL:
             return (void_cast_bool(value_1) > void_cast_bool(value_2));
@@ -91,7 +109,7 @@ bool check_greater_value(template_t T, void *value_1, void *value_2)
     return false;
 }
 
-bool check_less_equal_value(template_t T, void *value_1, void *value_2)
+bool check_less_equal_value(template_t T, void *value_1, void *value_2, bool ascii)
 {
     switch (T)
     {
@@ -104,6 +122,10 @@ bool check_less_equal_value(template_t T, void *value_1, void *value_2)
         case CHAR:
             return (void_cast_char(value_1) <= void_cast_char(value_2));
         case STR:
+            if (ascii)
+            {
+                return (get_ascii_size(value_1) <= get_ascii_size(value_2));
+            }
             return (strlen(void_cast_str(value_1)) <= strlen(void_cast_str(value_2)));
         case BOOL:
             return (void_cast_bool(value_1) <= void_cast_bool(value_2));
@@ -114,12 +136,12 @@ bool check_less_equal_value(template_t T, void *value_1, void *value_2)
     return false;
 }
 
-bool check_greater_equal_value(template_t T, void *value_1, void *value_2)
+bool check_greater_equal_value(template_t T, void *value_1, void *value_2, bool ascii)
 {
-    return check_less_equal_value(T, value_2, value_1);
+    return check_less_equal_value(T, value_2, value_1, ascii);
 }
 
-bool check_equal_value(template_t T, void *value_1, void *value_2)
+bool check_equal_value(template_t T, void *value_1, void *value_2, bool ascii)
 {
     switch (T)
     {
@@ -132,6 +154,10 @@ bool check_equal_value(template_t T, void *value_1, void *value_2)
         case CHAR:
             return (void_cast_char(value_1) == void_cast_char(value_2));
         case STR:
+            if (ascii)
+            {
+                return (get_ascii_size(value_1) == get_ascii_size(value_2));
+            }
             return (strlen(void_cast_str(value_1)) == strlen(void_cast_str(value_2)));
         case BOOL:
             return (void_cast_bool(value_1) == void_cast_bool(value_2));
@@ -142,9 +168,9 @@ bool check_equal_value(template_t T, void *value_1, void *value_2)
     return false;
 }
 
-bool check_not_equal_value(template_t T, void *value_1, void *value_2)
+bool check_not_equal_value(template_t T, void *value_1, void *value_2, bool ascii)
 {
-    return !(check_equal_value(T, value_1, value_2));
+    return !(check_equal_value(T, value_1, value_2, ascii));
 }
 
 size_t get_bytes(template_t T, void *value)
@@ -269,6 +295,56 @@ void free_T_value(template_t T, void *value)
     free(value);
 }
 
+void *new_arg_T_value(template_t T, va_list args)
+{
+    void *element = NULL;
+
+    switch (T)
+    {
+        case INT:
+            {
+                int value = va_arg(args, int);
+                element = new_T_value(T, &value);
+            }
+            break;
+        case DOUBLE:
+            {
+                double value = va_arg(args, double);
+                element = new_T_value(T, &value);
+            }
+            break;
+        case FLOAT:
+            {
+                float value = (float)va_arg(args, double);
+                element = new_T_value(T, &value);
+            }
+            break;
+        case CHAR:
+            {
+                char value = (char)va_arg(args, int);
+                element = new_T_value(T, &value);
+            }
+            break;
+        case STR:
+            {
+                char *value = va_arg(args, char*);
+                element = new_T_value(T, value);
+            }
+            break;
+        case BOOL:
+            {
+                bool value = (bool)va_arg(args, int);
+                element = new_T_value(T, &value);
+            }
+            break;
+        case NONE:
+            break;
+    }
+
+    return element;
+}
+
+/*
 void convert_2d_str(template_t T, void **value)
 {
     if (T == STR)
@@ -276,3 +352,4 @@ void convert_2d_str(template_t T, void **value)
         *value = *((char**)*value);
     }
 }
+*/

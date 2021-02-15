@@ -1,13 +1,14 @@
 
 #include "vector.h"
 
-#define VEC_FREE                    0x00000001
+#define VEC_NULL                    0x00000001
 #define VEC_SIZE_ZERO               0x00000002
-#define VEC_TYPE                    0x00000004
+#define VEC_TYPE_NONE               0x00000004
 #define VEC_SIZE_G                  0x00000008
 #define VEC_SIZE_GE                 0x00000010
 #define VEC_CAPACITY                0x00000020
-#define TURN_OFF_WARNING            0x00000040
+#define VEC_TYPE                    0x00000040
+#define TURN_OFF_WARNING            0x00000080
 
 #define WARNING_PLACEHOLDER         -1
 
@@ -17,7 +18,7 @@ static bool check_warnings(vector_t *vec, int warning_code, const char *function
     const char *white = "\033[1;97m";
     const char *reset = "\033[0m";
 
-    if (warning_code & VEC_FREE)
+    if (warning_code & VEC_NULL)
     {
         if (vec->data == NULL)
         {
@@ -43,15 +44,13 @@ static bool check_warnings(vector_t *vec, int warning_code, const char *function
         }
     }
 
-    if (warning_code & VEC_TYPE)
+    if (warning_code & VEC_TYPE_NONE)
     {
-        template_t T = (template_t)check_value;
-
-        if (vec->T != T)
+        if (vec->T == NONE)
         {
             if (!(warning_code & TURN_OFF_WARNING))
             {
-                printf("%s: %swarning:%s vector type does not equal the new data type%s\n", function_name, purple, white, reset);
+                printf("%s: %swarning:%s vector type equals NONE%s\n", function_name, purple, white, reset);
             }
 
             return true;
@@ -101,8 +100,24 @@ static bool check_warnings(vector_t *vec, int warning_code, const char *function
         }
     }
 
+    if (warning_code & VEC_TYPE)
+    {
+        template_t T = (template_t)check_value;
+
+        if (vec->T != T)
+        {
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s vector dest type does not equal vector src type%s\n", function_name, purple, white, reset);
+            }
+
+            return true;
+        }
+    }
+
     return false;
 }
+
 
 static void insertion_sort(template_t T, void **array, int size)
 {
@@ -114,7 +129,7 @@ static void insertion_sort(template_t T, void **array, int size)
         key = array[i];
         j = i - 1;
 
-        while (j >= 0 && check_greater_value(T, array[j], key))
+        while (j >= 0 && check_greater_value(T, array[j], key, false))
         {
             array[j + 1] = array[j];
             j--;
@@ -156,32 +171,10 @@ static void capacity_reallocation(vector_t *vec, int size)
     }
 }
 
-static void free_indices(vector_t *vec)
-{
-    for (int i = 0; i < vec->size; i++)
-    {
-        free_T_value(vec->T, vec->data[i]);
-        vec->data[i] = NULL;
-    }
-
-    vec->size = 0;
-}
-
 static void null_index(vector_t *vec)
 {
     vec->size--;
     vec->data[vec->size] = NULL;
-}
-
-static bool check_vector_null_init(vector_t *vec, template_t T, void *data, int size)
-{
-    if (vec->data == NULL)
-    {
-        *vec = vector_init(T, data, size);
-        return true;
-    }
-
-    return false;
 }
 
 static void pop_last_index(vector_t *vec)
@@ -191,9 +184,32 @@ static void pop_last_index(vector_t *vec)
     capacity_reallocation(vec, vec->size);
 }
 
+static int check_T_value(vector_t *vec, void *value)
+{
+    switch (vec->T)
+    {
+        case INT:
+            return vector_check_value(vec, void_cast_int(value));
+        case DOUBLE:
+            return vector_check_value(vec, void_cast_double(value));
+        case FLOAT:
+            return vector_check_value(vec, void_cast_float(value));
+        case CHAR:
+            return vector_check_value(vec, void_cast_char(value));
+        case STR:
+            return vector_check_value(vec, void_cast_str(value));
+        case BOOL:
+            return vector_check_value(vec, void_cast_bool(value));
+        case NONE:
+            break;
+    }
+
+    return -1;
+}
+
 void print_vector_size(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_FREE, "print_vector_size", WARNING_PLACEHOLDER))
+    if (check_warnings(vec, VEC_NULL, "print_vector_size", WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -201,86 +217,64 @@ void print_vector_size(vector_t *vec)
     printf("Vector Size: %d\n", vec->size);
 }
 
-vector_t vector_init(template_t T, void *data, int size)
+vector_t vector_init(template_t T, int size, ...)
 {
     vector_t new_vector;
     new_vector.size = size;
     new_vector.data = NULL;
     new_vector.T = T;
 
-    if (new_vector.size == 0)
+    if (new_vector.size <= 0)
     {
         new_vector.capacity = 0;
         return new_vector;
     }
 
-    new_void_elements(&new_vector);
-    
-    switch (new_vector.T)
-    {
-        case INT:
-        case DOUBLE:
-        case FLOAT:
-        case CHAR:
-        case BOOL:
-            for (int i = 0; i < new_vector.size; i++)
-            {
-                new_vector.data[i] = new_T_value(new_vector.T, data);
-                data += (int)get_bytes(new_vector.T, data);
-            }
-            break;
-        case STR:
-            {
-                char **str_array = ((char**)data);
+    va_list args;
+    va_start(args, size);
 
-                for (int i = 0; i < new_vector.size; i++)
-                {
-                    new_vector.data[i] = new_T_value(new_vector.T, *str_array);
-                    str_array++;
-                }
-            }
-            break;
-        case NONE: // default:
-            break;
+    new_void_elements(&new_vector);
+
+    for (int i = 0; i < new_vector.size; i++)
+    {
+        new_vector.data[i] = new_arg_T_value(new_vector.T, args);
     }
+
+    va_end(args);
 
     return new_vector;
 }
 
-void vector_push(vector_t *vec, template_t T, void *value)
+void vector_push(vector_t *vec, ...)
 {
-    if (check_vector_null_init(vec, T, value, 1))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE,
+        "vector_push", WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    if (check_warnings(vec, VEC_TYPE, "vector_push", (int)T))
-    {
-        return;
-    }
+    va_list args;
+    va_start(args, vec);
 
-    convert_2d_str(T, &value);
+    void *value = new_arg_T_value(vec->T, args);
+
+    va_end(args);
 
     capacity_reallocation(vec, vec->size);
-    vec->data[vec->size] = new_T_value(vec->T, value);
+    vec->data[vec->size] = value;
     vec->size++;
 }
 
-void vector_insert(vector_t *vec, template_t T, void *value, int index)
+void vector_insert(vector_t *vec, int index, ...)
 {
-    if (index == 0)
-    {
-        if (check_vector_null_init(vec, T, value, 1))
-        {
-            return;
-        }
-    }
-
-    if (check_warnings(vec, VEC_SIZE_G, "vector_insert", index)
-        || check_warnings(vec, VEC_TYPE, "vector_insert", (int)T))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_G,
+        "vector_insert", index))
     {
         return;
     }
+
+    va_list args;
+    va_start(args, index);
 
     capacity_reallocation(vec, vec->size);
 
@@ -290,61 +284,37 @@ void vector_insert(vector_t *vec, template_t T, void *value, int index)
     }
 
     vec->size++;
+    vec->data[index] = new_arg_T_value(vec->T, args);
 
-    convert_2d_str(T, &value);
-
-    vec->data[index] = new_T_value(vec->T, value);
+    va_end(args);
 }
 
-void vector_extend(vector_t *vec, template_t T, void *data, int size)
+void vector_extend(vector_t *vec, int size, ...)
 {
-    if (check_vector_null_init(vec, T, data, size))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE,
+        "vector_extend", WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    if (check_warnings(vec, VEC_TYPE, "vector_extend", (int)T))
-    {
-        return;
-    }
+    va_list args;
+    va_start(args, size);
 
     int original_size = vec->size;
     vec->size += size;
 
-    switch (T)
+    for (int i = original_size; i < vec->size; i++)
     {
-        case INT:
-        case DOUBLE:
-        case FLOAT:
-        case CHAR:
-        case BOOL:
-            for (int i = original_size; i < vec->size; i++)
-            {
-                capacity_reallocation(vec, i);
-                vec->data[i] = new_T_value(vec->T, data);
-                data += (int)get_bytes(vec->T, data);
-            }
-            break;
-        case STR:
-            {
-                char **str_array = ((char**)data);
-
-                for (int i = original_size; i < vec->size; i++)
-                {
-                    capacity_reallocation(vec, i);
-                    vec->data[i] = new_T_value(vec->T, *str_array);
-                    str_array++;
-                }
-            }
-            break;
-        case NONE: // default:
-            break;
+        capacity_reallocation(vec, i);
+        vec->data[i] = new_arg_T_value(vec->T, args);
     }
+
+    va_end(args);
 }
 
 void vector_pop(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO,
+    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
         "vector_pop", WARNING_PLACEHOLDER))
     {
         return;
@@ -355,7 +325,7 @@ void vector_pop(vector_t *vec)
 
 void vector_pop_index(vector_t *vec, int index)
 {
-    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO | VEC_SIZE_GE,
+    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO | VEC_SIZE_GE,
         "vector_pop_index", index))
     {
         return;
@@ -379,28 +349,36 @@ void vector_pop_index(vector_t *vec, int index)
     capacity_reallocation(vec, vec->size);
 }
 
-void vector_remove_value(vector_t *vec, template_t T, void *value)
+void vector_remove_value(vector_t *vec, ...)
 {
-    if (check_warnings(vec, VEC_FREE | VEC_TYPE | VEC_SIZE_ZERO,
-        "vector_remove_value", (int)T))
+    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
+        "vector_remove_value", WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    convert_2d_str(T, &value);
+    va_list args;
+    va_start(args, vec);
 
-    int index = vector_check_value(vec, T, value);
+    void *value = new_arg_T_value(vec->T, args);
+
+    va_end(args);
+
+    int index = check_T_value(vec, value);
 
     if (index >= 0)
     {
         vector_pop_index(vec, index);
+        free_T_value(vec->T, value);
         return;
     }
+
+    free_T_value(vec->T, value);
 }
 
 void *vector_at(vector_t *vec, int index)
 {
-    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO | VEC_SIZE_GE,
+    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO | VEC_SIZE_GE,
         "vector_at", index))
     {
         return NULL;
@@ -409,28 +387,37 @@ void *vector_at(vector_t *vec, int index)
     return vec->data[index];
 }
 
-int vector_check_value(vector_t *vec, template_t T, void *value)
+int vector_check_value(vector_t *vec, ...)
 {
-    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO | VEC_TYPE,
-        "vector_check_value", (int)T))
+    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
+        "vector_check_value", WARNING_PLACEHOLDER))
     {
         return -1;
     }
 
+    va_list args;
+    va_start(args, vec);
+
+    void *value = new_arg_T_value(vec->T, args);
+
+    va_end(args);
+
     for (int i = 0; i < vec->size; i++)
     {
-        if (check_equal_value(T, value, vec->data[i]))
+        if (check_equal_value(vec->T, value, vec->data[i], false))
         {
+            free_T_value(vec->T, value);
             return i;
         }
     }
 
+    free_T_value(vec->T, value);
     return -1;
 }
 
 void vector_reverse(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO,
+    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
         "vector_reverse", WARNING_PLACEHOLDER))
     {
         return;
@@ -449,7 +436,7 @@ void vector_reverse(vector_t *vec)
 
 void vector_sort(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO,
+    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
         "vector_sort", WARNING_PLACEHOLDER))
     {
         return;
@@ -460,7 +447,7 @@ void vector_sort(vector_t *vec)
 
 void vector_copy(vector_t *vec_dest, vector_t *vec_src)
 {
-    if (check_warnings(vec_src, VEC_FREE | VEC_SIZE_ZERO | VEC_TYPE,
+    if (check_warnings(vec_src, VEC_NULL | VEC_SIZE_ZERO | VEC_TYPE,
         "vector_copy", (int)vec_dest->T) ||
         check_warnings(vec_dest, VEC_CAPACITY, "vector_copy", WARNING_PLACEHOLDER))
     {
@@ -469,7 +456,6 @@ void vector_copy(vector_t *vec_dest, vector_t *vec_src)
 
     vec_dest->size = vec_src->size;
     vec_dest->data = NULL;
-    vec_dest->T = vec_src->T;
 
     if (vec_dest->size == 0)
     {
@@ -479,43 +465,25 @@ void vector_copy(vector_t *vec_dest, vector_t *vec_src)
 
     new_void_elements(vec_dest);
 
-    switch (vec_dest->T)
+    for (int i = 0; i < vec_dest->size; i++)
     {
-        case INT:
-        case DOUBLE:
-        case FLOAT:
-        case CHAR:
-        case STR:
-        case BOOL:
-            for (int i = 0; i < vec_dest->size; i++)
-            {
-                vec_dest->data[i] = new_T_value(vec_dest->T, vec_src->data[i]);
-            }
-            break;
-        case NONE: // default:
-            break;
+        vec_dest->data[i] = new_T_value(vec_dest->T, vec_src->data[i]);
     }
-}
-
-void vector_clear(vector_t *vec)
-{
-    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO,
-        "vector_clear", WARNING_PLACEHOLDER))
-    {
-        return;
-    }
-
-    free_indices(vec);
 }
 
 void vector_free(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_FREE, "vector_free", WARNING_PLACEHOLDER))
+    if (check_warnings(vec, VEC_NULL, "vector_free", WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    free_indices(vec);
+    for (int i = 0; i < vec->size; i++)
+    {
+        free_T_value(vec->T, vec->data[i]);
+        vec->data[i] = NULL;
+    }
+
     mem_usage.freed += (u_int32_t)(vec->capacity * (int)sizeof(void*));
     vec->size = 0;
     vec->capacity = 0;
@@ -526,7 +494,7 @@ void vector_free(vector_t *vec)
 
 void vector_print(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_FREE | VEC_SIZE_ZERO,
+    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
         "vector_print", WARNING_PLACEHOLDER))
     {
         return;
