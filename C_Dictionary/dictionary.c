@@ -65,6 +65,57 @@ static void free_node(node_dict_t **curr, template_t T_key, template_t T_value)
     mem_usage.freed += (u_int32_t)sizeof(node_dict_t);
 }
 
+static void insert_key_value(dictionary_t *dict, void *key, void *value)
+{
+    if (dict->root == NULL)
+    {
+        dict->root = new_node(key, value);
+        dict->size = 1;
+        return;
+    }
+
+    node_dict_t *top = dict->root;
+
+    while (top != NULL)
+    {
+        if (check_equal_value(dict->T_key, key, top->key, true))
+        {
+            free_T_value(dict->T_key, key);
+            free_T_value(dict->T_value, value);
+            return;
+        }
+        else if (check_less_value(dict->T_key, key, top->key, true))
+        {
+            if (top->left == NULL)
+            {
+                break;
+            }
+
+            top = top->left;
+        }
+        else if (check_greater_value(dict->T_key, key, top->key, true))
+        {
+            if (top->right == NULL)
+            {
+                break;
+            }
+
+            top = top->right;
+        }
+    }
+
+    if (check_less_value(dict->T_key, key, top->key, true))
+    {
+        top->left = new_node(key, value);
+    }
+    else if (check_greater_value(dict->T_key, key, top->key, true))
+    {
+        top->right = new_node(key, value);
+    }
+
+    dict->size++;
+}
+
 static node_dict_t *lookup_node(node_dict_t *root, template_t T, void *key, node_dict_t **parent)
 {
     node_dict_t *top = root;
@@ -162,165 +213,6 @@ static bool remove_key(node_dict_t **root, template_t T_key, void *key, template
     return true;
 }
 
-static void insert_copy(dictionary_t *dict, void *key, void *value)
-{
-    switch (dict->T_key)
-    {
-        case INT:
-            switch (dict->T_value)
-            {
-                case INT:
-                    dict_insert(dict, void_cast_int(key), void_cast_int(value));
-                    break;
-                case DOUBLE:
-                    dict_insert(dict, void_cast_int(key), void_cast_double(value));
-                    break;
-                case FLOAT:
-                    dict_insert(dict, void_cast_int(key), void_cast_float(value));
-                    break;
-                case CHAR:
-                    dict_insert(dict, void_cast_int(key), void_cast_char(value));
-                    break;
-                case STR:
-                    dict_insert(dict, void_cast_int(key), void_cast_str(value));
-                    break;
-                case BOOL:
-                    dict_insert(dict, void_cast_int(key), void_cast_bool(value));
-                    break;
-                case NONE: // defualt:
-                    break;
-            }
-            break;
-        case DOUBLE:
-            switch (dict->T_value)
-            {
-                case INT:
-                    dict_insert(dict, void_cast_double(key), void_cast_int(value));
-                    break;
-                case DOUBLE:
-                    dict_insert(dict, void_cast_double(key), void_cast_double(value));
-                    break;
-                case FLOAT:
-                    dict_insert(dict, void_cast_double(key), void_cast_float(value));
-                    break;
-                case CHAR:
-                    dict_insert(dict, void_cast_double(key), void_cast_char(value));
-                    break;
-                case STR:
-                    dict_insert(dict, void_cast_double(key), void_cast_str(value));
-                    break;
-                case BOOL:
-                    dict_insert(dict, void_cast_double(key), void_cast_bool(value));
-                    break;
-                case NONE: // default:
-                    break;
-            }
-            break;
-        case FLOAT:
-            switch (dict->T_value)
-            {
-                case INT:
-                    dict_insert(dict, void_cast_float(key), void_cast_int(value));
-                    break;
-                case DOUBLE:
-                    dict_insert(dict, void_cast_float(key), void_cast_double(value));
-                    break;
-                case FLOAT:
-                    dict_insert(dict, void_cast_float(key), void_cast_float(value));
-                    break;
-                case CHAR:
-                    dict_insert(dict, void_cast_float(key), void_cast_char(value));
-                    break;
-                case STR:
-                    dict_insert(dict, void_cast_float(key), void_cast_str(value));
-                    break;
-                case BOOL:
-                    dict_insert(dict, void_cast_float(key), void_cast_bool(value));
-                    break;
-                case NONE: // default:
-                    break;
-            }
-            break;
-        case CHAR:
-            switch (dict->T_value)
-            {
-                case INT:
-                    dict_insert(dict, void_cast_char(key), void_cast_int(value));
-                    break;
-                case DOUBLE:
-                    dict_insert(dict, void_cast_char(key), void_cast_double(value));
-                    break;
-                case FLOAT:
-                    dict_insert(dict, void_cast_char(key), void_cast_float(value));
-                    break;
-                case CHAR:
-                    dict_insert(dict, void_cast_char(key), void_cast_char(value));
-                    break;
-                case STR:
-                    dict_insert(dict, void_cast_char(key), void_cast_str(value));
-                    break;
-                case BOOL:
-                    dict_insert(dict, void_cast_char(key), void_cast_bool(value));
-                    break;
-                case NONE: // default:
-                    break;
-            }
-            break;
-        case STR:
-            switch (dict->T_value)
-            {
-                case INT:
-                    dict_insert(dict, void_cast_str(key), void_cast_int(value));
-                    break;
-                case DOUBLE:
-                    dict_insert(dict, void_cast_str(key), void_cast_double(value));
-                    break;
-                case FLOAT:
-                    dict_insert(dict, void_cast_str(key), void_cast_float(value));
-                    break;
-                case CHAR:
-                    dict_insert(dict, void_cast_str(key), void_cast_char(value));
-                    break;
-                case STR:
-                    dict_insert(dict, void_cast_str(key), void_cast_str(value));
-                    break;
-                case BOOL:
-                    dict_insert(dict, void_cast_str(key), void_cast_bool(value));
-                    break;
-                case NONE: // default:
-                    break;
-            }
-            break;
-        case BOOL:
-            switch (dict->T_value)
-            {
-                case INT:
-                    dict_insert(dict, void_cast_bool(key), void_cast_int(value));
-                    break;
-                case DOUBLE:
-                    dict_insert(dict, void_cast_bool(key), void_cast_double(value));
-                    break;
-                case FLOAT:
-                    dict_insert(dict, void_cast_bool(key), void_cast_float(value));
-                    break;
-                case CHAR:
-                    dict_insert(dict, void_cast_bool(key), void_cast_char(value));
-                    break;
-                case STR:
-                    dict_insert(dict, void_cast_bool(key), void_cast_str(value));
-                    break;
-                case BOOL:
-                    dict_insert(dict, void_cast_bool(key), void_cast_bool(value));
-                    break;
-                case NONE: // default:
-                    break;
-            }
-            break;
-        case NONE:
-            break;
-    }
-}
-
 static void copy_nodes(dictionary_t *dict_dest, node_dict_t *root_src)
 {
     if (root_src == NULL)
@@ -328,7 +220,10 @@ static void copy_nodes(dictionary_t *dict_dest, node_dict_t *root_src)
         return;
     }
 
-    insert_copy(dict_dest, root_src->key, root_src->value);
+    void *key = new_T_value(dict_dest->T_key, root_src->key);
+    void *value = new_T_value(dict_dest->T_value, root_src->value);
+
+    insert_key_value(dict_dest, key, value);
 
     copy_nodes(dict_dest, root_src->left);
     copy_nodes(dict_dest, root_src->right);
@@ -391,56 +286,9 @@ void dict_insert(dictionary_t *dict, ...)
     void *key = new_arg_T_value(dict->T_key, args);
     void *value = new_arg_T_value(dict->T_value, args);
 
-    if (dict->root == NULL)
-    {
-        dict->root = new_node(key, value);
-        dict->size = 1;
-        va_end(args);
-        return;
-    }
-
     va_end(args);
 
-    node_dict_t *top = dict->root;
-
-    while (top != NULL)
-    {
-        if (check_equal_value(dict->T_key, key, top->key, true))
-        {
-            free_T_value(dict->T_key, key);
-            free_T_value(dict->T_value, value);
-            return;
-        }
-        else if (check_less_value(dict->T_key, key, top->key, true))
-        {
-            if (top->left == NULL)
-            {
-                break;
-            }
-
-            top = top->left;
-        }
-        else if (check_greater_value(dict->T_key, key, top->key, true))
-        {
-            if (top->right == NULL)
-            {
-                break;
-            }
-
-            top = top->right;
-        }
-    }
-
-    if (check_less_value(dict->T_key, key, top->key, true))
-    {
-        top->left = new_node(key, value);
-    }
-    else if (check_greater_value(dict->T_key, key, top->key, true))
-    {
-        top->right = new_node(key, value);
-    }
-
-    dict->size++;
+    insert_key_value(dict, key, value);
 }
 
 void dict_remove_key(dictionary_t *dict, ...)
