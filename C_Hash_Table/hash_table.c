@@ -1,4 +1,3 @@
-
 #include "hash_table.h"
 
 static hash_elem_t *new_element(template_t T_Key, void *key, template_t T_Value, void *value)

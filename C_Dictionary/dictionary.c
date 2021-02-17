@@ -1,4 +1,3 @@
-
 #include "dictionary.h"
 
 #define DICT_ROOT_NULL              0x00000001u

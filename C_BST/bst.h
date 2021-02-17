@@ -1,7 +1,5 @@
-
 #ifndef BST_H
 #define BST_H
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +41,5 @@ void *bst_get_index(bst_t *tree, int index);
 void bst_copy(bst_t *dest_tree, bst_t *src_tree);
 void bst_free(bst_t *tree);
 void bst_print(bst_t *tree, unsigned short bst_print_options);
-
 
 #endif /* BST_H */

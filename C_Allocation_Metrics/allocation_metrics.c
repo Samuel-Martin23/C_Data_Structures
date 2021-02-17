@@ -1,4 +1,3 @@
-
 #include "allocation_metrics.h"
 
 allocation_metrics_t mem_usage = {0, 0};

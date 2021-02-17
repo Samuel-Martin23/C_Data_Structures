@@ -1,4 +1,3 @@
-
 #ifndef HASH_TABLE_H
 #define HASH_TABLE_H
 
@@ -38,6 +37,5 @@ void hash_table_copy(hash_table_t *ht_dest, hash_table_t *ht_src);
 void hash_table_clear(hash_table_t *ht);
 void hash_table_free(hash_table_t *ht);
 void hash_table_print(hash_table_t *ht, const char *beginning, const char *end);
-
 
 #endif /* HASH_TABLE_H */

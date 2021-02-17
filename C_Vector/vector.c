@@ -1,18 +1,17 @@
-
 #include "vector.h"
 
-#define VEC_NULL                    0x00000001
-#define VEC_SIZE_ZERO               0x00000002
-#define VEC_TYPE_NONE               0x00000004
-#define VEC_SIZE_G                  0x00000008
-#define VEC_SIZE_GE                 0x00000010
-#define VEC_CAPACITY                0x00000020
-#define VEC_TYPE                    0x00000040
-#define TURN_OFF_WARNING            0x00000080
+#define VEC_NULL                    0x00000001u
+#define VEC_SIZE_ZERO               0x00000002u
+#define VEC_TYPE_NONE               0x00000004u
+#define VEC_SIZE_G                  0x00000008u
+#define VEC_SIZE_GE                 0x00000010u
+#define VEC_CAPACITY                0x00000020u
+#define VEC_TYPE                    0x00000040u
+#define TURN_OFF_WARNING            0x00000080u
 
 #define WARNING_PLACEHOLDER         -1
 
-static bool check_warnings(vector_t *vec, int warning_code, const char *function_name, int check_value)
+static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *function_name, int check_value)
 {
     const char *purple = "\033[1;95m";
     const char *white = "\033[1;97m";

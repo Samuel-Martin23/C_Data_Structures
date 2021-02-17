@@ -1,4 +1,3 @@
-
 #include "template.h"
 
 static int get_ascii_size(void *value)
@@ -343,13 +342,3 @@ void *new_arg_T_value(template_t T, va_list args)
 
     return element;
 }
-
-/*
-void convert_2d_str(template_t T, void **value)
-{
-    if (T == STR)
-    {
-        *value = *((char**)*value);
-    }
-}
-*/

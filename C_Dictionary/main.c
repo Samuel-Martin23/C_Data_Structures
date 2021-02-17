@@ -1,4 +1,3 @@
-
 #include "dictionary.h"
 
 int get_str_key(dictionary_t *dict, char *key)

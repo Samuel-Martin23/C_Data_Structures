@@ -1,7 +1,5 @@
-
 #ifndef VECTOR_H
 #define VECTOR_H
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +41,5 @@ void vector_sort(vector_t *vec);
 void vector_copy(vector_t *vec_dest, vector_t *vec_src);
 void vector_free(vector_t *vec);
 void vector_print(vector_t *vec);
-
 
 #endif /* VECTOR_H */

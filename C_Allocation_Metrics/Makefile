@@ -1,4 +1,3 @@
-
 CC = clang
 file_to_compile = allocation_metrics
 name_of_lib = allocation_metrics

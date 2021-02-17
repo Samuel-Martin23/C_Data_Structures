@@ -1,4 +1,3 @@
-
 CC = clang
 file_to_compile = template
 name_of_lib = template

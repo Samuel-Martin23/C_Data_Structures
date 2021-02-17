@@ -1,7 +1,5 @@
-
 #ifndef DICTIONARY_H
 #define DICTIONARY_H
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +30,5 @@ void *dict_lookup(dictionary_t *dict, ...);
 void dict_copy(dictionary_t *dict_dest, dictionary_t *dict_src);
 void dict_free(dictionary_t *dict);
 void dict_print(dictionary_t *dict);
-
 
 #endif /* DICTIONARY_H */

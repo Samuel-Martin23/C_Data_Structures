@@ -1,4 +1,3 @@
-
 #include "bst.h"
 
 #define BST_ROOT_NULL               0x00000001u
