@@ -1,10 +1,11 @@
 #include "bst.h"
 
 #define BST_ROOT_NULL               0x00000001u
-#define BST_TYPE                    0x00000002u
+#define BST_TYPE_NONE               0x00000002u
 #define BST_INDEX                   0x00000004u
 #define BST_SIZE                    0x00000008u
-#define TURN_OFF_WARNING            0x00000010u
+#define BST_TYPE                    0x00000010u
+#define TURN_OFF_WARNING            0x00000020u
 
 #define WARNING_PLACEHOLDER         -1
 
@@ -27,15 +28,13 @@ static bool check_warnings(bst_t *tree, u_int16_t warning_code, const char *func
         }
     }
 
-    if (warning_code & BST_TYPE)
+    if (warning_code & BST_TYPE_NONE)
     {
-        template_t T = (template_t)check_value;
-
-        if (tree->T != T)
+        if (tree->T == NONE)
         {
             if (!(warning_code & TURN_OFF_WARNING))
             {
-                printf("%s: %swarning:%s bst type does not equal the new value type%s\n", function_name, purple, white, reset);
+                printf("%s: %swarning:%s bst type equals NONE%s\n", function_name, purple, white, reset);
             }
 
             return true;
@@ -70,15 +69,43 @@ static bool check_warnings(bst_t *tree, u_int16_t warning_code, const char *func
         }
     }
 
+    if (warning_code & BST_SIZE)
+    {
+        if (tree->size)
+        {
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s bst size is not zero%s\n", function_name, purple, white, reset);
+            }
+
+            return true;
+        }
+    }
+
+    if (warning_code & BST_TYPE)
+    {
+        template_t T = (template_t)check_value;
+
+        if (tree->T != T)
+        {
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s bst type does not equal the new data type%s\n", function_name, purple, white, reset);
+            }
+
+            return true;
+        }
+    }
+
     return false;
 }
 
-static node_bst_t *new_node(template_t T, void *value)
+static node_bst_t *new_node(void *value)
 {
     size_t number_of_bytes = sizeof(node_bst_t);
     
     node_bst_t *node = malloc(number_of_bytes);
-    node->value = new_T_value(T, value);
+    node->value = value;
     node->left = NULL;
     node->right = NULL;
 
@@ -96,22 +123,81 @@ static void free_node(node_bst_t **curr, template_t T)
     mem_usage.freed += (u_int32_t)sizeof(node_bst_t);
 }
 
+static void insert(bst_t *tree, void *value)
+{
+    if (tree->root == NULL)
+    {
+        tree->root = new_node(value);
+        tree->size = 1;
+        return;
+    }
+
+    int index = 0;
+    node_bst_t *top = tree->root;
+
+    while (top != NULL)
+    {
+        if (check_equal_value(tree->T, value, top->value, true))
+        {
+            return;
+        }
+        else if (check_less_value(tree->T, value, top->value, true))
+        {
+            index = (index * 2) + 1;
+
+            if (top->left == NULL)
+            {
+                break;
+            }
+
+            top = top->left;
+        }
+        else if (check_greater_value(tree->T, value, top->value, true))
+        {
+            index = (index * 2) + 2;
+
+            if (top->right == NULL)
+            {
+                break;
+            }
+
+            top = top->right;
+        }
+    }
+
+    if (check_less_value(tree->T, value, top->value, true))
+    {
+        top->left = new_node(value);
+    }
+    else if (check_greater_value(tree->T, value, top->value, true))
+    {
+        top->right = new_node(value);
+    }
+
+    tree->size++;
+
+    if (index > tree->last_index)
+    {
+        tree->last_index = index;
+    }
+}
+
 static node_bst_t *lookup_node(node_bst_t *root, template_t T, void *value, node_bst_t **parent)
 {
     node_bst_t *top = root;
 
     while (top != NULL)
     {
-        if (check_equal_value(T, value, top->value))
+        if (check_equal_value(T, value, top->value, true))
         {
             break;
         }
-        else if (check_less_value(T, value, top->value))
+        else if (check_less_value(T, value, top->value, true))
         {
             *parent = top;
             top = top->left;
         }
-        else if (check_greater_value(T, value, top->value))
+        else if (check_greater_value(T, value, top->value, true))
         {
             *parent = top;
             top = top->right;
@@ -147,11 +233,11 @@ static bool remove_value(node_bst_t **root, template_t T, void *value)
         {
             free_node(root, T);
         }
-        else if (check_less_value(T, curr->value, parent->value))
+        else if (check_less_value(T, curr->value, parent->value, true))
         {
             free_node(&parent->left, T);
         }
-        else if (check_greater_value(T, curr->value, parent->value))
+        else if (check_greater_value(T, curr->value, parent->value, true))
         {
             free_node(&parent->right, T);
         }
@@ -240,14 +326,7 @@ static void copy_nodes(bst_t *tree_dest, node_bst_t *root_src)
         return;
     }
 
-    if (tree_dest->T == STR)
-    {
-        bst_insert(tree_dest, str_cast_void(root_src->value));
-    }
-    else
-    {
-        bst_insert(tree_dest, tree_dest->T, root_src->value);
-    }
+    insert(tree_dest, new_T_value(tree_dest->T, root_src->value));
 
     copy_nodes(tree_dest, root_src->left);
     copy_nodes(tree_dest, root_src->right);
@@ -329,26 +408,7 @@ static void postorder_print(template_t T, node_bst_t *root)
     print_t(T, root->value, "", " ");
 }
 
-static bool check_bst_root_null(bst_t *tree, template_t T, void *value)
-{
-    if (tree->root == NULL)
-    {
-        tree->root = new_node(T, value);
-        tree->size = 1;
-
-        if (tree->T == NONE)
-        {
-            tree->T = T;
-            tree->last_index = 0;
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
-bst_t bst_init(template_t T, void *data, int size)
+bst_t bst_init(template_t T, int size, ...)
 {
     bst_t new_tree;
     new_tree.root = NULL;
@@ -361,139 +421,97 @@ bst_t bst_init(template_t T, void *data, int size)
         return new_tree;
     }
 
-    switch (new_tree.T)
-    {
-        case INT:
-        case DOUBLE:
-        case FLOAT:
-        case CHAR:
-            for (int i = 0; i < size; i++)
-            {
-                bst_insert(&new_tree, new_tree.T, data);
-                data += get_bytes(new_tree.T, data);
-            }
-            break;
-        case STR:
-            {
-                char **str_array = ((char**)data);
+    va_list args;
+    va_start(args, size);
 
-                for (int i = 0; i < size; i++)
-                {
-                    bst_insert(&new_tree, str_cast_void(*str_array));
-                    str_array++;
-                }
-            }
-            break;
-        case BOOL:
-        case NONE: // default:
-            break;
+    for (int i = 0; i < size; i++)
+    {
+        insert(&new_tree, new_arg_T_value(new_tree.T, args));
     }
+
+    va_end(args);
 
     return new_tree;
 }
 
-void bst_insert(bst_t *tree, template_t T, void *value)
+void bst_insert(bst_t *tree, ...)
 {
-    convert_2d_str(T, &value);
+    va_list args;
+    va_start(args, tree);
 
-    if (check_bst_root_null(tree, T, value))
-    {
-        return;
-    }
+    insert(tree, new_arg_T_value(tree->T, args));
 
-    if (check_warnings(tree, BST_TYPE, "bst_insert", (int)T))
-    {
-        return;
-    }
-
-    int index = 0;
-    node_bst_t *top = tree->root;
-
-    while (top != NULL)
-    {
-        if (check_equal_value(T, value, top->value))
-        {
-            return;
-        }
-        else if (check_less_value(T, value, top->value))
-        {
-            index = (index * 2) + 1;
-
-            if (top->left == NULL)
-            {
-                break;
-            }
-
-            top = top->left;
-        }
-        else if (check_greater_value(T, value, top->value))
-        {
-            index = (index * 2) + 2;
-
-            if (top->right == NULL)
-            {
-                break;
-            }
-
-            top = top->right;
-        }
-    }
-
-    if (check_less_value(T, value, top->value))
-    {
-        top->left = new_node(T, value);
-    }
-    else if (check_greater_value(T, value, top->value))
-    {
-        top->right = new_node(T, value);
-    }
-
-    tree->size++;
-
-    if (index > tree->last_index)
-    {
-        tree->last_index = index;
-    }
+    va_end(args);
 }
 
-void bst_remove_value(bst_t *tree, template_t T, void *value)
+void bst_remove_value(bst_t *tree, ...)
 {
-    if (check_warnings(tree, BST_ROOT_NULL | BST_TYPE, "bst_remove_value", (int)T))
+    if (check_warnings(tree, BST_ROOT_NULL | BST_TYPE_NONE,
+        "bst_remove_value", WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    convert_2d_str(T, &value);
+    va_list args;
+    va_start(args, tree);
 
-    if (remove_value(&tree->root, T, value))
+    void *value = new_arg_T_value(tree->T, args);
+
+    va_end(args);
+
+    if (remove_value(&tree->root, tree->T, value))
     {
         tree->size--;
     }
+
+    free_T_value(tree->T, value);
 }
 
-node_bst_t *bst_lookup(bst_t *tree, template_t T, void *value)
+node_bst_t *bst_lookup(bst_t *tree, ...)
 {
-    if (check_warnings(tree, BST_ROOT_NULL | BST_TYPE, "bst_lookup", (int)T))
+    if (check_warnings(tree, BST_ROOT_NULL | BST_TYPE_NONE,
+        "bst_lookup", WARNING_PLACEHOLDER))
     {
         return NULL;
     }
 
-    convert_2d_str(T, &value);
-
+    node_bst_t *curr = NULL;
     node_bst_t *parent = NULL;
-    return lookup_node(tree->root, T, value, &parent);
+
+    va_list args;
+    va_start(args, tree);
+
+    void *value = new_arg_T_value(tree->T, args);
+
+    va_end(args);
+
+    curr = lookup_node(tree->root, tree->T, value, &parent);
+    free_T_value(tree->T, value);
+
+    return curr;
 }
 
-node_bst_t *bst_lookup_with_parent(bst_t *tree, template_t T, void *value, node_bst_t **parent)
+node_bst_t *bst_lookup_with_parent(bst_t *tree, node_bst_t **parent, ...)
 {
-    if (check_warnings(tree, BST_ROOT_NULL | BST_TYPE, "bst_lookup_with_parent", (int)T))
+    if (check_warnings(tree, BST_ROOT_NULL | BST_TYPE_NONE,
+        "bst_lookup_with_parent", WARNING_PLACEHOLDER))
     {
         return NULL;
     }
 
-    convert_2d_str(T, &value);
+    node_bst_t *curr = NULL;
 
-    return lookup_node(tree->root, T, value, parent);
+    va_list args;
+    va_start(args, parent);
+
+    void *value = new_arg_T_value(tree->T, args);
+
+    va_end(args);
+
+    curr = lookup_node(tree->root, tree->T, value, parent);
+    free_T_value(tree->T, value);
+
+    return curr;
 }
 
 void *bst_get_index(bst_t *tree, int index)

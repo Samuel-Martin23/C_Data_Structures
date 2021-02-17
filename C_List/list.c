@@ -22,7 +22,7 @@ static bool check_warnings(list_t *list, u_int16_t warning_code, const char *fun
         {
             if (!(warning_code & TURN_OFF_WARNING))
             {
-                printf("%s: %swarning:%s list type equals none%s\n", function_name, purple, white, reset);
+                printf("%s: %swarning:%s list type equals NONE%s\n", function_name, purple, white, reset);
             }
 
             return true;
