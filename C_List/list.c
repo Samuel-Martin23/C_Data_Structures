@@ -1,29 +1,28 @@
-
 #include "list.h"
 
-#define LIST_TYPE               0x00000001
-#define LIST_HEAD_NULL          0x00000002
-#define LIST_INDEX_LGE          0x00000004
-#define LIST_SIZE               0x00000008
-#define TURN_OFF_WARNING        0x00000010
+#define LIST_TYPE_NONE          0x00000001u
+#define LIST_HEAD_NULL          0x00000002u
+#define LIST_INDEX_GE           0x00000004u
+#define LIST_SIZE               0x00000008u
+#define LIST_INDEX_G            0x00000010u
+#define LIST_TYPE               0x00000020u
+#define TURN_OFF_WARNING        0x00000040u
 
 #define WARNING_PLACEHOLDER     -1
 
-static bool check_warnings(list_t *list, int warning_code, const char *function_name, int check_value)
+static bool check_warnings(list_t *list, u_int16_t warning_code, const char *function_name, int check_value)
 {
     const char *purple = "\033[1;95m";
     const char *white = "\033[1;97m";
     const char *reset = "\033[0m";
 
-    if (warning_code & LIST_TYPE)
+    if (warning_code & LIST_TYPE_NONE)
     {
-        template_t T = (template_t)check_value;
-
-        if (list->T != T)
+        if (list->T == NONE)
         {
             if (!(warning_code & TURN_OFF_WARNING))
             {
-                printf("%s: %swarning:%s list type does not equal the new data type%s\n", function_name, purple, white, reset);
+                printf("%s: %swarning:%s list type equals none%s\n", function_name, purple, white, reset);
             }
 
             return true;
@@ -43,7 +42,7 @@ static bool check_warnings(list_t *list, int warning_code, const char *function_
         }
     }
 
-    if (warning_code & LIST_INDEX_LGE)
+    if (warning_code & LIST_INDEX_GE)
     {
         int index = check_value;
 
@@ -71,6 +70,36 @@ static bool check_warnings(list_t *list, int warning_code, const char *function_
         }
     }
 
+    if (warning_code & LIST_INDEX_G)
+    {
+        int index = check_value;
+
+        if (index < 0 || index > list->size)
+        {
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s index out of range%s\n", function_name, purple, white, reset);
+            }
+
+            return true;
+        }
+    }
+
+    if (warning_code & LIST_TYPE)
+    {
+        template_t T = (template_t)check_value;
+
+        if (list->T != T)
+        {
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s list type does not equal the new data type%s\n", function_name, purple, white, reset);
+            }
+
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -87,7 +116,7 @@ static node_list_t *merge_lists(node_list_t *left, node_list_t *right, template_
 
     node_list_t *merged_head = NULL;
 
-    if (check_less_equal_value(T, left->value, right->value))
+    if (check_less_equal_value(T, left->value, right->value, false))
     {
         merged_head = left;
         merged_head->next = merge_lists(left->next, right, T);
@@ -152,12 +181,12 @@ static void sort_data_values(node_list_t **head, template_t T)
     *head = merge_lists(split_left, split_right, T);
 }
 
-static node_list_t *new_node(list_t *list, void *value)
+static node_list_t *new_node(void *value)
 {
     size_t number_of_bytes = sizeof(node_list_t);
     node_list_t *curr = malloc(number_of_bytes);
 
-    curr->value = new_T_value(list->T, value);
+    curr->value = value;
     curr->next = NULL;
     mem_usage.allocated += (u_int32_t)number_of_bytes;
     return curr;
@@ -171,15 +200,13 @@ static void free_node(list_t *list, node_list_t **curr)
     mem_usage.freed += (u_int32_t)sizeof(node_list_t);
 }
 
-static bool check_list_null_init(list_t *list, template_t T, void *data, int size)
+static void append(list_t *list, node_list_t *curr)
 {
-    if (list->head == NULL)
-    {
-        *list = list_init(T, data, size);
-        return true;
-    }
+    node_list_t **tail = &list->tail;
 
-    return false;
+    (*tail)->next = curr;
+    *tail = (*tail)->next;
+    list->size++;
 }
 
 void print_list_size(list_t *list)
@@ -193,10 +220,9 @@ void print_list_size(list_t *list)
     printf("List Size: %d\n", list->size);
 }
 
-list_t list_init(template_t T, void *data, int size)
+list_t list_init(template_t T, int size, ...)
 {
     list_t new_list;
-
     new_list.size = size;
     new_list.T = T;
     new_list.head = NULL;
@@ -210,103 +236,70 @@ list_t list_init(template_t T, void *data, int size)
     node_list_t *top = NULL;
     node_list_t *curr = NULL;
 
-    switch (T)
+    va_list args;
+    va_start(args, size);
+
+    new_list.head = new_node(new_arg_T_value(new_list.T, args));
+    top = new_list.head;
+
+    for (int i = 1; i < new_list.size; i++)
     {
-        case INT:
-        case DOUBLE:
-        case FLOAT:
-        case CHAR:
-        case BOOL:
-            new_list.head = new_node(&new_list, data);
-            top = new_list.head;
-            data += (int)get_bytes(new_list.T, data);
-
-            for (int i = 1; i < new_list.size; i++)
-            {
-                curr = new_node(&new_list, data);
-                top->next = curr;
-                top = top->next;
-                data += (int)get_bytes(new_list.T, data);
-            }
-            break;
-        case STR:
-            {
-                char **str_array = ((char**)data);
-
-                new_list.head = new_node(&new_list, *str_array);
-                top = new_list.head;
-                str_array++;
-
-                for (int i = 1; i < new_list.size; i++)
-                {
-                    curr = new_node(&new_list, *str_array);
-                    top->next = curr;
-                    top = top->next;
-                    str_array++;
-                }
-            }
-            break;
-        case NONE: // default:
-            break;
+        curr = new_node(new_arg_T_value(new_list.T, args));
+        top->next = curr;
+        top = top->next;
     }
+
+    va_end(args);
 
     new_list.tail = top;
     return new_list;
 }
 
-void list_append(list_t *list, template_t T, void *value)
+void list_append(list_t *list, ...)
 {
-    if (check_list_null_init(list, T, value, 1))
+    if (check_warnings(list, LIST_HEAD_NULL | LIST_TYPE_NONE,
+        "list_append", WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    if (check_warnings(list, LIST_TYPE, "list_append", (int)T))
-    {
-        return;
-    }
+    va_list args;
+    va_start(args, list);
 
-    convert_2d_str(list->T, &value);
+    node_list_t *curr = new_node(new_arg_T_value(list->T, args));
 
-    node_list_t **tail = &list->tail;
-    node_list_t *curr = new_node(list, value);
+    va_end(args);
 
-    (*tail)->next = curr;
-    *tail = (*tail)->next;
-    list->size++;
+    append(list, curr);
 }
 
-void list_insert(list_t *list, template_t T, void *value, int index)
+void list_insert(list_t *list, int index, ...)
 {
-    if (index == 0)
-    {
-        if (check_list_null_init(list, T, value, 1))
-        {
-            return;
-        }
-    }
-
-    if (check_warnings(list, LIST_TYPE | LIST_HEAD_NULL, "list_insert", (int)T)
-        || check_warnings(list, LIST_INDEX_LGE, "list_insert", index))
+    if (check_warnings(list, LIST_HEAD_NULL | LIST_TYPE_NONE | LIST_INDEX_G,
+        "list_insert", index))
     {
         return;
     }
-
-    convert_2d_str(list->T, &value);
 
     node_list_t **head = &list->head;
 
+    va_list args;
+    va_start(args, index);
+
     if (index == 0)
     {
-        node_list_t *temp = new_node(list, value);
+        node_list_t *temp = new_node(new_arg_T_value(list->T, args));
         temp->next = *head;
         *head = temp;
         list->size++;
+        va_end(args);
         return;
     }
-    else if (index == list->size-1)
+    else if (index == list->size)
     {
-        list_append(list, T, value);
+        node_list_t *temp = new_node(new_arg_T_value(list->T, args));
+        append(list, temp);
+        va_end(args);
         return;
     }
 
@@ -319,20 +312,17 @@ void list_insert(list_t *list, template_t T, void *value, int index)
         curr = curr->next;
     }
 
-    node_list_t *temp = new_node(list, value);
+    node_list_t *temp = new_node(new_arg_T_value(list->T, args));
     prev->next = temp;
     temp->next = curr;
     list->size++;
+    va_end(args);
 }
 
-void list_extend(list_t *list, template_t T, void *data, int size)
+void list_extend(list_t *list, int size, ...)
 {
-    if (check_list_null_init(list, T, data, size))
-    {
-        return;
-    }
-
-    if (check_warnings(list, LIST_TYPE, "list_extend", (int)T))
+    if (check_warnings(list, LIST_HEAD_NULL | LIST_TYPE_NONE,
+        "list_extend", WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -340,48 +330,25 @@ void list_extend(list_t *list, template_t T, void *data, int size)
     node_list_t *curr = NULL;
     node_list_t **tail = &list->tail;
 
-    switch (T)
+    va_list args;
+    va_start(args, size);
+
+    for (int i = 0; i < size; i++)
     {
-        case INT:
-        case DOUBLE:
-        case FLOAT:
-        case CHAR:
-        case BOOL:
-            for (int i = 0; i < size; i++)
-            {
-                curr = new_node(list, data);
-                (*tail)->next = curr;
-                *tail = (*tail)->next;
-                data += (int)get_bytes(list->T, data);
-            }
-
-            list->tail = curr;
-            list->size += size;
-            break;
-        case STR:
-            {
-                char **str_array = ((char**)data);
-
-                for (int i = 0; i < size; i++)
-                {
-                    curr = new_node(list, *str_array);
-                    (*tail)->next = curr;
-                    *tail = (*tail)->next;
-                    str_array++;
-                }
-
-                list->tail = curr;
-                list->size += size;
-            }
-            break;
-        case NONE: // default:
-            break;
+        curr = new_node(new_arg_T_value(list->T, args));
+        (*tail)->next = curr;
+        *tail = (*tail)->next;
     }
+
+    va_end(args);
+
+    list->tail = curr;
+    list->size += size;
 }
 
 void list_remove_index(list_t *list, int index)
 {
-    if (check_warnings(list, LIST_HEAD_NULL | LIST_INDEX_LGE,
+    if (check_warnings(list, LIST_HEAD_NULL | LIST_INDEX_GE,
         "list_remove_index", index))
     {
         return;
@@ -412,24 +379,30 @@ void list_remove_index(list_t *list, int index)
     list->size--;
 }
 
-void list_remove_value(list_t *list, template_t T, void *value)
+void list_remove_value(list_t *list, ...)
 {
-    if (check_warnings(list, LIST_TYPE | LIST_HEAD_NULL,
-        "list_remove_value", (int)T))
+    if (check_warnings(list, LIST_HEAD_NULL | LIST_TYPE_NONE,
+        "list_remove_value", WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    convert_2d_str(list->T, &value);
-
     node_list_t **head = &list->head;
 
-    if (check_equal_value(T, (*head)->value, value))
+    va_list args;
+    va_start(args, list);
+
+    void *value = new_arg_T_value(list->T, args);
+
+    va_end(args);
+
+    if (check_equal_value(list->T, (*head)->value, value, false))
     {
         node_list_t *next = (*head)->next;
         free_node(list, head);
         *head = next;
         list->size--;
+        free_T_value(list->T, value);
         return;
     }
 
@@ -438,7 +411,7 @@ void list_remove_value(list_t *list, template_t T, void *value)
 
     while (curr != NULL)
     {
-        if (check_equal_value(T, curr->value, value))
+        if (check_equal_value(list->T, curr->value, value, false))
         {
             if (curr->next == NULL)
             {
@@ -448,6 +421,7 @@ void list_remove_value(list_t *list, template_t T, void *value)
             prev->next = curr->next;
             free_node(list, &curr);
             list->size--;
+            free_T_value(list->T, value);
             break;
         }
 
@@ -458,7 +432,7 @@ void list_remove_value(list_t *list, template_t T, void *value)
 
 void *list_get_value(list_t *list, int index)
 {
-    if (check_warnings(list, LIST_HEAD_NULL | LIST_INDEX_LGE,
+    if (check_warnings(list, LIST_HEAD_NULL | LIST_INDEX_GE,
         "list_get_value", index))
     {
         return NULL;
@@ -479,28 +453,35 @@ void *list_get_value(list_t *list, int index)
     return top->value;
 }
 
-bool list_check_value(list_t *list, template_t T, void *value)
+bool list_check_value(list_t *list, ...)
 {
-    if (check_warnings(list, LIST_TYPE | LIST_HEAD_NULL,
-        "list_check_value", (int)T))
+    if (check_warnings(list, LIST_HEAD_NULL | LIST_TYPE_NONE,
+        "list_check_value", WARNING_PLACEHOLDER))
     {
         return false;
     }
 
-    convert_2d_str(list->T, &value);
-
     node_list_t *top = list->head;
+
+    va_list args;
+    va_start(args, list);
+
+    void *key = new_arg_T_value(list->T, args);
+
+    va_end(args);
 
     while (top != NULL)
     {
-        if (check_equal_value(T, top->value, value))
+        if (check_equal_value(list->T, top->value, key, false))
         {
+            free_T_value(list->T, key);
             return true;
         }
 
         top = top->next;
     }
 
+    free_T_value(list->T, key);
     return false;
 }
 
@@ -571,29 +552,17 @@ void list_copy(list_t *list_dest, list_t *list_src)
     node_list_t *top_src = NULL;
     node_list_t *curr = NULL;
 
-    switch (list_dest->T)
-    {
-        case INT:
-        case DOUBLE:
-        case FLOAT:
-        case CHAR:
-        case STR:
-        case BOOL:
-            top_src = list_src->head;
-            list_dest->head = new_node(list_dest, top_src->value);
-            top_dest = list_dest->head;
-            top_src = top_src->next;
+    top_src = list_src->head;
+    list_dest->head = new_node(new_T_value(list_dest->T, top_src->value));
+    top_dest = list_dest->head;
+    top_src = top_src->next;
 
-            for (int i = 1; i < list_dest->size; i++)
-            {
-                curr = new_node(list_dest, top_src->value);
-                top_dest->next = curr;
-                top_dest = top_dest->next;
-                top_src = top_src->next;
-            }
-            break;
-        case NONE: // default:
-            break;
+    for (int i = 1; i < list_dest->size; i++)
+    {
+        curr = new_node(new_T_value(list_dest->T, top_src->value));
+        top_dest->next = curr;
+        top_dest = top_dest->next;
+        top_src = top_src->next;
     }
 }
 

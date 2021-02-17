@@ -157,7 +157,6 @@ void hash_table_insert(hash_table_t *ht, template_t T_key, template_t T_value, .
     va_end(args);
 
     table_insert(ht, T_key, key, T_value, value);
-
 }
 
 hash_elem_t *hash_table_lookup(hash_table_t *ht, template_t T_key, ...)
@@ -194,6 +193,12 @@ void hash_table_delete_elem(hash_table_t *ht, template_t T_key, ...)
 
     hash_elem_t *prev = NULL;
     hash_elem_t *curr = ht->table[index];
+
+    if (curr == NULL)
+    {
+        free_T_value(T_key, key);
+        return;
+    }
 
     while (curr != NULL && !(check_keys_equal(curr->T_key, curr->key, T_key, key)))
     {
