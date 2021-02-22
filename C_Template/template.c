@@ -209,61 +209,48 @@ size_t get_bytes(template_t T, void *value)
 void *new_T_value(template_t T, void *value)
 {
     void *new_value = NULL;
+    size_t number_of_bytes = get_bytes(T, value);
+    mem_usage.allocated += (u_int32_t)number_of_bytes;
 
     switch (T)
     {
         case INT:
             {
-                size_t number_of_bytes = get_bytes(T, value);
                 int *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_int(value);
                 new_value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case DOUBLE:
             {
-                size_t number_of_bytes = get_bytes(T, value);
                 double *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_double(value);
                 new_value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case FLOAT:
             {
-                size_t number_of_bytes = get_bytes(T, value);
                 float *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_float(value);
                 new_value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case CHAR:
              {
-                size_t number_of_bytes = get_bytes(T, value);
                 char cast_value = void_cast_char(value);
                 char *allocated_value = malloc(number_of_bytes);
 
                 memcpy(allocated_value, &cast_value, 1);
                 new_value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case STR:
             {
                 char *cast_value = void_cast_str(value);
-                size_t number_of_bytes = get_bytes(T, cast_value);
                 char *allocated_value = malloc(number_of_bytes);
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
 
                 number_of_bytes--;
                 memcpy(allocated_value, cast_value, number_of_bytes);
@@ -274,13 +261,10 @@ void *new_T_value(template_t T, void *value)
             break;
         case BOOL:
             {
-                size_t number_of_bytes = get_bytes(T, value);
                 bool *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_bool(value);
                 new_value = allocated_value;
-
-                mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
             break;
         case NONE: // default:
