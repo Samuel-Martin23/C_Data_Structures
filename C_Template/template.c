@@ -208,6 +208,8 @@ size_t get_bytes(template_t T, void *value)
 
 void *new_T_value(template_t T, void *value)
 {
+    void *new_value = NULL;
+
     switch (T)
     {
         case INT:
@@ -216,7 +218,7 @@ void *new_T_value(template_t T, void *value)
                 int *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_int(value);
-                value = allocated_value;
+                new_value = allocated_value;
 
                 mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
@@ -227,7 +229,7 @@ void *new_T_value(template_t T, void *value)
                 double *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_double(value);
-                value = allocated_value;
+                new_value = allocated_value;
 
                 mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
@@ -238,7 +240,7 @@ void *new_T_value(template_t T, void *value)
                 float *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_float(value);
-                value = allocated_value;
+                new_value = allocated_value;
 
                 mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
@@ -250,7 +252,7 @@ void *new_T_value(template_t T, void *value)
                 char *allocated_value = malloc(number_of_bytes);
 
                 memcpy(allocated_value, &cast_value, 1);
-                value = allocated_value;
+                new_value = allocated_value;
 
                 mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
@@ -267,7 +269,7 @@ void *new_T_value(template_t T, void *value)
                 memcpy(allocated_value, cast_value, number_of_bytes);
                 allocated_value[number_of_bytes] = '\0';
 
-                value = allocated_value;
+                new_value = allocated_value;
             }
             break;
         case BOOL:
@@ -276,7 +278,7 @@ void *new_T_value(template_t T, void *value)
                 bool *allocated_value = malloc(number_of_bytes);
 
                 *allocated_value = void_cast_bool(value);
-                value = allocated_value;
+                new_value = allocated_value;
 
                 mem_usage.allocated += (u_int32_t)number_of_bytes;
             }
@@ -285,7 +287,7 @@ void *new_T_value(template_t T, void *value)
             break;
     }
 
-    return value;
+    return new_value;
 }
 
 void free_T_value(template_t T, void *value)
@@ -296,49 +298,49 @@ void free_T_value(template_t T, void *value)
 
 void *new_arg_T_value(template_t T, va_list args)
 {
-    void *element = NULL;
+    void *value_arg = NULL;
 
     switch (T)
     {
         case INT:
             {
                 int value = va_arg(args, int);
-                element = new_T_value(T, &value);
+                value_arg = new_T_value(T, &value);
             }
             break;
         case DOUBLE:
             {
                 double value = va_arg(args, double);
-                element = new_T_value(T, &value);
+                value_arg = new_T_value(T, &value);
             }
             break;
         case FLOAT:
             {
                 float value = (float)va_arg(args, double);
-                element = new_T_value(T, &value);
+                value_arg = new_T_value(T, &value);
             }
             break;
         case CHAR:
             {
                 char value = (char)va_arg(args, int);
-                element = new_T_value(T, &value);
+                value_arg = new_T_value(T, &value);
             }
             break;
         case STR:
             {
                 char *value = va_arg(args, char*);
-                element = new_T_value(T, value);
+                value_arg = new_T_value(T, value);
             }
             break;
         case BOOL:
             {
                 bool value = (bool)va_arg(args, int);
-                element = new_T_value(T, &value);
+                value_arg = new_T_value(T, &value);
             }
             break;
-        case NONE:
+        case NONE: // default:
             break;
     }
 
-    return element;
+    return value_arg;
 }

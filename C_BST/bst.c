@@ -285,19 +285,16 @@ static bool check_int(float value)
     return check_float_equal(value, (float)truncated);
 }
 
-static void get_index(node_bst_t **root, int index, float left_value, float right_value)
+static void get_index(node_bst_t **root, int index)
 {
     if (index == 0)
     {
         return;
     }
 
-    left_value = (index - 1) / 2.0f;
-    right_value = (index - 2) / 2.0f;
-
-    if (check_int(left_value))
+    if (check_int(((index - 1) / 2.0f)))
     {
-        get_index(root, (int)left_value, 0.0f, 0.0f);
+        get_index(root, (int)((index - 1) / 2.0f));
 
         if (*root == NULL)
         {
@@ -308,7 +305,7 @@ static void get_index(node_bst_t **root, int index, float left_value, float righ
     }
     else
     {
-        get_index(root, (int)right_value, 0.0f, 0.0f);
+        get_index(root, (int)((index - 2) / 2.0f));
 
         if (*root == NULL)
         {
@@ -523,7 +520,7 @@ void *bst_get_index(bst_t *tree, int index)
 
     node_bst_t *top = tree->root;
 
-    get_index(&top, index, 0.0f, 0.0f);
+    get_index(&top, index);
 
     if (top != NULL) 
     {
