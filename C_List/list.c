@@ -222,6 +222,12 @@ void print_list_size(list_t *list)
 
 list_t list_init(template_t T, int size, ...)
 {
+    if (size < 0)
+    {
+        printf("list_init: \033[1;91merror:\033[1;97m list size is less than 0\033[0m\n");
+        exit(EXIT_FAILURE);
+    }
+
     list_t new_list;
     new_list.size = size;
     new_list.T = T;

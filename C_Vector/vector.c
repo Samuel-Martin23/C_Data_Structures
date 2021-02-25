@@ -218,21 +218,27 @@ void print_vector_size(vector_t *vec)
 
 vector_t vector_init(template_t T, int size, ...)
 {
+    if (size < 0)
+    {
+        printf("vector_init: \033[1;91merror:\033[1;97m vector size is less than 0\033[0m\n");
+        exit(EXIT_FAILURE);
+    }
+
     vector_t new_vector;
     new_vector.size = size;
     new_vector.data = NULL;
     new_vector.T = T;
 
-    if (new_vector.size <= 0)
+    if (new_vector.size == 0)
     {
         new_vector.capacity = 0;
         return new_vector;
     }
 
+    new_void_elements(&new_vector);
+
     va_list args;
     va_start(args, size);
-
-    new_void_elements(&new_vector);
 
     for (int i = 0; i < new_vector.size; i++)
     {
@@ -272,9 +278,6 @@ void vector_insert(vector_t *vec, int index, ...)
         return;
     }
 
-    va_list args;
-    va_start(args, index);
-
     capacity_reallocation(vec, vec->size);
 
     for (int i = vec->size; i > index; i--)
@@ -282,10 +285,14 @@ void vector_insert(vector_t *vec, int index, ...)
         vec->data[i] = vec->data[i - 1];
     }
 
-    vec->size++;
+    va_list args;
+    va_start(args, index);
+
     vec->data[index] = new_arg_T_value(vec->T, args);
 
     va_end(args);
+
+    vec->size++;
 }
 
 void vector_extend(vector_t *vec, int size, ...)
@@ -296,11 +303,11 @@ void vector_extend(vector_t *vec, int size, ...)
         return;
     }
 
-    va_list args;
-    va_start(args, size);
-
     int original_size = vec->size;
     vec->size += size;
+
+    va_list args;
+    va_start(args, size);
 
     for (int i = original_size; i < vec->size; i++)
     {
@@ -330,7 +337,9 @@ void vector_pop_index(vector_t *vec, int index)
         return;
     }
 
-    if (index == vec->size-1)
+    int last_index = vec->size - 1;
+
+    if (index == last_index)
     {
         pop_last_index(vec);
         return;
@@ -338,7 +347,7 @@ void vector_pop_index(vector_t *vec, int index)
 
     free_T_value(vec->T, vec->data[index]);
 
-    for (int i = index; i < vec->size-1; i++)
+    for (int i = index; i < last_index; i++)
     {
         vec->data[i] = vec->data[i + 1];
     }
@@ -424,12 +433,13 @@ void vector_reverse(vector_t *vec)
 
     void *temp = NULL;
     int half_size = vec->size / 2;
+    int last_index = vec->size - 1;
 
     for (int i = 0; i < half_size; i++)
     {
         temp = vec->data[i];
-        vec->data[i] = vec->data[(vec->size - 1) - i];
-        vec->data[(vec->size - 1) - i] = temp;
+        vec->data[i] = vec->data[last_index - i];
+        vec->data[last_index - i] = temp;
     }
 }
 

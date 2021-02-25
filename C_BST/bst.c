@@ -407,6 +407,12 @@ static void postorder_print(template_t T, node_bst_t *root)
 
 bst_t bst_init(template_t T, int size, ...)
 {
+    if (size < 0)
+    {
+        printf("bst_init: \033[1;91merror:\033[1;97m bst size is less than 0\033[0m\n");
+        exit(EXIT_FAILURE);
+    }
+
     bst_t new_tree;
     new_tree.root = NULL;
     new_tree.T = T;
