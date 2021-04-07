@@ -7,9 +7,18 @@
 #define VEC_SIZE_GE                 0x00000010u
 #define VEC_CAPACITY                0x00000020u
 #define VEC_TYPE                    0x00000040u
-#define TURN_OFF_WARNING            0x00000080u
+#define VEC_STEP                    0x00000080u
+#define TURN_OFF_WARNING            0x00000100u
 
 #define WARNING_PLACEHOLDER         -1
+
+typedef struct vector
+{
+    int size;
+    int capacity;
+    void **data;
+    template_t T;
+} vector_t;
 
 static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *function_name, int check_value)
 {
@@ -75,7 +84,19 @@ static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *fu
     {
         int index = check_value;
 
-        if (index < 0 || index >= vec->size)
+        if (index < 0)
+        {
+            if ((vec->size + index) < 0)
+            {
+                if (!(warning_code & TURN_OFF_WARNING))
+                {
+                    printf("%s: %swarning:%s index out of range%s\n", function_name, purple, white, reset);
+                }
+
+                return true;
+            }
+        }
+        else if (index >= vec->size)
         {
             if (!(warning_code & TURN_OFF_WARNING))
             {
@@ -114,9 +135,23 @@ static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *fu
         }
     }
 
+    if (warning_code & VEC_STEP)
+    {
+        int step = check_value;
+
+        if (step <= 0)
+        {
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s slice step cannot be less than or equal to zero%s\n", function_name, purple, white, reset);
+            }
+
+            return true;
+        }
+    }
+
     return false;
 }
-
 
 static void insertion_sort(template_t T, void **array, int size)
 {
@@ -138,11 +173,21 @@ static void insertion_sort(template_t T, void **array, int size)
     }
 }
 
+static int ceil_int(int x, int y) 
+{
+    return (int)ceil(x / (double)y);
+}
+
+static int round_nearest_capacity(int value)
+{
+    return (int)(ceil(value / (double)DEFAULT_CAPACITY_SIZE) * DEFAULT_CAPACITY_SIZE);
+}
+
 static void new_void_elements(vector_t *vec)
 {
     size_t number_of_bytes = 0;
 
-    vec->capacity = vec->size > DEFAULT_CAPACITY_SIZE ? vec->size + DEFAULT_CAPACITY_SIZE : DEFAULT_CAPACITY_SIZE;
+    vec->capacity = round_nearest_capacity(vec->size);
     number_of_bytes = sizeof(void*) * (size_t)vec->capacity;
     vec->data = malloc(number_of_bytes);
 
@@ -206,43 +251,47 @@ static int check_T_value(vector_t *vec, void *value)
     return -1;
 }
 
-void print_vector_size(vector_t *vec)
+int get_vector_size(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_NULL, "print_vector_size", WARNING_PLACEHOLDER))
-    {
-        return;
-    }
-
-    printf("Vector Size: %d\n", vec->size);
+    return vec->size;
 }
 
-vector_t vector_init(template_t T, int size, ...)
+int get_vector_capacity(vector_t *vec)
 {
-    if (size < 0)
-    {
-        printf("vector_init: \033[1;91merror:\033[1;97m vector size is less than 0\033[0m\n");
-        exit(EXIT_FAILURE);
-    }
+    return vec->capacity;
+}
 
-    vector_t new_vector;
-    new_vector.size = size;
-    new_vector.data = NULL;
-    new_vector.T = T;
+template_t get_vector_template(vector_t *vec)
+{
+    return vec->T;
+}
 
-    if (new_vector.size == 0)
+vector_t *vector_init(template_t T, int size, ...)
+{
+    size_t number_of_bytes = sizeof(vector_t);
+
+    vector_t *new_vector = malloc(number_of_bytes);
+    new_vector->size = size;
+    new_vector->data = NULL;
+    new_vector->T = T;
+
+    mem_usage.allocated += (u_int32_t)(number_of_bytes);
+
+    if (new_vector->size <= 0)
     {
-        new_vector.capacity = 0;
+        new_vector->size = 0;
+        new_vector->capacity = 0;
         return new_vector;
     }
 
-    new_void_elements(&new_vector);
+    new_void_elements(new_vector);
 
     va_list args;
     va_start(args, size);
 
-    for (int i = 0; i < new_vector.size; i++)
+    for (int i = 0; i < new_vector->size; i++)
     {
-        new_vector.data[i] = new_arg_T_value(new_vector.T, args);
+        new_vector->data[i] = new_arg_T_value(new_vector->T, args);
     }
 
     va_end(args);
@@ -377,8 +426,6 @@ void vector_remove_value(vector_t *vec, ...)
     if (index >= 0)
     {
         vector_pop_index(vec, index);
-        free_T_value(vec->T, value);
-        return;
     }
 
     free_T_value(vec->T, value);
@@ -392,7 +439,51 @@ void *vector_at(vector_t *vec, int index)
         return NULL;
     }
 
-    return vec->data[index];
+    return index < 0 ? vec->data[vec->size + index] : vec->data[index];
+}
+
+void vector_at_range(vector_t *vec_dest, vector_t *vec_src, int start, int end, int step)
+{
+    if (check_warnings(vec_src, VEC_NULL | VEC_SIZE_ZERO,
+        "vector_at_range", WARNING_PLACEHOLDER) ||
+        check_warnings(vec_dest, VEC_CAPACITY | VEC_STEP,
+        "vector_at_range", step))
+    {
+        return;
+    }
+
+    if (start < 0)
+    {
+        start = vec_src->size + start;
+    }
+
+    if (end == 0)
+    {
+        end = vec_src->size;
+    }
+    else if (end < 0)
+    {
+        end = vec_src->size + end;
+    }
+
+    if (start < 0 || end > vec_src->size || (end - start) <= 0)
+    {
+        printf("vector_at_range: \033[1;95mwarning:\033[1;97m indices out of range\033[0m\n");
+        return;
+    }
+
+    int step_counter = 0;
+    vec_dest->size = ceil_int((end - start), step);
+    vec_dest->T = vec_src->T;
+    step--;
+
+    new_void_elements(vec_dest);
+
+    for (int i = 0; i < vec_dest->size; i++)
+    {
+        vec_dest->data[i] = new_T_value(vec_dest->T, vec_src->data[i + start + step_counter]);
+        step_counter += step;
+    }
 }
 
 int vector_check_value(vector_t *vec, ...)
@@ -456,8 +547,8 @@ void vector_sort(vector_t *vec)
 
 void vector_copy(vector_t *vec_dest, vector_t *vec_src)
 {
-    if (check_warnings(vec_src, VEC_NULL | VEC_SIZE_ZERO | VEC_TYPE,
-        "vector_copy", (int)vec_dest->T) ||
+    if (check_warnings(vec_src, VEC_NULL | VEC_SIZE_ZERO,
+        "vector_copy", WARNING_PLACEHOLDER) ||
         check_warnings(vec_dest, VEC_CAPACITY, "vector_copy", WARNING_PLACEHOLDER))
     {
         return;
@@ -471,6 +562,8 @@ void vector_copy(vector_t *vec_dest, vector_t *vec_src)
         vec_dest->capacity = 0;
         return;
     }
+
+    vec_dest->T = vec_src->T;
 
     new_void_elements(vec_dest);
 
@@ -494,11 +587,14 @@ void vector_free(vector_t *vec)
     }
 
     mem_usage.freed += (u_int32_t)(vec->capacity * (int)sizeof(void*));
+    mem_usage.freed += (u_int32_t)(sizeof(vector_t));
+
     vec->size = 0;
     vec->capacity = 0;
+    vec->T = NONE;
     free(vec->data);
     vec->data = NULL;
-    vec->T = NONE;
+    free(vec);
 }
 
 void vector_print(vector_t *vec)
