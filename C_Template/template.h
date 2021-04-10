@@ -34,4 +34,6 @@ void *new_T_value(template_t T, void *value);
 void free_T_value(template_t T, void *value);
 void *new_arg_T_value(template_t T, va_list args);
 
+int get_ascii_size(void *value);
+
 #endif /* TEMPLATE_H */

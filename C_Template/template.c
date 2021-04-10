@@ -1,19 +1,5 @@
 #include "template.h"
 
-static int get_ascii_size(void *value)
-{
-    int ascii_size = 0;
-    char *cast_str = void_cast_str(value);
-
-    while (*cast_str != '\0')
-    {
-        ascii_size += *cast_str;
-        cast_str++;
-    }
-
-    return ascii_size;
-}
-
 int void_cast_int(void *value) {return (*(int*)value);}
 double void_cast_double(void *value) {return (*(double*)value);}
 float void_cast_float(void *value) {return (*(float*)value);}
@@ -42,8 +28,7 @@ void print_t(template_t T, void *value, const char *beginning, const char *end)
             break;
         case BOOL:
             {
-                bool condition = void_cast_bool(value);
-                const char *state = condition ? "true" : "false";
+                const char *state = void_cast_bool(value) ? "true" : "false";
                 printf("%s%s%s", beginning, state, end);
             }
             break;
@@ -327,4 +312,18 @@ void *new_arg_T_value(template_t T, va_list args)
     }
 
     return value_arg;
+}
+
+int get_ascii_size(void *value)
+{
+    int ascii_size = 0;
+    char *cast_str = void_cast_str(value);
+
+    while (*cast_str != '\0')
+    {
+        ascii_size += *cast_str;
+        cast_str++;
+    }
+
+    return ascii_size;
 }

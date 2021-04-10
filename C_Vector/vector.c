@@ -1,11 +1,11 @@
 #include "vector.h"
 
 #define VEC_NULL                    0x00000001u
-#define VEC_SIZE_ZERO               0x00000002u
-#define VEC_TYPE_NONE               0x00000004u
+#define VEC_TYPE_NONE               0x00000002u
+#define VEC_SIZE_ZERO               0x00000004u
 #define VEC_SIZE_G                  0x00000008u
 #define VEC_SIZE_GE                 0x00000010u
-#define VEC_CAPACITY                0x00000020u
+#define VEC_ALLOC                   0x00000020u
 #define VEC_TYPE                    0x00000040u
 #define VEC_STEP                    0x00000080u
 #define TURN_OFF_WARNING            0x00000100u
@@ -16,8 +16,17 @@ typedef struct vector
 {
     int size;
     int capacity;
-    void **data;
     template_t T;
+    union
+    {
+        int *data_int;
+        double *data_double;
+        float *data_float;
+        char *data_char;
+        char **data_str;
+        bool *data_bool;
+    };
+
 } vector_t;
 
 static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *function_name, int check_value)
@@ -28,24 +37,24 @@ static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *fu
 
     if (warning_code & VEC_NULL)
     {
-        if (vec->data == NULL)
+        if (vec == NULL)
         {
             if (!(warning_code & TURN_OFF_WARNING))
             {
-                printf("%s: %swarning:%s vector data is NULL%s\n", function_name, purple, white, reset);
+                printf("%s: %swarning:%s vector is NULL%s\n", function_name, purple, white, reset);
             }
 
             return true;
         }
     }
 
-    if (warning_code & VEC_SIZE_ZERO)
+    if (warning_code & VEC_ALLOC)
     {
-        if (vec->size == 0)
+        if (vec != NULL)
         {
             if (!(warning_code & TURN_OFF_WARNING))
             {
-                printf("%s: %swarning:%s vector size is 0%s\n", function_name, purple, white, reset);
+                printf("%s: %swarning:%s vector is not NULL%s\n", function_name, purple, white, reset);
             }
 
             return true;
@@ -59,6 +68,19 @@ static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *fu
             if (!(warning_code & TURN_OFF_WARNING))
             {
                 printf("%s: %swarning:%s vector type equals NONE%s\n", function_name, purple, white, reset);
+            }
+
+            return true;
+        }
+    }
+
+    if (warning_code & VEC_SIZE_ZERO)
+    {
+        if (vec->size == 0)
+        {
+            if (!(warning_code & TURN_OFF_WARNING))
+            {
+                printf("%s: %swarning:%s vector size is 0%s\n", function_name, purple, white, reset);
             }
 
             return true;
@@ -107,19 +129,6 @@ static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *fu
         }
     }
 
-    if (warning_code & VEC_CAPACITY)
-    {
-        if (vec->capacity)
-        {
-            if (!(warning_code & TURN_OFF_WARNING))
-            {
-                printf("%s: %swarning:%s vector already contains capacity%s\n", function_name, purple, white, reset);
-            }
-
-            return true;
-        }
-    }
-
     if (warning_code & VEC_TYPE)
     {
         template_t T = (template_t)check_value;
@@ -153,23 +162,123 @@ static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *fu
     return false;
 }
 
-static void insertion_sort(template_t T, void **array, int size)
+static void insertion_sort_int(vector_t *vec)
 {
     int j = 0;
-    void *key = NULL;
+    int key = 0;
 
-    for (int i = 1; i < size; i++)
+    for (int i = 1; i < vec->size; i++)
     {
-        key = array[i];
+        key = vec->data_int[i];
         j = i - 1;
 
-        while (j >= 0 && check_greater_value(T, array[j], key, false))
+        while (j >= 0 && vec->data_int[j] > key)
         {
-            array[j + 1] = array[j];
+            vec->data_int[j + 1] = vec->data_int[j];
             j--;
         }
 
-        array[j + 1] = key;
+        vec->data_int[j + 1] = key;
+    }
+}
+
+static void insertion_sort_double(vector_t *vec)
+{
+    int j = 0;
+    double key = 0.0;
+
+    for (int i = 1; i < vec->size; i++)
+    {
+        key = vec->data_double[i];
+        j = i - 1;
+
+        while (j >= 0 && vec->data_double[j] > key)
+        {
+            vec->data_double[j + 1] = vec->data_double[j];
+            j--;
+        }
+
+        vec->data_double[j + 1] = key;
+    }
+}
+
+static void insertion_sort_float(vector_t *vec)
+{
+    int j = 0;
+    float key = 0.0f;
+
+    for (int i = 1; i < vec->size; i++)
+    {
+        key = vec->data_float[i];
+        j = i - 1;
+
+        while (j >= 0 && vec->data_float[j] > key)
+        {
+            vec->data_float[j + 1] = vec->data_float[j];
+            j--;
+        }
+
+        vec->data_float[j + 1] = key;
+    }
+}
+
+static void insertion_sort_char(vector_t *vec)
+{
+    int j = 0;
+    char key = 0;
+
+    for (int i = 1; i < vec->size; i++)
+    {
+        key = vec->data_char[i];
+        j = i - 1;
+
+        while (j >= 0 && vec->data_char[j] > key)
+        {
+            vec->data_char[j + 1] = vec->data_char[j];
+            j--;
+        }
+
+        vec->data_char[j + 1] = key;
+    }
+}
+
+static void insertion_sort_str(vector_t *vec)
+{
+    int j = 0;
+    char *key = "";
+
+    for (int i = 1; i < vec->size; i++)
+    {
+        key = vec->data_str[i];
+        j = i - 1;
+
+        while (j >= 0 && get_ascii_size(vec->data_str[j]) > get_ascii_size(key))
+        {
+            vec->data_str[j + 1] = vec->data_str[j];
+            j--;
+        }
+
+        vec->data_str[j + 1] = key;
+    }
+}
+
+static void insertion_sort_bool(vector_t *vec)
+{
+    int j = 0;
+    bool key = false;
+
+    for (int i = 1; i < vec->size; i++)
+    {
+        key = vec->data_bool[i];
+        j = i - 1;
+
+        while (j >= 0 && vec->data_bool[j] > key)
+        {
+            vec->data_bool[j + 1] = vec->data_bool[j];
+            j--;
+        }
+
+        vec->data_bool[j + 1] = key;
     }
 }
 
@@ -183,22 +292,78 @@ static int round_nearest_capacity(int value)
     return (int)(ceil(value / (double)DEFAULT_CAPACITY_SIZE) * DEFAULT_CAPACITY_SIZE);
 }
 
-static void new_void_elements(vector_t *vec)
+static void new_elements(vector_t *vec)
 {
     size_t number_of_bytes = 0;
-
     vec->capacity = round_nearest_capacity(vec->size);
-    number_of_bytes = sizeof(void*) * (size_t)vec->capacity;
-    vec->data = malloc(number_of_bytes);
+
+    switch (vec->T)
+    {
+        case INT:
+            number_of_bytes = sizeof(int) * (size_t)vec->capacity;
+            vec->data_int = malloc(number_of_bytes);
+            break;
+        case DOUBLE:
+            number_of_bytes = sizeof(double) * (size_t)vec->capacity;
+            vec->data_double = malloc(number_of_bytes);
+            break;
+        case FLOAT:
+            number_of_bytes = sizeof(float) * (size_t)vec->capacity;
+            vec->data_float = malloc(number_of_bytes);
+            break;
+        case CHAR:
+            number_of_bytes = sizeof(char) * (size_t)vec->capacity;
+            vec->data_char = malloc(number_of_bytes);
+            break;
+        case STR:
+            number_of_bytes = sizeof(char*) * (size_t)vec->capacity;
+            vec->data_str = malloc(number_of_bytes);
+            break;
+        case BOOL:
+            number_of_bytes = sizeof(bool) * (size_t)vec->capacity;
+            vec->data_bool = malloc(number_of_bytes);
+            break;
+        case NONE: // default:
+            break;
+    }
 
     mem_usage.allocated += (u_int32_t)(number_of_bytes);
 }
 
 static void realloc_void_elements(vector_t *vec, int new_capacity)
 {
-    size_t number_of_bytes = sizeof(void*);
+    size_t number_of_bytes = 0;
 
-    vec->data = realloc(vec->data, number_of_bytes * (size_t)(new_capacity));
+    switch (vec->T)
+    {
+        case INT:
+            number_of_bytes = sizeof(int);
+            vec->data_int = realloc(vec->data_int, number_of_bytes * (size_t)(new_capacity));
+            break;
+        case DOUBLE:
+            number_of_bytes = sizeof(double);
+            vec->data_double = realloc(vec->data_double, number_of_bytes * (size_t)(new_capacity));
+            break;
+        case FLOAT:
+            number_of_bytes = sizeof(float);
+            vec->data_float = realloc(vec->data_float, number_of_bytes * (size_t)(new_capacity));
+            break;
+        case CHAR:
+            number_of_bytes = sizeof(char);
+            vec->data_char = realloc(vec->data_char, number_of_bytes * (size_t)(new_capacity));
+            break;
+        case STR:
+            number_of_bytes = sizeof(char*);
+            vec->data_str = realloc(vec->data_str, number_of_bytes * (size_t)(new_capacity));
+            break;
+        case BOOL:
+            number_of_bytes = sizeof(bool);
+            vec->data_bool = realloc(vec->data_bool, number_of_bytes * (size_t)(new_capacity));
+            break;
+        case NONE: // default:
+            break;
+    }
+
     mem_usage.allocated += (u_int32_t)(number_of_bytes * (size_t)(new_capacity - vec->capacity));
     vec->capacity = new_capacity;
 }
@@ -215,130 +380,231 @@ static void capacity_reallocation(vector_t *vec, int size)
     }
 }
 
-static void null_index(vector_t *vec)
-{
-    vec->size--;
-    vec->data[vec->size] = NULL;
-}
-
 static void pop_last_index(vector_t *vec)
 {
-    free_T_value(vec->T, vec->data[vec->size-1]);
-    null_index(vec);
+    vec->size--;
     capacity_reallocation(vec, vec->size);
 }
 
-static int check_T_value(vector_t *vec, void *value)
+static void arg_at_vec_index(vector_t *vec, va_list args, int index)
 {
     switch (vec->T)
     {
         case INT:
-            return vector_check_value(vec, void_cast_int(value));
+            {
+                int value = va_arg(args, int);
+                vec->data_int[index] = value;
+            }
+            break;
         case DOUBLE:
-            return vector_check_value(vec, void_cast_double(value));
+            {
+                double value = va_arg(args, double);
+                vec->data_double[index] = value;
+            }
+            break;
         case FLOAT:
-            return vector_check_value(vec, void_cast_float(value));
+            {
+                float value = (float)va_arg(args, double);
+                vec->data_float[index] = value;
+            }
+            break;
         case CHAR:
-            return vector_check_value(vec, void_cast_char(value));
+            {
+                char value = (char)va_arg(args, int);
+                vec->data_char[index] = value;
+            }
+            break;
         case STR:
-            return vector_check_value(vec, void_cast_str(value));
+            {
+                char *value = va_arg(args, char*);
+                vec->data_str[index] = value;
+            }
+            break;
         case BOOL:
-            return vector_check_value(vec, void_cast_bool(value));
-        case NONE:
+             {
+                bool value = (bool)va_arg(args, int);
+                vec->data_bool[index] = value;
+            }
+            break;
+        case NONE: // default:
             break;
     }
+}
 
-    return -1;
+void print_vec_index(vector_t *vec, int index, const char *beginning, const char *end)
+{
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO | VEC_SIZE_GE,
+        __func__, index))
+    {
+        return;
+    }
+
+    switch (vec->T)
+    {
+        case INT:
+            printf("%s%d%s", beginning, vec->data_int[index], end);
+            break;
+        case DOUBLE:
+            printf("%s%.2f%s", beginning, vec->data_double[index], end);
+            break;
+        case FLOAT:
+            printf("%s%.2f%s", beginning, vec->data_float[index], end);
+            break;
+        case CHAR:
+            printf("%s%c%s", beginning, vec->data_char[index], end);
+            break;
+        case STR:
+            printf("%s%s%s", beginning, vec->data_str[index], end);
+            break;
+        case BOOL:
+            printf("%s%d%s", beginning, vec->data_bool[index], end);
+            break;
+        case NONE: // default:
+            break;
+    }
 }
 
 int get_vector_size(vector_t *vec)
 {
+    if (check_warnings(vec, VEC_NULL, __func__, WARNING_PLACEHOLDER))
+    {
+        return -1;
+    }
+
     return vec->size;
 }
 
 int get_vector_capacity(vector_t *vec)
 {
+    if (check_warnings(vec, VEC_NULL, __func__, WARNING_PLACEHOLDER))
+    {
+        return -1;
+    }
+
     return vec->capacity;
 }
 
 template_t get_vector_template(vector_t *vec)
 {
+    if (check_warnings(vec, VEC_NULL, __func__, WARNING_PLACEHOLDER))
+    {
+        return NONE;
+    }
+
     return vec->T;
 }
 
-vector_t *vector_init(template_t T, int size, ...)
+void vector_init(vector_t **vec, template_t T, int size, ...)
 {
+     if (check_warnings(*vec, VEC_ALLOC,
+        __func__, WARNING_PLACEHOLDER))
+    {
+        return;
+    }
+
     size_t number_of_bytes = sizeof(vector_t);
 
-    vector_t *new_vector = malloc(number_of_bytes);
-    new_vector->size = size;
-    new_vector->data = NULL;
-    new_vector->T = T;
+    *vec = malloc(number_of_bytes);
+    (*vec)->size = size;
+    (*vec)->T = T;
 
     mem_usage.allocated += (u_int32_t)(number_of_bytes);
 
-    if (new_vector->size <= 0)
+    if ((*vec)->size <= 0 || (*vec)->T == NONE)
     {
-        new_vector->size = 0;
-        new_vector->capacity = 0;
-        return new_vector;
+        (*vec)->size = 0;
+        (*vec)->capacity = 0;
+        return;
     }
 
-    new_void_elements(new_vector);
+    new_elements(*vec);
 
     va_list args;
     va_start(args, size);
 
-    for (int i = 0; i < new_vector->size; i++)
+    for (int i = 0; i < (*vec)->size; i++)
     {
-        new_vector->data[i] = new_arg_T_value(new_vector->T, args);
+        arg_at_vec_index(*vec, args, i);
     }
 
     va_end(args);
-
-    return new_vector;
 }
 
 void vector_push(vector_t *vec, ...)
 {
     if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE,
-        "vector_push", WARNING_PLACEHOLDER))
+        __func__, WARNING_PLACEHOLDER))
     {
         return;
     }
 
+    capacity_reallocation(vec, vec->size);
+
     va_list args;
     va_start(args, vec);
 
-    void *value = new_arg_T_value(vec->T, args);
+    arg_at_vec_index(vec, args, vec->size);
 
     va_end(args);
-
-    capacity_reallocation(vec, vec->size);
-    vec->data[vec->size] = value;
     vec->size++;
 }
 
 void vector_insert(vector_t *vec, int index, ...)
 {
     if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_G,
-        "vector_insert", index))
+        __func__, index))
     {
         return;
     }
 
     capacity_reallocation(vec, vec->size);
 
-    for (int i = vec->size; i > index; i--)
-    {
-        vec->data[i] = vec->data[i - 1];
-    }
-
     va_list args;
     va_start(args, index);
 
-    vec->data[index] = new_arg_T_value(vec->T, args);
+    switch (vec->T)
+    {
+        case INT:
+            for (int i = vec->size; i > index; i--)
+            {
+                vec->data_int[i] = vec->data_int[i - 1];
+            }
+            break;
+        case DOUBLE:
+            for (int i = vec->size; i > index; i--)
+            {
+                vec->data_double[i] = vec->data_double[i - 1];
+            }
+            break;
+        case FLOAT:
+            for (int i = vec->size; i > index; i--)
+            {
+                vec->data_float[i] = vec->data_float[i - 1];
+            }
+            break;
+        case CHAR:
+            for (int i = vec->size; i > index; i--)
+            {
+                vec->data_char[i] = vec->data_char[i - 1];
+            }
+            break;
+        case STR:
+            for (int i = vec->size; i > index; i--)
+            {
+                vec->data_str[i] = vec->data_str[i - 1];
+            }
+            break;
+        case BOOL:
+            for (int i = vec->size; i > index; i--)
+            {
+                vec->data_bool[i] = vec->data_bool[i - 1];
+            }
+            break;
+        case NONE: // default:
+            break;
+    }
 
+    arg_at_vec_index(vec, args, index);
     va_end(args);
 
     vec->size++;
@@ -347,7 +613,7 @@ void vector_insert(vector_t *vec, int index, ...)
 void vector_extend(vector_t *vec, int size, ...)
 {
     if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE,
-        "vector_extend", WARNING_PLACEHOLDER))
+        __func__, WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -361,7 +627,7 @@ void vector_extend(vector_t *vec, int size, ...)
     for (int i = original_size; i < vec->size; i++)
     {
         capacity_reallocation(vec, i);
-        vec->data[i] = new_arg_T_value(vec->T, args);
+        arg_at_vec_index(vec, args, i);
     }
 
     va_end(args);
@@ -369,8 +635,8 @@ void vector_extend(vector_t *vec, int size, ...)
 
 void vector_pop(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
-        "vector_pop", WARNING_PLACEHOLDER))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
+        __func__, WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -380,8 +646,8 @@ void vector_pop(vector_t *vec)
 
 void vector_pop_index(vector_t *vec, int index)
 {
-    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO | VEC_SIZE_GE,
-        "vector_pop_index", index))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO | VEC_SIZE_GE,
+        __func__, index))
     {
         return;
     }
@@ -394,60 +660,133 @@ void vector_pop_index(vector_t *vec, int index)
         return;
     }
 
-    free_T_value(vec->T, vec->data[index]);
-
-    for (int i = index; i < last_index; i++)
+    switch (vec->T)
     {
-        vec->data[i] = vec->data[i + 1];
+        case INT:
+            for (int i = index; i < last_index; i++)
+            {
+                vec->data_int[i] = vec->data_int[i + 1];
+            }
+            break;
+        case DOUBLE:
+            for (int i = index; i < last_index; i++)
+            {
+                vec->data_double[i] = vec->data_double[i + 1];
+            }
+            break;
+        case FLOAT:
+            for (int i = index; i < last_index; i++)
+            {
+                vec->data_float[i] = vec->data_float[i + 1];
+            }
+            break;
+        case CHAR:
+            for (int i = index; i < last_index; i++)
+            {
+                vec->data_char[i] = vec->data_char[i + 1];
+            }
+            break;
+        case STR:
+            for (int i = index; i < last_index; i++)
+            {
+                vec->data_str[i] = vec->data_str[i + 1];
+            }
+            break;
+        case BOOL:
+            for (int i = index; i < last_index; i++)
+            {
+                vec->data_bool[i] = vec->data_bool[i + 1];
+            }
+            break;
+        case NONE: // default:
+            break;
     }
 
-    null_index(vec);
+    vec->size--;
 
     capacity_reallocation(vec, vec->size);
 }
 
 void vector_remove_value(vector_t *vec, ...)
 {
-    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
-        "vector_remove_value", WARNING_PLACEHOLDER))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
+        __func__, WARNING_PLACEHOLDER))
     {
         return;
     }
 
+    int index = -1;
+
     va_list args;
     va_start(args, vec);
 
-    void *value = new_arg_T_value(vec->T, args);
-
-    va_end(args);
-
-    int index = check_T_value(vec, value);
+    switch (vec->T)
+    {
+        case INT:
+            index = vector_get_index(vec, va_arg(args, int));
+            break;
+        case DOUBLE:
+            index = vector_get_index(vec, va_arg(args, double));
+            break;
+        case FLOAT:
+            index = vector_get_index(vec, (float)va_arg(args, double));
+            break;
+        case CHAR:
+            index = vector_get_index(vec, (char)va_arg(args, int));
+            break;
+        case STR:
+            index = vector_get_index(vec, va_arg(args, char*));
+            break;
+        case BOOL:
+            index = vector_get_index(vec, (bool)va_arg(args, int));
+            break;
+        case NONE: // default:
+            break;
+    }
 
     if (index >= 0)
     {
         vector_pop_index(vec, index);
     }
 
-    free_T_value(vec->T, value);
+    va_end(args);
 }
 
 void *vector_at(vector_t *vec, int index)
 {
-    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO | VEC_SIZE_GE,
-        "vector_at", index))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO | VEC_SIZE_GE,
+        __func__, index))
     {
         return NULL;
     }
 
-    return index < 0 ? vec->data[vec->size + index] : vec->data[index];
+    switch (vec->T)
+    {
+        case INT:
+            return index < 0 ? &vec->data_int[vec->size + index] : &vec->data_int[index];
+        case DOUBLE:
+            return index < 0 ? &vec->data_double[vec->size + index] : &vec->data_double[index];
+        case FLOAT:
+            return index < 0 ? &vec->data_float[vec->size + index] : &vec->data_float[index];
+        case CHAR:
+            return index < 0 ? &vec->data_char[vec->size + index] : &vec->data_char[index];
+        case STR:
+            return index < 0 ? &vec->data_str[vec->size + index] : &vec->data_str[index];
+        case BOOL:
+            return index < 0 ? &vec->data_bool[vec->size + index] : &vec->data_bool[index];
+        case NONE: // default:
+            break;
+    }
+
+    return NULL;
 }
 
-void vector_at_range(vector_t *vec_dest, vector_t *vec_src, int start, int end, int step)
+void vector_at_range(vector_t **vec_dest, vector_t *vec_src, int start, int end, int step)
 {
-    if (check_warnings(vec_src, VEC_NULL | VEC_SIZE_ZERO,
-        "vector_at_range", WARNING_PLACEHOLDER) ||
-        check_warnings(vec_dest, VEC_CAPACITY | VEC_STEP,
-        "vector_at_range", step))
+    if (check_warnings(vec_src, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
+        __func__, WARNING_PLACEHOLDER) ||
+        check_warnings(*vec_dest, VEC_ALLOC | VEC_STEP,
+        __func__, step))
     {
         return;
     }
@@ -468,28 +807,75 @@ void vector_at_range(vector_t *vec_dest, vector_t *vec_src, int start, int end, 
 
     if (start < 0 || end > vec_src->size || (end - start) <= 0)
     {
-        printf("vector_at_range: \033[1;95mwarning:\033[1;97m indices out of range\033[0m\n");
+        printf("%s: \033[1;95mwarning:\033[1;97m indices out of range\033[0m\n", __func__);
         return;
     }
 
+    size_t number_of_bytes = sizeof(vector_t);
+
+    *vec_dest = malloc(number_of_bytes);
+    mem_usage.allocated += number_of_bytes;
+
     int step_counter = 0;
-    vec_dest->size = ceil_int((end - start), step);
-    vec_dest->T = vec_src->T;
+    (*vec_dest)->size = ceil_int((end - start), step);
+    (*vec_dest)->T = vec_src->T;
     step--;
 
-    new_void_elements(vec_dest);
+    new_elements(*vec_dest);
 
-    for (int i = 0; i < vec_dest->size; i++)
+    switch ((*vec_dest)->T)
     {
-        vec_dest->data[i] = new_T_value(vec_dest->T, vec_src->data[i + start + step_counter]);
-        step_counter += step;
+        case INT:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_int[i] = vec_src->data_int[i + start + step_counter];
+                step_counter += step;
+            }
+            break;
+        case DOUBLE:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_double[i] = vec_src->data_double[i + start + step_counter];
+                step_counter += step;
+            }
+            break;
+        case FLOAT:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_float[i] = vec_src->data_float[i + start + step_counter];
+                step_counter += step;
+            }
+            break;
+        case CHAR:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_char[i] = vec_src->data_char[i + start + step_counter];
+                step_counter += step;
+            }
+            break;
+        case STR:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_str[i] = vec_src->data_str[i + start + step_counter];
+                step_counter += step;
+            }
+            break;
+        case BOOL:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_bool[i] = vec_src->data_bool[i + start + step_counter];
+                step_counter += step;
+            }
+            break;
+        case NONE: // default:
+            break;
     }
 }
 
-int vector_check_value(vector_t *vec, ...)
+int vector_get_index(vector_t *vec, ...)
 {
-    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
-        "vector_check_value", WARNING_PLACEHOLDER))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
+        __func__, WARNING_PLACEHOLDER))
     {
         return -1;
     }
@@ -497,110 +883,333 @@ int vector_check_value(vector_t *vec, ...)
     va_list args;
     va_start(args, vec);
 
-    void *value = new_arg_T_value(vec->T, args);
-
-    va_end(args);
-
-    for (int i = 0; i < vec->size; i++)
+    switch (vec->T)
     {
-        if (check_equal_value(vec->T, value, vec->data[i], false))
-        {
-            free_T_value(vec->T, value);
-            return i;
-        }
+        case INT:
+            {
+                int value = va_arg(args, int);
+
+                for (int i = 0; i < vec->size; i++)
+                {
+                    if (value == vec->data_int[i])
+                    {
+                        va_end(args);
+                        return i;
+                    }
+                }
+            }          
+            break;
+        case DOUBLE:
+            {
+                double value = va_arg(args, double);
+
+                for (int i = 0; i < vec->size; i++)
+                {
+                    if (check_double_equal(value, vec->data_double[i]))
+                    {
+                        va_end(args);
+                        return i;
+                    }
+                }
+            }      
+            break;
+        case FLOAT:
+            {
+                float value = (float)va_arg(args, double);
+
+                for (int i = 0; i < vec->size; i++)
+                {
+                    if (check_float_equal(value, vec->data_float[i]))
+                    {
+                        va_end(args);
+                        return i;
+                    }
+                }
+            }   
+            break;
+        case CHAR:
+            {
+                char value = (char)va_arg(args, int);
+
+                for (int i = 0; i < vec->size; i++)
+                {
+                    if (value == vec->data_char[i])
+                    {
+                        va_end(args);
+                        return i;
+                    }
+                }
+            }
+            break;
+        case STR:
+            {
+                char *value = va_arg(args, char*);
+                int value_len = get_ascii_size(value);
+
+                for (int i = 0; i < vec->size; i++)
+                {
+                    if (value_len == get_ascii_size(vec->data_str[i]))
+                    {
+                        va_end(args);
+                        return i;
+                    }
+                }
+            }
+            break;
+        case BOOL:
+            {
+                bool value = (bool)va_arg(args, int);
+
+                for (int i = 0; i < vec->size; i++)
+                {
+                    if (value == vec->data_bool[i])
+                    {
+                        va_end(args);
+                        return i;
+                    }
+                }
+            }
+            break;
+        case NONE: // default:
+            break;
     }
 
-    free_T_value(vec->T, value);
+    va_end(args);
     return -1;
 }
 
 void vector_reverse(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
-        "vector_reverse", WARNING_PLACEHOLDER))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
+        __func__, WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    void *temp = NULL;
     int half_size = vec->size / 2;
     int last_index = vec->size - 1;
 
-    for (int i = 0; i < half_size; i++)
+    switch (vec->T)
     {
-        temp = vec->data[i];
-        vec->data[i] = vec->data[last_index - i];
-        vec->data[last_index - i] = temp;
+        case INT:
+            {
+                int temp = 0;
+
+                for (int i = 0; i < half_size; i++)
+                {
+                    temp = vec->data_int[i];
+                    vec->data_int[i] = vec->data_int[last_index - i];
+                    vec->data_int[last_index - i] = temp;
+                }
+            }
+            break;
+        case DOUBLE:
+            {
+                double temp = 0.0;
+
+                for (int i = 0; i < half_size; i++)
+                {
+                    temp = vec->data_double[i];
+                    vec->data_double[i] = vec->data_double[last_index - i];
+                    vec->data_double[last_index - i] = temp;
+                }
+            }
+            break;
+        case FLOAT:
+            {
+                float temp = 0.0f;
+
+                for (int i = 0; i < half_size; i++)
+                {
+                    temp = vec->data_float[i];
+                    vec->data_float[i] = vec->data_float[last_index - i];
+                    vec->data_float[last_index - i] = temp;
+                }
+            }
+            break;
+        case CHAR:
+             {
+                char temp = 0;
+
+                for (int i = 0; i < half_size; i++)
+                {
+                    temp = vec->data_char[i];
+                    vec->data_char[i] = vec->data_char[last_index - i];
+                    vec->data_char[last_index - i] = temp;
+                }
+            }
+            break;
+        case STR:
+            {
+                char *temp = "";
+
+                for (int i = 0; i < half_size; i++)
+                {
+                    temp = vec->data_str[i];
+                    vec->data_str[i] = vec->data_str[last_index - i];
+                    vec->data_str[last_index - i] = temp;
+                }
+            }
+            break;
+        case BOOL:
+            {
+                bool temp = false;
+
+                for (int i = 0; i < half_size; i++)
+                {
+                    temp = vec->data_bool[i];
+                    vec->data_bool[i] = vec->data_bool[last_index - i];
+                    vec->data_bool[last_index - i] = temp;
+                }
+            }
+            break;
+        case NONE: // default:
+            break;
     }
 }
 
 void vector_sort(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
-        "vector_sort", WARNING_PLACEHOLDER))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
+        __func__, WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    insertion_sort(vec->T, vec->data, vec->size);
-}
-
-void vector_copy(vector_t *vec_dest, vector_t *vec_src)
-{
-    if (check_warnings(vec_src, VEC_NULL | VEC_SIZE_ZERO,
-        "vector_copy", WARNING_PLACEHOLDER) ||
-        check_warnings(vec_dest, VEC_CAPACITY, "vector_copy", WARNING_PLACEHOLDER))
+    switch (vec->T)
     {
-        return;
-    }
-
-    vec_dest->size = vec_src->size;
-    vec_dest->data = NULL;
-
-    if (vec_dest->size == 0)
-    {
-        vec_dest->capacity = 0;
-        return;
-    }
-
-    vec_dest->T = vec_src->T;
-
-    new_void_elements(vec_dest);
-
-    for (int i = 0; i < vec_dest->size; i++)
-    {
-        vec_dest->data[i] = new_T_value(vec_dest->T, vec_src->data[i]);
+        case INT:
+            insertion_sort_int(vec);
+            break;
+        case DOUBLE:
+            insertion_sort_double(vec);
+            break;
+        case FLOAT:
+            insertion_sort_float(vec);
+            break;
+        case CHAR:
+            insertion_sort_char(vec);
+            break;
+        case STR:
+            insertion_sort_str(vec);
+            break;
+        case BOOL:
+            insertion_sort_bool(vec);
+            break;
+        case NONE: // default:
+            break;
     }
 }
 
-void vector_free(vector_t *vec)
+void vector_copy(vector_t **vec_dest, vector_t *vec_src)
 {
-    if (check_warnings(vec, VEC_NULL, "vector_free", WARNING_PLACEHOLDER))
+    if (check_warnings(vec_src, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
+        __func__, WARNING_PLACEHOLDER) ||
+        check_warnings(*vec_dest, VEC_ALLOC, 
+        __func__, WARNING_PLACEHOLDER))
     {
         return;
     }
 
-    for (int i = 0; i < vec->size; i++)
+    size_t number_of_bytes = sizeof(vector_t);
+    mem_usage.allocated += number_of_bytes;
+
+    *vec_dest = malloc(number_of_bytes);
+    (*vec_dest)->size = vec_src->size;
+    (*vec_dest)->T = vec_src->T;
+
+    new_elements(*vec_dest);
+
+    switch ((*vec_dest)->T)
     {
-        free_T_value(vec->T, vec->data[i]);
-        vec->data[i] = NULL;
+        case INT:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_int[i] = vec_src->data_int[i];
+            }
+            break;
+        case DOUBLE:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_double[i] = vec_src->data_double[i];
+            }
+            break;
+        case FLOAT:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_float[i] = vec_src->data_float[i];
+            }
+            break;
+        case CHAR:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_char[i] = vec_src->data_char[i];
+            }
+            break;
+        case STR:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_str[i] = vec_src->data_str[i];
+            }
+            break;
+        case BOOL:
+            for (int i = 0; i < (*vec_dest)->size; i++)
+            {
+                (*vec_dest)->data_bool[i] = vec_src->data_bool[i];
+            }
+            break;
+        case NONE: // default:
+            break;
+    }
+}
+
+void vector_free(vector_t **vec)
+{
+    if (check_warnings(*vec, VEC_NULL, __func__, WARNING_PLACEHOLDER))
+    {
+        return;
     }
 
-    mem_usage.freed += (u_int32_t)(vec->capacity * (int)sizeof(void*));
+    switch ((*vec)->T)
+    {
+        case INT:
+            free((*vec)->data_int);
+            mem_usage.freed += (u_int32_t)(sizeof(int) * (size_t)(*vec)->capacity);
+            break;
+        case DOUBLE:
+            free((*vec)->data_double);
+            mem_usage.freed += (u_int32_t)(sizeof(double) * (size_t)(*vec)->capacity);
+            break;
+        case FLOAT:
+            free((*vec)->data_float);
+            mem_usage.freed += (u_int32_t)(sizeof(float) * (size_t)(*vec)->capacity);
+            break;
+        case CHAR:
+            free((*vec)->data_char);
+            mem_usage.freed += (u_int32_t)(sizeof(char) * (size_t)(*vec)->capacity);
+            break;
+        case STR:
+            free((*vec)->data_str);
+            mem_usage.freed += (u_int32_t)(sizeof(char*) * (size_t)(*vec)->capacity);
+            break;
+        case BOOL:
+            free((*vec)->data_bool);
+            mem_usage.freed += (u_int32_t)(sizeof(bool) * (size_t)(*vec)->capacity);
+            break;
+        case NONE: // default:
+            break;
+    }
+
+    free(*vec);
     mem_usage.freed += (u_int32_t)(sizeof(vector_t));
 
-    vec->size = 0;
-    vec->capacity = 0;
-    vec->T = NONE;
-    free(vec->data);
-    vec->data = NULL;
-    free(vec);
+    *vec = NULL;
 }
 
 void vector_print(vector_t *vec)
 {
-    if (check_warnings(vec, VEC_NULL | VEC_SIZE_ZERO,
-        "vector_print", WARNING_PLACEHOLDER))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
+        __func__, WARNING_PLACEHOLDER))
     {
         return;
     }
@@ -609,8 +1218,8 @@ void vector_print(vector_t *vec)
 
     for (i = 0; i < vec->size-1; i++)
     {
-        print_t(vec->T, vec->data[i], "|", "| ");
+        print_vec_index(vec, i, "|", "| ");
     }
 
-    print_t(vec->T, vec->data[i], "|", "|\n");
+    print_vec_index(vec, i, "|", "|\n");
 }
