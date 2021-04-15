@@ -16,4 +16,7 @@ void print_total_mem();
 void print_allocated_mem();
 void print_freed_mem();
 
+void *new_mem(size_t bytes);
+void free_mem(void *mem, size_t bytes);
+
 #endif /* ALLOCATION_METRICS_H */

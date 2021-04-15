@@ -16,3 +16,15 @@ void print_freed_mem()
 {
     printf("Memory Freed: %d Bytes\n", mem_usage.freed);
 }
+
+void *new_mem(size_t bytes)
+{
+    mem_usage.allocated += (u_int32_t)bytes;
+    return malloc(bytes);
+}
+
+void free_mem(void *mem, size_t bytes)
+{
+    mem_usage.freed += (u_int32_t)bytes;
+    free(mem);
+}

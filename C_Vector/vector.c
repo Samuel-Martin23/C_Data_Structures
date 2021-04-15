@@ -294,40 +294,31 @@ static int round_nearest_capacity(int value)
 
 static void new_elements(vector_t *vec)
 {
-    size_t number_of_bytes = 0;
     vec->capacity = round_nearest_capacity(vec->size);
 
     switch (vec->T)
     {
         case INT:
-            number_of_bytes = sizeof(int) * (size_t)vec->capacity;
-            vec->data_int = malloc(number_of_bytes);
+            vec->data_int = new_mem(sizeof(int) * (size_t)vec->capacity);
             break;
         case DOUBLE:
-            number_of_bytes = sizeof(double) * (size_t)vec->capacity;
-            vec->data_double = malloc(number_of_bytes);
+            vec->data_double = new_mem(sizeof(double) * (size_t)vec->capacity);
             break;
         case FLOAT:
-            number_of_bytes = sizeof(float) * (size_t)vec->capacity;
-            vec->data_float = malloc(number_of_bytes);
+            vec->data_float = new_mem(sizeof(float) * (size_t)vec->capacity);
             break;
         case CHAR:
-            number_of_bytes = sizeof(char) * (size_t)vec->capacity;
-            vec->data_char = malloc(number_of_bytes);
+            vec->data_char = new_mem(sizeof(char) * (size_t)vec->capacity);
             break;
         case STR:
-            number_of_bytes = sizeof(char*) * (size_t)vec->capacity;
-            vec->data_str = malloc(number_of_bytes);
+            vec->data_str = new_mem(sizeof(char*) * (size_t)vec->capacity);
             break;
         case BOOL:
-            number_of_bytes = sizeof(bool) * (size_t)vec->capacity;
-            vec->data_bool = malloc(number_of_bytes);
+            vec->data_bool = new_mem(sizeof(bool) * (size_t)vec->capacity);
             break;
         case NONE: // default:
             break;
     }
-
-    mem_usage.allocated += (u_int32_t)(number_of_bytes);
 }
 
 static void realloc_void_elements(vector_t *vec, int new_capacity)
@@ -386,7 +377,7 @@ static void pop_last_index(vector_t *vec)
     capacity_reallocation(vec, vec->size);
 }
 
-static void arg_at_vec_index(vector_t *vec, va_list args, int index)
+static void arg_at_vec_index(vector_t *vec, int index, va_list args)
 {
     switch (vec->T)
     {
@@ -502,13 +493,9 @@ void vector_init(vector_t **vec, template_t T, int size, ...)
         return;
     }
 
-    size_t number_of_bytes = sizeof(vector_t);
-
-    *vec = malloc(number_of_bytes);
+    *vec = new_mem(sizeof(vector_t));
     (*vec)->size = size;
     (*vec)->T = T;
-
-    mem_usage.allocated += (u_int32_t)(number_of_bytes);
 
     if ((*vec)->size <= 0 || (*vec)->T == NONE)
     {
@@ -524,7 +511,7 @@ void vector_init(vector_t **vec, template_t T, int size, ...)
 
     for (int i = 0; i < (*vec)->size; i++)
     {
-        arg_at_vec_index(*vec, args, i);
+        arg_at_vec_index(*vec, i, args);
     }
 
     va_end(args);
@@ -543,7 +530,7 @@ void vector_push(vector_t *vec, ...)
     va_list args;
     va_start(args, vec);
 
-    arg_at_vec_index(vec, args, vec->size);
+    arg_at_vec_index(vec, vec->size, args);
 
     va_end(args);
     vec->size++;
@@ -604,7 +591,7 @@ void vector_insert(vector_t *vec, int index, ...)
             break;
     }
 
-    arg_at_vec_index(vec, args, index);
+    arg_at_vec_index(vec, index, args);
     va_end(args);
 
     vec->size++;
@@ -627,7 +614,7 @@ void vector_extend(vector_t *vec, int size, ...)
     for (int i = original_size; i < vec->size; i++)
     {
         capacity_reallocation(vec, i);
-        arg_at_vec_index(vec, args, i);
+        arg_at_vec_index(vec, i, args);
     }
 
     va_end(args);
@@ -811,10 +798,7 @@ void vector_at_range(vector_t **vec_dest, vector_t *vec_src, int start, int end,
         return;
     }
 
-    size_t number_of_bytes = sizeof(vector_t);
-
-    *vec_dest = malloc(number_of_bytes);
-    mem_usage.allocated += number_of_bytes;
+    *vec_dest = new_mem(sizeof(vector_t));
 
     int step_counter = 0;
     (*vec_dest)->size = ceil_int((end - start), step);
@@ -1111,56 +1095,7 @@ void vector_copy(vector_t **vec_dest, vector_t *vec_src)
         return;
     }
 
-    size_t number_of_bytes = sizeof(vector_t);
-    mem_usage.allocated += number_of_bytes;
-
-    *vec_dest = malloc(number_of_bytes);
-    (*vec_dest)->size = vec_src->size;
-    (*vec_dest)->T = vec_src->T;
-
-    new_elements(*vec_dest);
-
-    switch ((*vec_dest)->T)
-    {
-        case INT:
-            for (int i = 0; i < (*vec_dest)->size; i++)
-            {
-                (*vec_dest)->data_int[i] = vec_src->data_int[i];
-            }
-            break;
-        case DOUBLE:
-            for (int i = 0; i < (*vec_dest)->size; i++)
-            {
-                (*vec_dest)->data_double[i] = vec_src->data_double[i];
-            }
-            break;
-        case FLOAT:
-            for (int i = 0; i < (*vec_dest)->size; i++)
-            {
-                (*vec_dest)->data_float[i] = vec_src->data_float[i];
-            }
-            break;
-        case CHAR:
-            for (int i = 0; i < (*vec_dest)->size; i++)
-            {
-                (*vec_dest)->data_char[i] = vec_src->data_char[i];
-            }
-            break;
-        case STR:
-            for (int i = 0; i < (*vec_dest)->size; i++)
-            {
-                (*vec_dest)->data_str[i] = vec_src->data_str[i];
-            }
-            break;
-        case BOOL:
-            for (int i = 0; i < (*vec_dest)->size; i++)
-            {
-                (*vec_dest)->data_bool[i] = vec_src->data_bool[i];
-            }
-            break;
-        case NONE: // default:
-            break;
-    }
+    vector_at_range(vec_dest, vec_src, 0, 0, 1);
 }
 
 void vector_free(vector_t **vec)
@@ -1173,36 +1108,28 @@ void vector_free(vector_t **vec)
     switch ((*vec)->T)
     {
         case INT:
-            free((*vec)->data_int);
-            mem_usage.freed += (u_int32_t)(sizeof(int) * (size_t)(*vec)->capacity);
+            free_mem((*vec)->data_int, (sizeof(int) * (size_t)(*vec)->capacity));
             break;
         case DOUBLE:
-            free((*vec)->data_double);
-            mem_usage.freed += (u_int32_t)(sizeof(double) * (size_t)(*vec)->capacity);
+            free_mem((*vec)->data_double, (sizeof(double) * (size_t)(*vec)->capacity));
             break;
         case FLOAT:
-            free((*vec)->data_float);
-            mem_usage.freed += (u_int32_t)(sizeof(float) * (size_t)(*vec)->capacity);
+            free_mem((*vec)->data_float, (sizeof(float) * (size_t)(*vec)->capacity));
             break;
         case CHAR:
-            free((*vec)->data_char);
-            mem_usage.freed += (u_int32_t)(sizeof(char) * (size_t)(*vec)->capacity);
+            free_mem((*vec)->data_char, (sizeof(char) * (size_t)(*vec)->capacity));
             break;
         case STR:
-            free((*vec)->data_str);
-            mem_usage.freed += (u_int32_t)(sizeof(char*) * (size_t)(*vec)->capacity);
+            free_mem((*vec)->data_str, (sizeof(char*) * (size_t)(*vec)->capacity));
             break;
         case BOOL:
-            free((*vec)->data_bool);
-            mem_usage.freed += (u_int32_t)(sizeof(bool) * (size_t)(*vec)->capacity);
+            free_mem((*vec)->data_bool, (sizeof(bool) * (size_t)(*vec)->capacity));
             break;
         case NONE: // default:
             break;
     }
 
-    free(*vec);
-    mem_usage.freed += (u_int32_t)(sizeof(vector_t));
-
+    free_mem(*vec, sizeof(vector_t));
     *vec = NULL;
 }
 
