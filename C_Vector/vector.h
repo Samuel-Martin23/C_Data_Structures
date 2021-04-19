@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
-#include "../C_Template/template.h"
-#include "../C_Allocation_Metrics/allocation_metrics.h"
+#include "../../C_Template/template.h"
+#include "../../C_Allocation_Metrics/allocation_metrics.h"
 
 #define DEFAULT_CAPACITY_SIZE       100
 

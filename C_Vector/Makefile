@@ -2,8 +2,8 @@ CC = clang
 flags = -std=c17 -Wall -Wextra -Wconversion -Wunreachable-code -Wnewline-eof -Wno-error=unused-variable -Wshadow -Wfloat-equal -Wcovered-switch-default -Wunreachable-code-break
 
 object_files = main.o vector.o
-template_dir = ../C_Template/
-allocation_metrics_dir = ../C_Allocation_Metrics/
+template_dir = ../../C_Template/
+allocation_metrics_dir = ../../C_Allocation_Metrics/
 name_of_executable = program
 
 template_lib = -Wl,-rpath,$(template_dir) -L$(template_dir) -ltemplate
