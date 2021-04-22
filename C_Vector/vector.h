@@ -17,7 +17,7 @@ int get_vector_size(vector_t *vec);
 int get_vector_capacity(vector_t *vec);
 template_t get_vector_template(vector_t *vec);
 
-vector_t *alloc_vector(template_t T, int size, ...);
+vector_t *vector_alloc(template_t T, int size, ...);
 void vector_push(vector_t *vec, ...);
 void vector_insert(vector_t *vec, int index, ...);
 void vector_extend(vector_t *vec, int size, ...);

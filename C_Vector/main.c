@@ -2,7 +2,7 @@
 
 int main()
 {
-    vector_t *scores = alloc_vector(INT, 5, 23, 1, 3, 2, 4);    // |23| |1| |3| |2| |4|
+    vector_t *scores = vector_alloc(INT, 5, 23, 1, 3, 2, 4);    // |23| |1| |3| |2| |4|
     vector_push(scores, 6);                                     // |23| |1| |3| |2| |4| |6|
     vector_pop(scores);                                         // |23| |1| |3| |2| |4|
     vector_pop_index(scores, 0);                                // |1| |3| |2| |4|

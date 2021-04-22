@@ -485,7 +485,7 @@ template_t get_vector_template(vector_t *vec)
     return vec->T;
 }
 
-vector_t *alloc_vector(template_t T, int size, ...)
+vector_t *vector_alloc(template_t T, int size, ...)
 {
     vector_t *vec = alloc_mem(sizeof(vector_t));
     vec->size = size;
