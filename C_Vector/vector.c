@@ -299,22 +299,22 @@ static void new_elements(vector_t *vec)
     switch (vec->T)
     {
         case INT:
-            vec->data_int = new_mem(sizeof(int) * (size_t)vec->capacity);
+            vec->data_int = alloc_mem(sizeof(int) * (size_t)vec->capacity);
             break;
         case DOUBLE:
-            vec->data_double = new_mem(sizeof(double) * (size_t)vec->capacity);
+            vec->data_double = alloc_mem(sizeof(double) * (size_t)vec->capacity);
             break;
         case FLOAT:
-            vec->data_float = new_mem(sizeof(float) * (size_t)vec->capacity);
+            vec->data_float = alloc_mem(sizeof(float) * (size_t)vec->capacity);
             break;
         case CHAR:
-            vec->data_char = new_mem(sizeof(char) * (size_t)vec->capacity);
+            vec->data_char = alloc_mem(sizeof(char) * (size_t)vec->capacity);
             break;
         case STR:
-            vec->data_str = new_mem(sizeof(char*) * (size_t)vec->capacity);
+            vec->data_str = alloc_mem(sizeof(char*) * (size_t)vec->capacity);
             break;
         case BOOL:
-            vec->data_bool = new_mem(sizeof(bool) * (size_t)vec->capacity);
+            vec->data_bool = alloc_mem(sizeof(bool) * (size_t)vec->capacity);
             break;
         case NONE: // default:
             break;
@@ -485,36 +485,32 @@ template_t get_vector_template(vector_t *vec)
     return vec->T;
 }
 
-void vector_init(vector_t **vec, template_t T, int size, ...)
+vector_t *alloc_vector(template_t T, int size, ...)
 {
-     if (check_warnings(*vec, VEC_ALLOC,
-        __func__, WARNING_PLACEHOLDER))
+    vector_t *vec = alloc_mem(sizeof(vector_t));
+    vec->size = size;
+    vec->T = T;
+
+    if (vec->size <= 0 || vec->T == NONE)
     {
-        return;
+        vec->size = 0;
+        vec->capacity = 0;
+        return vec;
     }
 
-    *vec = new_mem(sizeof(vector_t));
-    (*vec)->size = size;
-    (*vec)->T = T;
-
-    if ((*vec)->size <= 0 || (*vec)->T == NONE)
-    {
-        (*vec)->size = 0;
-        (*vec)->capacity = 0;
-        return;
-    }
-
-    new_elements(*vec);
+    new_elements(vec);
 
     va_list args;
     va_start(args, size);
 
-    for (int i = 0; i < (*vec)->size; i++)
+    for (int i = 0; i < vec->size; i++)
     {
-        arg_at_vec_index(*vec, i, args);
+        arg_at_vec_index(vec, i, args);
     }
 
     va_end(args);
+
+    return vec;
 }
 
 void vector_push(vector_t *vec, ...)
@@ -798,7 +794,7 @@ void vector_at_range(vector_t **vec_dest, vector_t *vec_src, int start, int end,
         return;
     }
 
-    *vec_dest = new_mem(sizeof(vector_t));
+    *vec_dest = alloc_mem(sizeof(vector_t));
 
     int step_counter = 0;
     (*vec_dest)->size = ceil_int((end - start), step);
