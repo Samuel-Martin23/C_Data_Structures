@@ -13,6 +13,7 @@
 typedef struct vector vector_t;
 
 void print_vec_index(vector_t *vec, int index, const char *beginning, const char *end);
+size_t get_sizeof_vector();
 int get_vector_size(vector_t *vec);
 int get_vector_capacity(vector_t *vec);
 template_t get_vector_template(vector_t *vec);
@@ -25,11 +26,11 @@ void vector_pop(vector_t *vec);
 void vector_pop_index(vector_t *vec, int index);
 void vector_remove_value(vector_t *vec, ...);
 void *vector_at(vector_t *vec, int index);
-void vector_at_range(vector_t **vec_dest, vector_t *vec_src, int start, int end, int step);
+vector_t *vector_range_alloc(vector_t *vec_src, int *start_opt, int *end_opt, int *step_opt);
 int vector_get_index(vector_t *vec, ...);
 void vector_reverse(vector_t *vec);
 void vector_sort(vector_t *vec);
-void vector_copy(vector_t **vec_dest, vector_t *vec_src);
+vector_t *vector_copy_alloc(vector_t *vec);
 void vector_free(vector_t **vec);
 void vector_print(vector_t *vec);
 

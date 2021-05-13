@@ -148,11 +148,11 @@ static bool check_warnings(vector_t *vec, u_int16_t warning_code, const char *fu
     {
         int step = check_value;
 
-        if (step <= 0)
+        if (step == 0)
         {
             if (!(warning_code & TURN_OFF_WARNING))
             {
-                printf("%s: %swarning:%s slice step cannot be less than or equal to zero%s\n", function_name, purple, white, reset);
+                printf("%s: %swarning:%s slice step cannot be equal to zero%s\n", function_name, purple, white, reset);
             }
 
             return true;
@@ -282,6 +282,61 @@ static void insertion_sort_bool(vector_t *vec)
     }
 }
 
+static int get_start_index(int *start_opt, int size, bool is_step_neg)
+{
+    if (start_opt == NULL)
+    {
+        return is_step_neg ? (size - 1) : 0;
+    }
+
+    int start = *start_opt;
+
+    if (start < 0)
+    {
+        start += size;
+    }
+
+    return start;
+}
+
+static int get_end_index(int *end_opt, int size, bool is_step_neg)
+{
+    if (end_opt == NULL)
+    {
+        return is_step_neg ? -1 : size;
+    }
+
+    int end = *end_opt;
+
+    if (end < 0)
+    {
+        end += size;
+    }
+    else if (end > size)
+    {
+        end = size;
+    }
+
+    return end;
+}
+
+static int get_range_size(int start, int end, bool is_step_neg)
+{
+    if (start < 0)
+    {
+        return 0;
+    }
+
+    int sub_str_size = is_step_neg ? (start - end) : (end - start);
+
+    if (sub_str_size <= 0)
+    {
+        return 0;
+    }
+
+    return sub_str_size;
+}
+
 static int ceil_int(int x, int y) 
 {
     return (int)ceil(x / (double)y);
@@ -289,10 +344,10 @@ static int ceil_int(int x, int y)
 
 static int round_nearest_capacity(int value)
 {
-    return (int)(ceil(value / (double)DEFAULT_CAPACITY_SIZE) * DEFAULT_CAPACITY_SIZE);
+    return (ceil_int(value, DEFAULT_CAPACITY_SIZE) * DEFAULT_CAPACITY_SIZE);
 }
 
-static void new_elements(vector_t *vec)
+static void alloc_indices(vector_t *vec)
 {
     vec->capacity = round_nearest_capacity(vec->size);
 
@@ -382,40 +437,22 @@ static void arg_at_vec_index(vector_t *vec, int index, va_list args)
     switch (vec->T)
     {
         case INT:
-            {
-                int value = va_arg(args, int);
-                vec->data_int[index] = value;
-            }
+            vec->data_int[index] = va_arg(args, int);
             break;
         case DOUBLE:
-            {
-                double value = va_arg(args, double);
-                vec->data_double[index] = value;
-            }
+            vec->data_double[index] = va_arg(args, double);
             break;
         case FLOAT:
-            {
-                float value = (float)va_arg(args, double);
-                vec->data_float[index] = value;
-            }
+            vec->data_float[index] = (float)va_arg(args, double);
             break;
         case CHAR:
-            {
-                char value = (char)va_arg(args, int);
-                vec->data_char[index] = value;
-            }
+            vec->data_char[index] = (char)va_arg(args, int);
             break;
         case STR:
-            {
-                char *value = va_arg(args, char*);
-                vec->data_str[index] = value;
-            }
+            vec->data_str[index] = va_arg(args, char*);
             break;
         case BOOL:
-             {
-                bool value = (bool)va_arg(args, int);
-                vec->data_bool[index] = value;
-            }
+            vec->data_bool[index] = (bool)va_arg(args, int);
             break;
         case NONE: // default:
             break;
@@ -453,6 +490,11 @@ void print_vec_index(vector_t *vec, int index, const char *beginning, const char
         case NONE: // default:
             break;
     }
+}
+
+size_t get_sizeof_vector()
+{
+    return sizeof(vector_t);
 }
 
 int get_vector_size(vector_t *vec)
@@ -498,7 +540,7 @@ vector_t *vector_alloc(template_t T, int size, ...)
         return vec;
     }
 
-    new_elements(vec);
+    alloc_indices(vec);
 
     va_list args;
     va_start(args, size);
@@ -685,9 +727,7 @@ void vector_pop_index(vector_t *vec, int index)
             break;
     }
 
-    vec->size--;
-
-    capacity_reallocation(vec, vec->size);
+    pop_last_index(vec);
 }
 
 void vector_remove_value(vector_t *vec, ...)
@@ -764,92 +804,98 @@ void *vector_at(vector_t *vec, int index)
     return NULL;
 }
 
-void vector_at_range(vector_t **vec_dest, vector_t *vec_src, int start, int end, int step)
+vector_t *vector_range_alloc(vector_t *vec, int *start_opt, int *end_opt, int *step_opt)
 {
-    if (check_warnings(vec_src, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
-        __func__, WARNING_PLACEHOLDER) ||
-        check_warnings(*vec_dest, VEC_ALLOC | VEC_STEP,
-        __func__, step))
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
+        __func__, WARNING_PLACEHOLDER))
     {
-        return;
+        return NULL;
     }
 
-    if (start < 0)
+    int step = 0;
+
+    if (step_opt == NULL)
     {
-        start = vec_src->size + start;
+        step = 1;
+    }
+    else if (check_warnings(NULL, VEC_STEP, __func__, *step_opt))
+    {
+        return NULL;
+    }
+    else
+    {
+        step = *step_opt;
     }
 
-    if (end == 0)
+    bool is_step_neg = (step < 0);
+    int start = get_start_index(start_opt, vec->size, is_step_neg);
+    int end = get_end_index(end_opt, vec->size, is_step_neg);
+    int size = get_range_size(start, end, is_step_neg);
+
+    vector_t *vec_range = alloc_mem(sizeof(vector_t));
+    vec_range->T = vec->T;
+
+    if (size == 0)
     {
-        end = vec_src->size;
-    }
-    else if (end < 0)
-    {
-        end = vec_src->size + end;
+        vec_range->size = 0;
+        vec_range->capacity = 0;
+        return vec_range;
     }
 
-    if (start < 0 || end > vec_src->size || (end - start) <= 0)
-    {
-        printf("%s: \033[1;95mwarning:\033[1;97m indices out of range\033[0m\n", __func__);
-        return;
-    }
+    int abs_step = abs(step);
 
-    *vec_dest = alloc_mem(sizeof(vector_t));
+    vec_range->size = (abs_step >= size) ? 1 : ceil_int(size, abs_step);
+    alloc_indices(vec_range);
 
-    int step_counter = 0;
-    (*vec_dest)->size = ceil_int((end - start), step);
-    (*vec_dest)->T = vec_src->T;
-    step--;
-
-    new_elements(*vec_dest);
-
-    switch ((*vec_dest)->T)
+    switch (vec_range->T)
     {
         case INT:
-            for (int i = 0; i < (*vec_dest)->size; i++)
+            for (int i = 0; i < vec_range->size; i++)
             {
-                (*vec_dest)->data_int[i] = vec_src->data_int[i + start + step_counter];
-                step_counter += step;
+                vec_range->data_int[i] = vec->data_int[start];
+                start += step;
             }
             break;
         case DOUBLE:
-            for (int i = 0; i < (*vec_dest)->size; i++)
+            for (int i = 0; i < vec_range->size; i++)
             {
-                (*vec_dest)->data_double[i] = vec_src->data_double[i + start + step_counter];
-                step_counter += step;
+                vec_range->data_double[i] = vec->data_double[start];
+                start += step;
             }
             break;
         case FLOAT:
-            for (int i = 0; i < (*vec_dest)->size; i++)
+            for (int i = 0; i < vec_range->size; i++)
             {
-                (*vec_dest)->data_float[i] = vec_src->data_float[i + start + step_counter];
-                step_counter += step;
+                vec_range->data_float[i] = vec->data_float[start];
+                start += step;
             }
             break;
         case CHAR:
-            for (int i = 0; i < (*vec_dest)->size; i++)
+            for (int i = 0; i < vec_range->size; i++)
             {
-                (*vec_dest)->data_char[i] = vec_src->data_char[i + start + step_counter];
-                step_counter += step;
+                vec_range->data_char[i] = vec->data_char[start];
+                start += step;
             }
             break;
         case STR:
-            for (int i = 0; i < (*vec_dest)->size; i++)
+            for (int i = 0; i < vec_range->size; i++)
             {
-                (*vec_dest)->data_str[i] = vec_src->data_str[i + start + step_counter];
-                step_counter += step;
+                vec_range->data_str[i] = vec->data_str[start];
+                start += step;
             }
             break;
         case BOOL:
-            for (int i = 0; i < (*vec_dest)->size; i++)
+            for (int i = 0; i < vec_range->size; i++)
             {
-                (*vec_dest)->data_bool[i] = vec_src->data_bool[i + start + step_counter];
-                step_counter += step;
+                vec_range->data_bool[i] = vec->data_bool[start];
+                start += step;
             }
             break;
         case NONE: // default:
             break;
     }
+
+    return vec_range;
 }
 
 int vector_get_index(vector_t *vec, ...)
@@ -1081,17 +1127,15 @@ void vector_sort(vector_t *vec)
     }
 }
 
-void vector_copy(vector_t **vec_dest, vector_t *vec_src)
+vector_t *vector_copy_alloc(vector_t *vec)
 {
-    if (check_warnings(vec_src, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
-        __func__, WARNING_PLACEHOLDER) ||
-        check_warnings(*vec_dest, VEC_ALLOC, 
+    if (check_warnings(vec, VEC_NULL | VEC_TYPE_NONE | VEC_SIZE_ZERO,
         __func__, WARNING_PLACEHOLDER))
     {
-        return;
+        return NULL;
     }
 
-    vector_at_range(vec_dest, vec_src, 0, 0, 1);
+    return vector_range_alloc(vec, NULL, NULL, NULL);
 }
 
 void vector_free(vector_t **vec)
