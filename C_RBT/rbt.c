@@ -275,14 +275,15 @@ static void rbt_fixup(rbt_t *tree, size_t node_index)
         }
         else
         {
-            // Case 2.1: Forms a triangle.
-            if (node_index == right_child(parent_index))
+            // Case 2.1: Forms left triangle.
+            if (uncle_index == right_child(grandparent_index) && node_index == right_child(parent_index))
             {
                 left_rotate(tree, parent_index);
                 // Update it to find the child violation node.
                 node_index = left_child(parent_index);
             }
-            else
+            // Case 2.1: Forms right triangle.
+            else if (uncle_index == left_child(grandparent_index) && node_index == left_child(parent_index))
             {
                 right_rotate(tree, parent_index);
                 // Update it to find the child violation node.

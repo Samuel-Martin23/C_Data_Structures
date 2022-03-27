@@ -1,10 +1,10 @@
 #include "rbt.h"
 
-#define SIZE 5
+#define SIZE 8
 
 int main()
 {
-    rbt_t *tree = rbt_init_args(SIZE, 10, 15, 12, 13, 11);
+    rbt_t *tree = rbt_init_args(SIZE, 7, 3, 8, 2, 4, 5, 1, 6);
 
     rbt_print(tree, PRINT_PREORDER);
 

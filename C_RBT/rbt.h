@@ -11,7 +11,7 @@
 #define PRINT_INORDER   2
 #define PRINT_POSTORDER 4
 
-#define RBT_CAPACITY    50
+#define RBT_CAPACITY    200
 
 typedef struct rb_node
 {
