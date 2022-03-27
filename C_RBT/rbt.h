@@ -13,12 +13,18 @@
 
 #define RBT_CAPACITY    50
 
+typedef struct rb_node
+{
+    int value;
+    bool is_red;
+} rb_node_t;
+
 typedef struct rbt
 {
     size_t size;
     size_t capacity;
-    size_t last_index;
-    int **data;
+    rb_node_t *NIL;
+    rb_node_t **data;
 } rbt_t;
 
 rbt_t *rbt_init(void);
