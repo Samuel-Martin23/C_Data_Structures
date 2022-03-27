@@ -22,6 +22,42 @@ static size_t right_child(size_t index)
     return (2 * index) + 2;
 }
 
+static void pre_order(rbt_t *tree, size_t index)
+{
+    if (tree->data[index] == NULL)
+    {
+        return;
+    }
+
+    printf("%d\n", *tree->data[index]);
+    pre_order(tree, left_child(index));
+    pre_order(tree, right_child(index));
+}
+
+static void in_order(rbt_t *tree, size_t index)
+{
+    if (tree->data[index] == NULL)
+    {
+        return;
+    }
+
+    in_order(tree, left_child(index));
+    printf("%d\n", *tree->data[index]);
+    in_order(tree, right_child(index));
+}
+
+static void post_order(rbt_t *tree, size_t index)
+{
+    if (tree->data[index] == NULL)
+    {
+        return;
+    }
+
+    post_order(tree, left_child(index));
+    post_order(tree, right_child(index));
+    printf("%d\n", *tree->data[index]);
+}
+
 static void C_and_B_rotation(int **data, size_t old_index, size_t new_index)
 {
     if (data[old_index] == NULL)
@@ -60,7 +96,7 @@ static void A_rotation(int **data, size_t old_index, size_t new_index, bool is_l
     data[old_index] = NULL;
 }
 
-void right_rotate(int **data, size_t rotate_index)
+static void right_rotate(int **data, size_t rotate_index)
 {
     // Shift all of the elements to the right of A downwards to get their correct location.
     A_rotation(data, right_child(rotate_index), right_child(right_child(rotate_index)), false);
@@ -84,7 +120,7 @@ void right_rotate(int **data, size_t rotate_index)
     C_and_B_rotation(data, left_child(left_child(rotate_index)), left_child(rotate_index));
 }
 
-void left_rotate(int **data, size_t rotate_index)
+static void left_rotate(int **data, size_t rotate_index)
 {
     // Shift all of the elements to the left of A downwards to get their correct location.
     A_rotation(data, left_child(rotate_index), left_child(left_child(rotate_index)), true);
@@ -108,7 +144,7 @@ void left_rotate(int **data, size_t rotate_index)
     C_and_B_rotation(data, right_child(right_child(rotate_index)), right_child(rotate_index));
 }
 
-int *alloc_int(int x)
+static int *alloc_int(int x)
 {
     int *alloc_x = malloc(sizeof(int));
     *alloc_x = x;
@@ -121,7 +157,7 @@ rbt_t *rbt_init(void)
 
     tree->size = 0;
     tree->capacity = RBT_CAPACITY;
-    tree->longest_path = 0;
+    tree->last_index = 0;
 
     tree->data = malloc(sizeof(int*) * tree->capacity);
     memset(tree->data, 0, tree->capacity * sizeof(tree->data[0]));
@@ -132,14 +168,13 @@ rbt_t *rbt_init(void)
 rbt_t *rbt_init_args(size_t size, ...)
 {
     rbt_t *tree = rbt_init();
-    tree->size = size;
 
     va_list args;
     va_start(args, size);
 
-    for (size_t i = 0; i < tree->size; i++)
+    for (size_t i = 0; i < size; i++)
     {
-        tree->data[i] = alloc_int(va_arg(args, int));
+        rbt_insert(tree, va_arg(args, int));
     }
 
     va_end(args);
@@ -147,37 +182,69 @@ rbt_t *rbt_init_args(size_t size, ...)
     return tree;
 }
 
-void rbt_print(rbt_t *tree)
+void rbt_insert(rbt_t *tree, int value)
+{
+    if (tree->data[0] == NULL)
+    {
+        tree->data[0] = alloc_int(value);
+        tree->size++;
+        return;
+    }
+
+    size_t search_index = 0;
+
+    while (true)
+    {
+        if (value < *tree->data[search_index])
+        {
+            search_index = left_child(search_index);
+        }
+        else
+        {
+            search_index = right_child(search_index);
+        }
+
+        if (tree->data[search_index] == NULL)
+        {
+            tree->data[search_index] = alloc_int(value);
+            break;
+        }
+    }
+
+    tree->size++;
+
+    if (search_index > tree->last_index )
+    {
+        tree->last_index = search_index;
+    }
+}
+
+void rbt_print(rbt_t *tree, int print_order)
 {
     if (tree->data == NULL)
     {
         return;
     }
 
-    for (size_t i = 0; i < tree->size; i++)
+    if (print_order & PRINT_PREORDER)
     {
-        if (tree->data[i] != NULL)
-        {
-            printf("|%zu", i);
-        }
+        pre_order(tree, 0);
     }
 
-    printf("|\n");
-
-    for (size_t i = 0; i < tree->size; i++)
+    if (print_order & PRINT_INORDER)
     {
-        if (tree->data[i] != NULL)
-        {
-            printf("|%c", *(tree->data[i]));
-        }
+        in_order(tree, 0);
     }
 
-    printf("|\n");
+    if (print_order & PRINT_POSTORDER)
+    {
+        post_order(tree, 0);
+    }
 }
 
 void rbt_free(rbt_t **tree)
 {
-    for (size_t i = 0; i < (*tree)->size; i++)
+    for (size_t i = 0; i <= (*tree)->last_index; i++)
     {
         if ((*tree)->data[i] != NULL)
         {
