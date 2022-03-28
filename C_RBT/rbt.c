@@ -301,13 +301,15 @@ static void rbt_fixup(rbt_t *tree, size_t node_index)
             if (uncle_index == right_child(grandparent_index))
             {
                 right_rotate(tree, grandparent_index);
-                node_index = parent(node_index);
             }
             else
             {
                 left_rotate(tree, grandparent_index);
-                node_index = parent(node_index);
             }
+            
+            // Update node_index to where it actually is
+            // since it got rotated.
+            node_index = parent(node_index);
         }
     }
 
