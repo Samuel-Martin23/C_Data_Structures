@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -13,11 +12,17 @@
 
 #define RBT_CAPACITY    200
 
+// Forward declaration.
+typedef struct rbt rbt_t;
+
 typedef struct rb_node
 {
-    int value;
+    void *value;
     bool is_red;
 } rb_node_t;
+
+typedef bool (*rb_node_compare)(rb_node_t *inserting_node, rb_node_t *curr_node);
+typedef void (*rb_node_print)(rbt_t *tree, size_t index);
 
 typedef struct rbt
 {
@@ -25,11 +30,13 @@ typedef struct rbt
     size_t capacity;
     rb_node_t *NIL;
     rb_node_t **data;
+
+    rb_node_compare compare_nodes;
+    rb_node_print print_node;
 } rbt_t;
 
-rbt_t *rbt_init(void);
-rbt_t *rbt_init_args(size_t size, ...);
-void rbt_insert(rbt_t *tree, int value);
+rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_print print_node);
+void rbt_insert(rbt_t *tree, rb_node_t *node);
 void rbt_print(rbt_t *tree, int print_order);
 void rbt_free(rbt_t **tree);
 

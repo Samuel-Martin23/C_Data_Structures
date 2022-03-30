@@ -20,11 +20,6 @@ static size_t right_child(size_t index)
     return (2 * index) + 2;
 }
 
-static int get_node_value(rbt_t *tree, size_t index)
-{
-    return tree->data[index]->value;
-}
-
 static bool is_node_red(rbt_t *tree, size_t index)
 {
     return tree->data[index]->is_red;
@@ -42,8 +37,8 @@ static void pre_order(rbt_t *tree, size_t index)
         return;
     }
 
-    printf("%d:\t", get_node_value(tree, index));
-    printf("%s\n", get_node_color(tree, index));
+    tree->print_node(tree, index);
+    printf("\t%s\n", get_node_color(tree, index));
 
     pre_order(tree, left_child(index));
     pre_order(tree, right_child(index));
@@ -58,7 +53,7 @@ static void in_order(rbt_t *tree, size_t index)
 
     in_order(tree, left_child(index));
 
-    printf("%d:\t", get_node_value(tree, index));
+    tree->print_node(tree, index);
     printf("%s\n", get_node_color(tree, index));
 
     in_order(tree, right_child(index));
@@ -74,7 +69,7 @@ static void post_order(rbt_t *tree, size_t index)
     post_order(tree, left_child(index));
     post_order(tree, right_child(index));
 
-    printf("%d:\t", get_node_value(tree, index));
+    tree->print_node(tree, index);
     printf("%s\n", get_node_color(tree, index));
 }
 
@@ -298,27 +293,20 @@ static void rbt_fixup(rbt_t *tree, size_t node_index)
     rbt_set_node_black(tree, 0);
 }
 
-static rb_node_t *alloc_node(int value)
-{
-    rb_node_t *node = malloc(sizeof(rb_node_t));
-
-    node->value = value;
-    node->is_red = true;
-
-    return node;
-}
-
-rbt_t *rbt_init(void)
+rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_print print_node)
 {
     rbt_t *tree = malloc(sizeof(rbt_t));
 
     tree->size = 0;
     tree->capacity = RBT_CAPACITY;
 
-    tree->NIL = alloc_node(0);
-    tree->NIL->is_red = false;
+    tree->NIL = malloc(sizeof(rb_node_t*));
+    memset(tree->NIL, 0, sizeof(*tree->NIL));
 
     tree->data = malloc(sizeof(rb_node_t*) * tree->capacity);
+
+    tree->compare_nodes = compare_nodes;
+    tree->print_node = print_node;
 
     for (size_t i = 0; i < tree->capacity; i++)
     {
@@ -328,28 +316,11 @@ rbt_t *rbt_init(void)
     return tree;
 }
 
-rbt_t *rbt_init_args(size_t size, ...)
-{
-    rbt_t *tree = rbt_init();
-
-    va_list args;
-    va_start(args, size);
-
-    for (size_t i = 0; i < size; i++)
-    {
-        rbt_insert(tree, va_arg(args, int));
-    }
-
-    va_end(args);
-
-    return tree;
-}
-
-void rbt_insert(rbt_t *tree, int value)
+void rbt_insert(rbt_t *tree, rb_node_t *node)
 {
     if (tree->data[0] == tree->NIL)
     {
-        tree->data[0] = alloc_node(value);
+        tree->data[0] = node;
         tree->size++;
         rbt_set_node_black(tree, 0);
         return;
@@ -359,7 +330,7 @@ void rbt_insert(rbt_t *tree, int value)
 
     while (true)
     {
-        if (value < get_node_value(tree, insert_index))
+        if (tree->compare_nodes(node, tree->data[insert_index]))
         {
             insert_index = left_child(insert_index);
         }
@@ -370,7 +341,7 @@ void rbt_insert(rbt_t *tree, int value)
 
         if (tree->data[insert_index] == tree->NIL)
         {
-            tree->data[insert_index] = alloc_node(value);
+            tree->data[insert_index] = node;
             break;
         }
     }
@@ -409,6 +380,7 @@ void rbt_free(rbt_t **tree)
     {
         if ((*tree)->data[i] != (*tree)->NIL)
         {
+            free((*tree)->data[i]->value);
             free((*tree)->data[i]);
         }
     }
