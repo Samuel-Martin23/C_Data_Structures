@@ -5,16 +5,17 @@
 
 void print_node_int(rbt_t *tree, size_t index)
 {
-    int value = *((int*)tree->data[index]->value);
-    printf("%d:\t", value);
+    printf("%d:\t", *((int*)tree->data[index]->value));
 }
 
-bool compare_nodes_int(rb_node_t *inserting_node, rb_node_t *curr_node)
+bool compare_nodes_int(rb_node_t *node_1, rb_node_t *node_2)
 {
-    int inserting_value = *((int*)inserting_node->value);
-    int curr_value = *((int*)curr_node->value);
+    return (*((int*)node_1->value) < *((int*)node_2->value));
+}
 
-    return (inserting_value < curr_value);
+bool equal_nodes_int(rb_node_t *node_1, rb_node_t *node_2)
+{
+    return (*((int*)node_1->value) == *((int*)node_2->value));
 }
 
 rb_node_t *alloc_node_int(int value)
@@ -30,7 +31,7 @@ rb_node_t *alloc_node_int(int value)
     return node;
 }
 
-void add_to_tree(rbt_t *tree, size_t size, ...)
+void add_to_tree_int(rbt_t *tree, size_t size, ...)
 {
     va_list args;
     va_start(args, size);
@@ -43,11 +44,23 @@ void add_to_tree(rbt_t *tree, size_t size, ...)
     va_end(args);
 }
 
+bool is_value_in_tree_int(rbt_t *tree, int value)
+{
+    rb_node_t temp_node = {&value, false};
+    return (rbt_search(tree, &temp_node) != tree->NIL);
+}
+
 int main()
 {
-    rbt_t *tree = rbt_init(compare_nodes_int, print_node_int);
+    rbt_t *tree = rbt_init(compare_nodes_int, equal_nodes_int, print_node_int);
+    int search_value = 6;
 
-    add_to_tree(tree, SIZE, 7, 3, 8, 2, 4, 5, 1, 6, 10, 9, 11, 12);
+    add_to_tree_int(tree, SIZE, 7, 3, 8, 2, 4, 5, 1, 6, 10, 9, 11, 12);
+
+    if (is_value_in_tree_int(tree, search_value))
+    {
+        printf("The value %d is in our tree.\n\n", search_value);
+    }
 
     rbt_print(tree, PRINT_PREORDER);
 

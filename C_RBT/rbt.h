@@ -17,7 +17,8 @@ typedef struct rbt rbt_t;
 typedef struct rb_node rb_node_t;
 
 // Function pointers for rbt_t.
-typedef bool (*rb_node_compare)(rb_node_t *inserting_node, rb_node_t *curr_node);
+typedef bool (*rb_node_compare)(rb_node_t *node_1, rb_node_t *node_2);
+typedef bool (*rb_node_equal)(rb_node_t *node_1, rb_node_t *node_2);
 typedef void (*rb_node_print)(rbt_t *tree, size_t index);
 
 typedef struct rb_node
@@ -34,11 +35,13 @@ typedef struct rbt
     rb_node_t **data;
 
     rb_node_compare compare_nodes;
+    rb_node_equal equal_nodes;
     rb_node_print print_node;
 } rbt_t;
 
-rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_print print_node);
+rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_equal equal_nodes, rb_node_print print_node);
 void rbt_insert(rbt_t *tree, rb_node_t *node);
+rb_node_t *rbt_search(rbt_t *tree, rb_node_t *node);
 void rbt_print(rbt_t *tree, int print_order);
 void rbt_free(rbt_t **tree);
 

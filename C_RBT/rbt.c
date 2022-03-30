@@ -295,7 +295,7 @@ static void rbt_fixup(rbt_t *tree, size_t node_index)
     rbt_set_node_black(tree, 0);
 }
 
-rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_print print_node)
+rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_equal equal_nodes, rb_node_print print_node)
 {
     rbt_t *tree = malloc(sizeof(rbt_t));
 
@@ -308,6 +308,7 @@ rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_print print_node)
     tree->data = malloc(sizeof(rb_node_t*) * tree->capacity);
 
     tree->compare_nodes = compare_nodes;
+    tree->equal_nodes = equal_nodes;
     tree->print_node = print_node;
 
     for (size_t i = 0; i < tree->capacity; i++)
@@ -351,6 +352,30 @@ void rbt_insert(rbt_t *tree, rb_node_t *node)
     tree->size++;
 
     rbt_fixup(tree, insert_index);
+}
+
+rb_node_t *rbt_search(rbt_t *tree, rb_node_t *node)
+{
+    size_t searched_index = 0;
+
+    while (tree->data[searched_index] != tree->NIL)
+    {
+        if (tree->equal_nodes(node, tree->data[searched_index]))
+        {
+            return tree->data[searched_index];
+        }
+
+        if (tree->compare_nodes(node, tree->data[searched_index]))
+        {
+            searched_index = left_child(searched_index);
+        }
+        else
+        {
+            searched_index = right_child(searched_index);
+        }
+    }
+
+    return tree->NIL;
 }
 
 void rbt_print(rbt_t *tree, int print_order)
