@@ -30,6 +30,11 @@ static bool is_node_red(rbt_t *tree, size_t index)
     return tree->data[index]->is_red;
 }
 
+static const char *get_node_color(rbt_t *tree, size_t index)
+{
+    return is_node_red(tree, index) ? "red" : "black";
+}
+
 static void pre_order(rbt_t *tree, size_t index)
 {
     if (tree->data[index] == tree->NIL)
@@ -38,15 +43,7 @@ static void pre_order(rbt_t *tree, size_t index)
     }
 
     printf("%d:\t", get_node_value(tree, index));
-
-    if (is_node_red(tree, index))
-    {
-        printf("red\n");
-    }
-    else
-    {
-        printf("black\n");
-    }
+    printf("%s\n", get_node_color(tree, index));
 
     pre_order(tree, left_child(index));
     pre_order(tree, right_child(index));
@@ -62,15 +59,7 @@ static void in_order(rbt_t *tree, size_t index)
     in_order(tree, left_child(index));
 
     printf("%d:\t", get_node_value(tree, index));
-
-    if (is_node_red(tree, index))
-    {
-        printf("red\n");
-    }
-    else
-    {
-        printf("black\n");
-    }
+    printf("%s\n", get_node_color(tree, index));
 
     in_order(tree, right_child(index));
 }
@@ -86,15 +75,7 @@ static void post_order(rbt_t *tree, size_t index)
     post_order(tree, right_child(index));
 
     printf("%d:\t", get_node_value(tree, index));
-
-    if (is_node_red(tree, index))
-    {
-        printf("red\n");
-    }
-    else
-    {
-        printf("black\n");
-    }
+    printf("%s\n", get_node_color(tree, index));
 }
 
 static void C_and_B_rotation(rbt_t *tree, size_t old_index, size_t new_index)
