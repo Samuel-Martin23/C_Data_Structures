@@ -38,7 +38,7 @@ static void pre_order(rbt_t *tree, size_t index)
     }
 
     tree->print_node(tree, index);
-    printf("\t%s\n", get_node_color(tree, index));
+    printf("%s\n", get_node_color(tree, index));
 
     pre_order(tree, left_child(index));
     pre_order(tree, right_child(index));
@@ -73,7 +73,7 @@ static void post_order(rbt_t *tree, size_t index)
     printf("%s\n", get_node_color(tree, index));
 }
 
-static void C_and_B_rotation(rbt_t *tree, size_t old_index, size_t new_index)
+static void C_and_B_shift(rbt_t *tree, size_t old_index, size_t new_index)
 {
     if (tree->data[old_index] == tree->NIL)
     {
@@ -83,11 +83,11 @@ static void C_and_B_rotation(rbt_t *tree, size_t old_index, size_t new_index)
     tree->data[new_index] = tree->data[old_index];
     tree->data[old_index] = tree->NIL;
 
-    C_and_B_rotation(tree, left_child(old_index), left_child(new_index));
-    C_and_B_rotation(tree, right_child(old_index), right_child(new_index));
+    C_and_B_shift(tree, left_child(old_index), left_child(new_index));
+    C_and_B_shift(tree, right_child(old_index), right_child(new_index));
 }
 
-static void A_rotation(rbt_t *tree, size_t old_index, size_t new_index, bool is_left)
+static void A_shift(rbt_t *tree, size_t old_index, size_t new_index, bool is_left)
 {
     if (tree->data[old_index] == tree->NIL)
     {
@@ -97,14 +97,14 @@ static void A_rotation(rbt_t *tree, size_t old_index, size_t new_index, bool is_
     if (is_left)
     {
         // Get the right most subtree.
-        A_rotation(tree, left_child(old_index), left_child(new_index), true);
-        A_rotation(tree, right_child(old_index), right_child(new_index), true);
+        A_shift(tree, left_child(old_index), left_child(new_index), true);
+        A_shift(tree, right_child(old_index), right_child(new_index), true);
     }
     else
     {
         // Get the left most subtree.
-        A_rotation(tree, right_child(old_index), right_child(new_index), false);
-        A_rotation(tree, left_child(old_index), left_child(new_index), false);
+        A_shift(tree, right_child(old_index), right_child(new_index), false);
+        A_shift(tree, left_child(old_index), left_child(new_index), false);
     }
 
     tree->data[new_index] = tree->data[old_index];
@@ -121,7 +121,7 @@ B
 static void right_rotate(rbt_t *tree, size_t rotate_index)
 {
     // Shift all of the elements to the right of A downwards to get their correct location.
-    A_rotation(tree, right_child(rotate_index), right_child(right_child(rotate_index)), false);
+    A_shift(tree, right_child(rotate_index), right_child(right_child(rotate_index)), false);
     // Copy A into the its right child.
     tree->data[right_child(rotate_index)] = tree->data[rotate_index];
 
@@ -137,22 +137,23 @@ static void right_rotate(rbt_t *tree, size_t rotate_index)
         tree->data[old_C_index] = tree->NIL;
 
         // Shift all of the elements to the left and right of C downwards to get their correct location.
-        C_and_B_rotation(tree, left_child(old_C_index), left_child(new_C_index));
-        C_and_B_rotation(tree, right_child(old_C_index), right_child(new_C_index));
+        C_and_B_shift(tree, left_child(old_C_index), left_child(new_C_index));
+        C_and_B_shift(tree, right_child(old_C_index), right_child(new_C_index));
     }
 
     // Copy B into A's original location.
-    tree->data[rotate_index] = tree->data[left_child(rotate_index)];
+    size_t B_index = left_child(rotate_index);
+    tree->data[rotate_index] = tree->data[B_index];
 
     // If B doesn't have any nodes to the left, just set the left side to NIL.
-    if (tree->data[left_child(left_child(rotate_index))] == tree->NIL)
+    if (tree->data[left_child(B_index)] == tree->NIL)
     {
-        tree->data[left_child(rotate_index)] = tree->NIL;
+        tree->data[B_index] = tree->NIL;
     }
     else
     {
         // Shift all of the elements to the left of B upwards to get their correct location.
-        C_and_B_rotation(tree, left_child(left_child(rotate_index)), left_child(rotate_index));
+        C_and_B_shift(tree, left_child(B_index), B_index);
     }
 }
 
@@ -166,7 +167,7 @@ static void right_rotate(rbt_t *tree, size_t rotate_index)
 static void left_rotate(rbt_t *tree, size_t rotate_index)
 {
     // Shift all of the elements to the left of A downwards to get their correct location.
-    A_rotation(tree, left_child(rotate_index), left_child(left_child(rotate_index)), true);
+    A_shift(tree, left_child(rotate_index), left_child(left_child(rotate_index)), true);
     // Copy A into the its left child.
     tree->data[left_child(rotate_index)] = tree->data[rotate_index];
 
@@ -182,22 +183,23 @@ static void left_rotate(rbt_t *tree, size_t rotate_index)
         tree->data[old_C_index] = tree->NIL;
 
         // Shift all of the elements to the left and right of C downwards to get their correct location.
-        C_and_B_rotation(tree, left_child(old_C_index), left_child(new_C_index));
-        C_and_B_rotation(tree, right_child(old_C_index), right_child(new_C_index));
+        C_and_B_shift(tree, left_child(old_C_index), left_child(new_C_index));
+        C_and_B_shift(tree, right_child(old_C_index), right_child(new_C_index));
     }
 
     // Copy B into A's original location.
-    tree->data[rotate_index] = tree->data[right_child(rotate_index)];
+    size_t B_index = right_child(rotate_index);
+    tree->data[rotate_index] = tree->data[B_index];
 
     // If B doesn't have any nodes to the right, just set the right side to NIL.
-    if (tree->data[right_child(right_child(rotate_index))] == tree->NIL)
+    if (tree->data[right_child(B_index)] == tree->NIL)
     {
-        tree->data[right_child(rotate_index)] = tree->NIL;
+        tree->data[B_index] = tree->NIL;
     }
     else
     {
         // Shift all of the elements to the right of B upwards to get their correct location.
-        C_and_B_rotation(tree, right_child(right_child(rotate_index)), right_child(rotate_index));
+        C_and_B_shift(tree, right_child(B_index), B_index);
     }
 }
 

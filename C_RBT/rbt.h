@@ -12,17 +12,19 @@
 
 #define RBT_CAPACITY    200
 
-// Forward declaration.
+// Forward declarations.
 typedef struct rbt rbt_t;
+typedef struct rb_node rb_node_t;
+
+// Function pointers for rbt_t.
+typedef bool (*rb_node_compare)(rb_node_t *inserting_node, rb_node_t *curr_node);
+typedef void (*rb_node_print)(rbt_t *tree, size_t index);
 
 typedef struct rb_node
 {
     void *value;
     bool is_red;
 } rb_node_t;
-
-typedef bool (*rb_node_compare)(rb_node_t *inserting_node, rb_node_t *curr_node);
-typedef void (*rb_node_print)(rbt_t *tree, size_t index);
 
 typedef struct rbt
 {

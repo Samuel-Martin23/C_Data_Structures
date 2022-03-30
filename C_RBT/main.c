@@ -1,12 +1,12 @@
 #include "rbt.h"
 #include <stdarg.h>
 
-#define SIZE    8
+#define SIZE    12
 
 void print_node_int(rbt_t *tree, size_t index)
 {
     int value = *((int*)tree->data[index]->value);
-    printf("%d:", value);
+    printf("%d:\t", value);
 }
 
 bool compare_nodes_int(rb_node_t *inserting_node, rb_node_t *curr_node)
@@ -47,7 +47,7 @@ int main()
 {
     rbt_t *tree = rbt_init(compare_nodes_int, print_node_int);
 
-    add_to_tree(tree, SIZE, 7, 3, 8, 2, 4, 5, 1, 6);
+    add_to_tree(tree, SIZE, 7, 3, 8, 2, 4, 5, 1, 6, 10, 9, 11, 12);
 
     rbt_print(tree, PRINT_PREORDER);
 
