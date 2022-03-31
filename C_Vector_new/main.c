@@ -1,46 +1,68 @@
 #include "vector.h"
-#include <stdarg.h>
 
-#define SIZE 5
-
-bool vec_equal_int(void *value_1, void *value_2)
+typedef struct
 {
-    return (*((int*)value_1) == *((int*)value_2));
+    char name[25];
+    int age;
+} person_t;
+
+bool vec_equal_person(void *value_1, void *value_2)
+{
+    person_t *person_1 = (person_t*)value_1;
+    person_t *person_2 = (person_t*)value_2;
+
+    bool is_name = (strncmp(person_1->name, person_2->name, 25) == 0);
+    bool is_age = (person_1->age == person_2->age);
+
+    return (is_name && is_age);
 }
 
-void vec_print_int(void *value)
+void vec_print_person(void *value)
 {
-    printf("%d", *((int*)value));
+    person_t *person = (person_t*)value;
+    printf("(%s: %d)", person->name, person->age);
 }
 
-void *alloc_int(int value)
+void *alloc_person(const char *name, int age)
 {
-    int *allocated_value = malloc(sizeof(int));
-    *allocated_value = value;
-    return allocated_value;
+    person_t *person = malloc(sizeof(person_t));
+
+    person->age = age;
+    memcpy(person->name, name, 25);
+
+    return person;
 }
 
-void vector_va_int(vector_t *vec, size_t size, ...)
+void vector_remove_person(vector_t *persons, const char *name, int age)
 {
-    va_list args;
-    va_start(args, size);
+    person_t dummy;
 
-    for (size_t i = 0; i < size; i++)
-    {
-        vector_push(vec, alloc_int(va_arg(args, int)));
-    }
+    dummy.age = age;
+    memcpy(dummy.name, name, 25);
 
-    va_end(args);
+    vector_remove_value(persons, &dummy);
 }
 
 int main()
 {
-    vector_t *scores = vector_init_alloc(vec_equal_int, vec_print_int);
-    vector_va_int(scores, SIZE, 345, 123, 8934, 34, 89);
+    vector_t *persons = vector_init_alloc(vec_equal_person, vec_print_person, free);
 
-    vector_print(scores);
+    vector_push(persons, alloc_person("Samuel", 45));
+    vector_push(persons, alloc_person("John", 23));
+    vector_push(persons, alloc_person("Luke", 654));
+    vector_push(persons, alloc_person("Will", 1234));
 
-    vector_free(scores);
+    vector_print(persons);
+
+    vector_pop_index(persons, 0);
+
+    vector_print(persons);
+
+    vector_remove_person(persons, "Luke", 654);
+
+    vector_print(persons);
+
+    vector_free(persons);
 
     return 0;
 }

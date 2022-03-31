@@ -8,6 +8,7 @@ typedef struct vector
 
     vector_equal_values equal_values;
     vector_print_index print_index;
+    vector_free_index free_index;
 } vector_t;
 
 static void realloc_void_elements(vector_t *vec, size_t new_capacity)
@@ -45,7 +46,8 @@ void **vector_get_data(vector_t *vec)
     return vec->data;
 }
 
-vector_t *vector_init_alloc(vector_equal_values equal_values, vector_print_index print_index)
+vector_t *vector_init_alloc(vector_equal_values equal_values, vector_print_index print_index,
+                            vector_free_index free_index)
 {
     vector_t *vec = malloc(sizeof(vector_t));
     vec->size = 0;
@@ -55,6 +57,7 @@ vector_t *vector_init_alloc(vector_equal_values equal_values, vector_print_index
 
     vec->equal_values = equal_values;
     vec->print_index = print_index;
+    vec->free_index = free_index;
 
     return vec;
 }
@@ -84,14 +87,14 @@ void vector_insert(vector_t *vec, size_t index, void *alloc_value)
 void vector_pop(vector_t *vec)
 {
     vec->size--;
-    free(vec->data[vec->size]);
+    vec->free_index(vec->data[vec->size]);
     check_capacity_reallocation(vec, vec->size);
 }
 
 void vector_pop_index(vector_t *vec, size_t index)
 {
     vec->size--;
-    free(vec->data[index]);
+    vec->free_index(vec->data[index]);
 
     for (size_t i = index; i < vec->size; i++)
     {
@@ -167,7 +170,7 @@ void vector_free(vector_t *vec)
 {
     for (size_t i = 0; i < vec->size; i++)
     {
-        free(vec->data[i]);
+        vec->free_index(vec->data[i]);
     }
 
     free(vec->data);
