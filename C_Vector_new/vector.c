@@ -17,15 +17,15 @@ static void realloc_void_elements(vector_t *vec, size_t new_capacity)
     vec->data = realloc(vec->data, sizeof(void*) * vec->capacity);
 }
 
-static void check_capacity_reallocation(vector_t *vec, size_t size)
+static void check_capacity_reallocation(vector_t *vec)
 {
-    if (size == vec->capacity)
+    if (vec->size == vec->capacity)
     {
         realloc_void_elements(vec, vec->capacity + DEFAULT_CAPACITY_SIZE);
     }
-    else if ((size % DEFAULT_CAPACITY_SIZE) == 0 && vec->capacity != DEFAULT_CAPACITY_SIZE)
+    else if ((vec->size % DEFAULT_CAPACITY_SIZE) == 0 && vec->capacity != DEFAULT_CAPACITY_SIZE)
     {
-        realloc_void_elements(vec, size);
+        realloc_void_elements(vec, vec->size);
     }
 }
 
@@ -64,7 +64,7 @@ vector_t *vector_init_alloc(vector_equal_values equal_values, vector_print_index
 
 void vector_push(vector_t *vec, void *alloc_value)
 {
-    check_capacity_reallocation(vec, vec->size);
+    check_capacity_reallocation(vec);
 
     vec->data[vec->size] = alloc_value;
     vec->size++;
@@ -72,7 +72,7 @@ void vector_push(vector_t *vec, void *alloc_value)
 
 void vector_insert(vector_t *vec, size_t index, void *alloc_value)
 {
-    check_capacity_reallocation(vec, vec->size);
+    check_capacity_reallocation(vec);
 
     for (size_t i = vec->size; i > index; i--)
     {
@@ -88,7 +88,7 @@ void vector_pop(vector_t *vec)
 {
     vec->size--;
     vec->free_index(vec->data[vec->size]);
-    check_capacity_reallocation(vec, vec->size);
+    check_capacity_reallocation(vec);
 }
 
 void vector_pop_index(vector_t *vec, size_t index)
@@ -101,7 +101,7 @@ void vector_pop_index(vector_t *vec, size_t index)
         vec->data[i] = vec->data[i + 1];
     }
 
-    check_capacity_reallocation(vec, vec->size);
+    check_capacity_reallocation(vec);
 }
 
 void vector_remove_value(vector_t *vec, void *value)
