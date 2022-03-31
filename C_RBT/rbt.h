@@ -14,35 +14,17 @@
 
 // Forward declarations.
 typedef struct rbt rbt_t;
-typedef struct rb_node rb_node_t;
 
 // Function pointers for rbt_t.
-typedef bool (*rb_node_compare)(rb_node_t *node_1, rb_node_t *node_2);
-typedef bool (*rb_node_equal)(rb_node_t *node_1, rb_node_t *node_2);
-typedef void (*rb_node_print)(rbt_t *tree, size_t index);
+typedef bool (*rb_node_less)(void *value_1, void *value_2);
+typedef bool (*rb_node_equal)(void *value_1, void *value_2);
+typedef void (*rb_node_print)(void *value);
+typedef void (*rb_node_free)(void *value);
 
-typedef struct rb_node
-{
-    void *value;
-    bool is_red;
-} rb_node_t;
-
-typedef struct rbt
-{
-    size_t size;
-    size_t capacity;
-    rb_node_t *NIL;
-    rb_node_t **data;
-
-    rb_node_compare compare_nodes;
-    rb_node_equal equal_nodes;
-    rb_node_print print_node;
-} rbt_t;
-
-rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_equal equal_nodes, rb_node_print print_node);
-void rbt_insert(rbt_t *tree, rb_node_t *node);
-rb_node_t *rbt_search(rbt_t *tree, rb_node_t *node);
+rbt_t *rbt_init(rb_node_less less_nodes, rb_node_equal equal_nodes, rb_node_print print_node, rb_node_free free_node_value);
+void rbt_insert(rbt_t *tree, void *value);
+bool rbt_cotains_value(rbt_t *tree, void *value);
 void rbt_print(rbt_t *tree, int print_order);
-void rbt_free(rbt_t **tree);
+void rbt_free(rbt_t *tree);
 
 #endif /* RBT_H */

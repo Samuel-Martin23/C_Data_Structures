@@ -1,5 +1,24 @@
 #include "rbt.h"
 
+typedef struct rb_node
+{
+    void *value;
+    bool is_red;
+} rb_node_t;
+
+typedef struct rbt
+{
+    size_t size;
+    size_t capacity;
+    rb_node_t *NIL;
+    rb_node_t **data;
+
+    rb_node_less less_nodes;
+    rb_node_equal equal_nodes;
+    rb_node_print print_node;
+    rb_node_free free_node_value;
+} rbt_t;
+
 static size_t parent(size_t index)
 {
     if (index == 0)
@@ -37,7 +56,7 @@ static void pre_order(rbt_t *tree, size_t index)
         return;
     }
 
-    tree->print_node(tree, index);
+    tree->print_node(tree->data[index]->value);
     printf("%s\n", get_node_color(tree, index));
 
     pre_order(tree, left_child(index));
@@ -53,7 +72,7 @@ static void in_order(rbt_t *tree, size_t index)
 
     in_order(tree, left_child(index));
 
-    tree->print_node(tree, index);
+    tree->print_node(tree->data[index]->value);
     printf("%s\n", get_node_color(tree, index));
 
     in_order(tree, right_child(index));
@@ -69,7 +88,7 @@ static void post_order(rbt_t *tree, size_t index)
     post_order(tree, left_child(index));
     post_order(tree, right_child(index));
 
-    tree->print_node(tree, index);
+    tree->print_node(tree->data[index]->value);
     printf("%s\n", get_node_color(tree, index));
 }
 
@@ -295,7 +314,7 @@ static void rbt_fixup(rbt_t *tree, size_t node_index)
     rbt_set_node_black(tree, 0);
 }
 
-rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_equal equal_nodes, rb_node_print print_node)
+rbt_t *rbt_init(rb_node_less less_nodes, rb_node_equal equal_nodes, rb_node_print print_node, rb_node_free free_node_value)
 {
     rbt_t *tree = malloc(sizeof(rbt_t));
 
@@ -307,9 +326,10 @@ rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_equal equal_nodes, rb_nod
 
     tree->data = malloc(sizeof(rb_node_t*) * tree->capacity);
 
-    tree->compare_nodes = compare_nodes;
+    tree->less_nodes = less_nodes;
     tree->equal_nodes = equal_nodes;
     tree->print_node = print_node;
+    tree->free_node_value = free_node_value;
 
     for (size_t i = 0; i < tree->capacity; i++)
     {
@@ -319,8 +339,12 @@ rbt_t *rbt_init(rb_node_compare compare_nodes, rb_node_equal equal_nodes, rb_nod
     return tree;
 }
 
-void rbt_insert(rbt_t *tree, rb_node_t *node)
+void rbt_insert(rbt_t *tree, void *value)
 {
+    rb_node_t *node = malloc(sizeof(rb_node_t));
+    node->value = value;
+    node->is_red = true;
+
     if (tree->data[0] == tree->NIL)
     {
         tree->data[0] = node;
@@ -333,7 +357,7 @@ void rbt_insert(rbt_t *tree, rb_node_t *node)
 
     while (true)
     {
-        if (tree->compare_nodes(node, tree->data[insert_index]))
+        if (tree->less_nodes(node, tree->data[insert_index]))
         {
             insert_index = left_child(insert_index);
         }
@@ -354,18 +378,18 @@ void rbt_insert(rbt_t *tree, rb_node_t *node)
     rbt_fixup(tree, insert_index);
 }
 
-rb_node_t *rbt_search(rbt_t *tree, rb_node_t *node)
+bool rbt_cotains_value(rbt_t *tree, void *value)
 {
     size_t searched_index = 0;
 
     while (tree->data[searched_index] != tree->NIL)
     {
-        if (tree->equal_nodes(node, tree->data[searched_index]))
+        if (tree->equal_nodes(value, tree->data[searched_index]->value))
         {
-            return tree->data[searched_index];
+            return true;
         }
 
-        if (tree->compare_nodes(node, tree->data[searched_index]))
+        if (tree->less_nodes(value, tree->data[searched_index]->value))
         {
             searched_index = left_child(searched_index);
         }
@@ -375,7 +399,7 @@ rb_node_t *rbt_search(rbt_t *tree, rb_node_t *node)
         }
     }
 
-    return tree->NIL;
+    return false;
 }
 
 void rbt_print(rbt_t *tree, int print_order)
@@ -401,20 +425,18 @@ void rbt_print(rbt_t *tree, int print_order)
     }
 }
 
-void rbt_free(rbt_t **tree)
+void rbt_free(rbt_t *tree)
 {
-    for (size_t i = 0; i < (*tree)->capacity; i++)
+    for (size_t i = 0; i < tree->capacity; i++)
     {
-        if ((*tree)->data[i] != (*tree)->NIL)
+        if (tree->data[i] != tree->NIL)
         {
-            free((*tree)->data[i]->value);
-            free((*tree)->data[i]);
+            tree->free_node_value(tree->data[i]->value);
+            free(tree->data[i]);
         }
     }
 
-    free((*tree)->data);
-    free((*tree)->NIL);
-    free((*tree));
-
-    (*tree) = NULL;
+    free(tree->data);
+    free(tree->NIL);
+    free(tree);
 }
