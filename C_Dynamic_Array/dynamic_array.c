@@ -116,6 +116,11 @@ void dynamic_array_remove_value(dynamic_array_t *dyn_array, void *value)
     dynamic_array_pop_index(dyn_array, index);
 }
 
+void *dynamic_array_at(dynamic_array_t *dyn_array, size_t index)
+{
+    return dyn_array->data[index];
+}
+
 // Needs to be a long long because we return -1 as an error check.
 long long dynamic_array_get_value_index(dynamic_array_t *dyn_array, void *value)
 {
