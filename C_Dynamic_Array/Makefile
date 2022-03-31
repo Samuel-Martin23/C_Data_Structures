@@ -4,9 +4,6 @@ SOURCES := $(wildcard *.c)
 OBJECTS := $(patsubst %.c, %.o, $(SOURCES))
 HEADERS := $(wildcard *.h)
 
-LIBRARY_NAME := prompt
-LIBRARY_SOURCES := $(filter-out main.c, $(SOURCES))
-
 EXECUTABLE_NAME := program
 
 %.o: %.c $(HEADERS)
@@ -14,9 +11,6 @@ EXECUTABLE_NAME := program
 
 $(EXECUTABLE_NAME): $(OBJECTS)
 	$(CC) $^ -o $@
-
-shared:
-	$(CC) $(FLAGS) -dynamiclib $(LIBRARY_SOURCES) -o lib$(LIBRARY_NAME).dylib -install_name @rpath/lib$(LIBRARY_NAME).dylib
 
 clean:
 	rm *.o
