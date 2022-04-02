@@ -177,6 +177,7 @@ bool dynamic_array_iterate(dynamic_array_t *dyn_array, void **value)
     if (dyn_array->iter_index == dyn_array->size)
     {
         // Reset everything back to the beginning.
+        *value = NULL;
         dyn_array->iter_index = 0;
         return false;
     }

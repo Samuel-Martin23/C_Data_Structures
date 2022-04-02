@@ -148,6 +148,8 @@ bool hash_table_iterate(hash_table_t *ht, void **key, void **value)
             // Reset everything back to the beginning.
             ht->iter_index = 0;
             ht->iter_slot = NULL;
+            *key = NULL;
+            *value = NULL;
 
             return false;
         }
@@ -158,13 +160,13 @@ bool hash_table_iterate(hash_table_t *ht, void **key, void **value)
     // In case "key" is NULL.
     if (key)
     {
-        (*key) = ht->iter_slot->key;
+        *key = ht->iter_slot->key;
     }
 
     // In case "value" is NULL.
     if (value)
     {
-        (*value) = ht->iter_slot->value;
+        *value = ht->iter_slot->value;
     }
 
     ht->iter_slot = ht->iter_slot->next;
