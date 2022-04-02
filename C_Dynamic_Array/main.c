@@ -40,7 +40,7 @@ void dynamic_array_remove_person(dynamic_array_t *persons, const char *name, int
     dummy.age = age;
     memcpy(dummy.name, name, 25);
 
-    dynamic_array_remove_value(persons, &dummy);
+    dynamic_array_remove(persons, &dummy);
 }
 
 int main()
@@ -59,6 +59,19 @@ int main()
     dynamic_array_print(persons);
 
     dynamic_array_remove_person(persons, "Luke", 654);
+
+    dynamic_array_print(persons);
+
+    for (void *value = NULL; dynamic_array_iterate(persons, &value);)
+    {
+        person_t *person = ((person_t*)value);
+
+        if (person->age == 23)
+        {
+            dynamic_array_remove(persons, value);
+            break;
+        }
+    }
 
     dynamic_array_print(persons);
 

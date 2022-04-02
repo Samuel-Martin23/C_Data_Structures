@@ -6,6 +6,8 @@ typedef struct dynamic_array
     size_t capacity;
     void **data;
 
+    size_t iter_index;
+
     dynamic_array_equal_values equal_values;
     dynamic_array_print_index print_index;
     dynamic_array_free_index free_index;
@@ -50,10 +52,12 @@ dynamic_array_t *dynamic_array_init_alloc(dynamic_array_equal_values equal_value
                                             dynamic_array_free_index free_index)
 {
     dynamic_array_t *dyn_array = malloc(sizeof(dynamic_array_t));
+
     dyn_array->size = 0;
     dyn_array->capacity = DEFAULT_CAPACITY_SIZE;
-    dyn_array->data = malloc(sizeof(void*) * dyn_array->capacity);
-    memset(dyn_array->data, 0, sizeof(*dyn_array->data) * dyn_array->capacity);
+    dyn_array->data = calloc(dyn_array->capacity, sizeof(void*));
+
+    dyn_array->iter_index = 0;
 
     dyn_array->equal_values = equal_values;
     dyn_array->print_index = print_index;
@@ -104,7 +108,7 @@ void dynamic_array_pop_index(dynamic_array_t *dyn_array, size_t index)
     check_capacity_reallocation(dyn_array);
 }
 
-void dynamic_array_remove_value(dynamic_array_t *dyn_array, void *value)
+void dynamic_array_remove(dynamic_array_t *dyn_array, void *value)
 {
     long long index = dynamic_array_get_value_index(dyn_array, value);
 
@@ -160,6 +164,28 @@ void dynamic_array_reverse(dynamic_array_t *dyn_array)
         dyn_array->data[i] = dyn_array->data[last_index - i];
         dyn_array->data[last_index - i] = temp;
     }
+}
+
+bool dynamic_array_iterate(dynamic_array_t *dyn_array, void **value)
+{
+    if (dyn_array->size == 0)
+    {
+        return false;
+    }
+
+    // We have reached the end.
+    if (dyn_array->iter_index == dyn_array->size)
+    {
+        // Reset everything back to the beginning.
+        dyn_array->iter_index = 0;
+        return false;
+    }
+
+    (*value) = dyn_array->data[dyn_array->iter_index];
+    dyn_array->iter_index++;
+
+    return true;
+    
 }
 
 void dynamic_array_print(dynamic_array_t *dyn_array)
