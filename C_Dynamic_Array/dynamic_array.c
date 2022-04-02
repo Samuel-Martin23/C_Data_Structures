@@ -139,7 +139,7 @@ long long dynamic_array_get_value_index(dynamic_array_t *dyn_array, void *value)
     return -1;
 }
 
-bool dynamic_array_contains_value(dynamic_array_t *dyn_array, void *value)
+bool dynamic_array_contains(dynamic_array_t *dyn_array, void *value)
 {
     for (size_t i = 0; i < dyn_array->size; i++)
     {
