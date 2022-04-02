@@ -33,11 +33,10 @@ static table_slot_t *alloc_table_slot(void *key, void *value)
     return slot;
 }
 
-static void free_table_slot(hash_table_t *ht, table_slot_t **slot)
+static void free_table_slot(hash_table_t *ht, table_slot_t *slot)
 {
-    ht->free_pair((*slot)->key, (*slot)->value);
-    free((*slot));
-    (*slot) = NULL;
+    ht->free_pair(slot->key, slot->value);
+    free(slot);
 }
 
 hash_table_t *hash_table_init(ht_get_hash_value get_hash_value, ht_equal_keys equal_keys, ht_print_slot print_slot,
@@ -128,7 +127,7 @@ void hash_table_delete(hash_table_t *ht, void *key)
         prev->next = curr->next;
     }
 
-    free_table_slot(ht, &curr);
+    free_table_slot(ht, curr);
 }
 
 bool hash_table_iterate(hash_table_t *ht, void **key, void **value)
@@ -222,7 +221,7 @@ void hash_table_free(hash_table_t *ht)
         while (slot != NULL)
         {
             slot_succeeding = slot->next;
-            free_table_slot(ht, &slot);
+            free_table_slot(ht, slot);
             slot = slot_succeeding;
         }
     }
