@@ -18,6 +18,7 @@ hash_table_t *hash_table_init(ht_get_hash_value get_hash_value, ht_equal_keys eq
 void hash_table_insert(hash_table_t *ht, void *key, void *value);
 void *hash_table_lookup(hash_table_t *ht, void *key);
 void hash_table_delete(hash_table_t *ht, void *key);
+bool hash_table_iterate(hash_table_t *ht, void **key, void **value);
 void hash_table_print(hash_table_t *ht);
 void hash_table_free(hash_table_t *ht);
 
