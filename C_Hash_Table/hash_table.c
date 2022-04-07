@@ -22,6 +22,19 @@ typedef struct hash_table
     ht_free_pair free_pair;
 } hash_table_t;
 
+static table_slot_t *hash_table_lookup_slot(hash_table_t *ht, void *key)
+{
+    size_t index = ht->get_hash_value(key) % ht->capacity;
+    table_slot_t *slot = ht->table[index];
+
+    while (slot != NULL && !(ht->equal_keys(key, slot->key)))
+    {
+        slot = slot->next;
+    }
+
+    return slot;
+}
+
 static table_slot_t *alloc_table_slot(void *key, void *value)
 {
     table_slot_t *slot = malloc(sizeof(table_slot_t));
@@ -62,17 +75,20 @@ hash_table_t *hash_table_init(ht_get_hash_value get_hash_value, ht_equal_keys eq
 
 void hash_table_insert(hash_table_t *ht, void *key, void *value)
 {
-    size_t index = ht->get_hash_value(key) % ht->capacity;
+    table_slot_t *searched_slot = hash_table_lookup_slot(ht, key);
 
-    if (ht->table[index] != NULL && ht->equal_keys(ht->table[index]->key, key))
+    // If the key is already in the hash table, free the key and the value
+    // that was already there, since the incoming key and value are allocated.
+    if (searched_slot)
     {
-        ht->free_pair(ht->table[index]->key, ht->table[index]->value);
-        ht->table[index]->key = key;
-        ht->table[index]->value = value;
+        ht->free_pair(searched_slot->key, searched_slot->value);
+        searched_slot->key = key;
+        searched_slot->value = value;
         return;
     }
 
     table_slot_t *slot = alloc_table_slot(key, value);
+    size_t index = ht->get_hash_value(key) % ht->capacity;
 
     if (ht->table[index] == NULL)
     {
@@ -87,15 +103,9 @@ void hash_table_insert(hash_table_t *ht, void *key, void *value)
     ht->size++;
 }
 
-void *hash_table_lookup(hash_table_t *ht, void *key)
+void *hash_table_find(hash_table_t *ht, void *key)
 {
-    size_t index = ht->get_hash_value(key) % ht->capacity;
-    table_slot_t *slot = ht->table[index];
-
-    while (slot != NULL && !(ht->equal_keys(key, slot->key)))
-    {
-        slot = slot->next;
-    }
+    table_slot_t *slot = hash_table_lookup_slot(ht, key);
 
     return (slot == NULL) ? NULL : slot->value;
 }
