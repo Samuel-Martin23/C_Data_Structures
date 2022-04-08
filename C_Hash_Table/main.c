@@ -20,13 +20,13 @@ size_t get_hash_str(void *key)
     return hash_value;
 }
 
-bool keys_equal_contacts(void *key_1, void *key_2) {return (strncmp((const char*)key_1, (const char*)key_2, 50) == 0);}
+bool contact_keys_equal(void *key_1, void *key_2) {return (strncmp((const char*)key_1, (const char*)key_2, 50) == 0);}
 
-void print_contact(void *key, void *value) {printf("\"%s\": (%d, %s)", (const char*)key, ((contact_t*)value)->age, ((contact_t*)value)->phone_number);}
+void contact_print(void *key, void *value) {printf("\"%s\": (%d, %s)", (const char*)key, ((contact_t*)value)->age, ((contact_t*)value)->phone_number);}
 
-void free_contact(void *key, void *value) {free(key); free(value);}
+void contact_free(void *key, void *value) {free(key); free(value);}
 
-void hash_table_insert_contact(hash_table_t *ht, const char *key_name, int age, const char *phone_number)
+void contact_insert(hash_table_t *ht, const char *key_name, int age, const char *phone_number)
 {
     contact_t *person = malloc(sizeof(contact_t));
 
@@ -36,14 +36,23 @@ void hash_table_insert_contact(hash_table_t *ht, const char *key_name, int age, 
     hash_table_insert(ht, strdup(key_name), person);
 }
 
+void contact_delete(hash_table_t *ht, const char *key_name) {hash_table_delete(ht, (void*)key_name);}
+
+
+
 int main()
 {
-    hash_table_t *contacts = hash_table_init(get_hash_str, keys_equal_contacts, print_contact, free_contact);
+    hash_table_t *contacts = hash_table_init(get_hash_str, contact_keys_equal, contact_print, contact_free);
 
-    hash_table_insert_contact(contacts, "Sam", 89, "48012356780");
-    hash_table_insert_contact(contacts, "Luke", 32, "4808359281");
-    hash_table_insert_contact(contacts, "John", 67, "4801675678");
-    hash_table_insert_contact(contacts, "Will", 50, "4808359281");
+    // contacts["Sam"] = (89, "4801256780")
+    contact_insert(contacts, "Sam", 89, "4801256780");
+    contact_insert(contacts, "Luke", 32, "4808359281");
+    contact_insert(contacts, "John", 67, "4801675678");
+    contact_insert(contacts, "Will", 50, "4808359281");
+
+    hash_table_print(contacts);
+
+    contact_delete(contacts, "Will");
 
     hash_table_print(contacts);
 
@@ -51,7 +60,7 @@ int main()
     {
         contact_t *contact = (contact_t*)value;
 
-        if (contact->age == 89 || contact->age == 50)
+        if (contact->age == 89)
         {
             hash_table_delete(contacts, key);
         }
