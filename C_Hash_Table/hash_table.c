@@ -113,19 +113,20 @@ void *hash_table_find(hash_table_t *ht, void *key)
 void hash_table_delete(hash_table_t *ht, void *key)
 {
     size_t index = ht->get_hash_value(key) % ht->capacity;
-
     table_slot_t *prev = NULL;
     table_slot_t *curr = ht->table[index];
-
-    if (curr == NULL)
-    {
-        return;
-    }
 
     while (curr != NULL && !(ht->equal_keys(key, curr->key)))
     {
         prev = curr;
         curr = curr->next;
+    }
+
+    // If we hashed to a NULL index, or we looked through
+    // the entire list and did not find the key.
+    if (curr == NULL)
+    {
+        return;
     }
 
     if (prev == NULL)
