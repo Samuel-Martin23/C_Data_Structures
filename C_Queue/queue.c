@@ -83,11 +83,6 @@ void queue_list_dequeue(queue_list_t *ql)
 
     ql->front = node;
 
-    if (ql->front == NULL)
-    {
-        ql->rear = NULL;
-    }
-
     ql->size--;
 }
 
