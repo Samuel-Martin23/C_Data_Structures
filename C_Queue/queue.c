@@ -45,18 +45,18 @@ queue_list_t *queue_list_init(queue_node_print_value print_value, queue_node_fre
 
 void queue_list_enqueue(queue_list_t *ql, void *value)
 {
-    ql->size++;
-
     if (ql->front == NULL)
     {
         ql->front = alloc_queue_node(value);
         ql->rear = ql->front;
         ql->iter = ql->front;
+        ql->size++;
         return;
     }
 
     ql->rear->next = alloc_queue_node(value);
     ql->rear = ql->rear->next;
+    ql->size++;
 }
 
 void *queue_list_get_front(queue_list_t *ql)
