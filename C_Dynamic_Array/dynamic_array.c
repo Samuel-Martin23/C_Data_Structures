@@ -76,6 +76,11 @@ void dynamic_array_push(dynamic_array_t *dyn_array, void *value)
 
 void dynamic_array_insert(dynamic_array_t *dyn_array, size_t index, void *value)
 {
+    if (index > dyn_array->size)
+    {
+        index = dyn_array->size;
+    }
+
     check_capacity_reallocation(dyn_array);
 
     for (size_t i = dyn_array->size; i > index; i--)
@@ -90,6 +95,11 @@ void dynamic_array_insert(dynamic_array_t *dyn_array, size_t index, void *value)
 
 void dynamic_array_pop(dynamic_array_t *dyn_array)
 {
+    if (dyn_array->size == 0)
+    {
+        return;
+    }
+
     dyn_array->size--;
     dyn_array->free_index(dyn_array->data[dyn_array->size]);
     check_capacity_reallocation(dyn_array);
@@ -97,6 +107,11 @@ void dynamic_array_pop(dynamic_array_t *dyn_array)
 
 void dynamic_array_pop_index(dynamic_array_t *dyn_array, size_t index)
 {
+    if (dyn_array->size == 0 || index >= dyn_array->size)
+    {
+        return;
+    }
+
     dyn_array->size--;
     dyn_array->free_index(dyn_array->data[index]);
 
@@ -110,6 +125,11 @@ void dynamic_array_pop_index(dynamic_array_t *dyn_array, size_t index)
 
 void dynamic_array_remove(dynamic_array_t *dyn_array, void *value)
 {
+    if (dyn_array->size == 0)
+    {
+        return;
+    }
+
     long long index = dynamic_array_get_value_index(dyn_array, value);
 
     if (index == -1)
@@ -122,12 +142,22 @@ void dynamic_array_remove(dynamic_array_t *dyn_array, void *value)
 
 void *dynamic_array_at(dynamic_array_t *dyn_array, size_t index)
 {
+    if (index >= dyn_array->size)
+    {
+        return NULL;
+    }
+
     return dyn_array->data[index];
 }
 
 // Needs to be a long long because we return -1 as an error check.
 long long dynamic_array_get_value_index(dynamic_array_t *dyn_array, void *value)
 {
+    if (dyn_array->size == 0)
+    {
+        return -1;
+    }
+
     for (size_t i = 0; i < dyn_array->size; i++)
     {
         if (dyn_array->equal_values(value, dyn_array->data[i]))
@@ -141,6 +171,11 @@ long long dynamic_array_get_value_index(dynamic_array_t *dyn_array, void *value)
 
 bool dynamic_array_contains(dynamic_array_t *dyn_array, void *value)
 {
+    if (dyn_array->size == 0)
+    {
+        return false;
+    }
+
     for (size_t i = 0; i < dyn_array->size; i++)
     {
         if (dyn_array->equal_values(value, dyn_array->data[i]))
@@ -154,6 +189,11 @@ bool dynamic_array_contains(dynamic_array_t *dyn_array, void *value)
 
 void dynamic_array_reverse(dynamic_array_t *dyn_array)
 {
+    if (dyn_array->size == 0)
+    {
+        return;
+    }
+
     size_t half_size = dyn_array->size / 2;
     size_t last_index = dyn_array->size - 1;
     void *temp = NULL;
@@ -191,6 +231,11 @@ bool dynamic_array_iterate(dynamic_array_t *dyn_array, void **value)
 
 void dynamic_array_print(dynamic_array_t *dyn_array)
 {
+    if (dyn_array->size == 0)
+    {
+        return;
+    }
+
     size_t i;
 
     printf("{");
