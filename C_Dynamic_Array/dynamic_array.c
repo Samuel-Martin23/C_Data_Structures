@@ -59,8 +59,8 @@ void **dynamic_array_get_data(dynamic_array_t *dyn_array)
     return dyn_array->data;
 }
 
-dynamic_array_t *dynamic_array_init_alloc(dynamic_array_equal_values equal_values, dynamic_array_print_index print_index,
-                                            dynamic_array_free_value free_value)
+dynamic_array_t *dynamic_array_init(dynamic_array_equal_values equal_values, dynamic_array_print_index print_index,
+                                    dynamic_array_free_value free_value)
 {
     dynamic_array_t *dyn_array = malloc(sizeof(dynamic_array_t));
 
