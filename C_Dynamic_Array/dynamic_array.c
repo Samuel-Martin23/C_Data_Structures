@@ -79,8 +79,9 @@ dynamic_array_t *dynamic_array_init(dynamic_array_equal_values equal_values, dyn
 
 void dynamic_array_push(dynamic_array_t *dyn_array, void *value)
 {
-    if (dyn_array == NULL)
+    if (dyn_array == NULL || dyn_array->data == NULL)
     {
+        dyn_array->free_value(value);
         return;
     }
 
@@ -96,8 +97,9 @@ void dynamic_array_push(dynamic_array_t *dyn_array, void *value)
 
 void dynamic_array_insert(dynamic_array_t *dyn_array, size_t index, void *value)
 {
-    if (dyn_array == NULL)
+    if (dyn_array == NULL || dyn_array->data == NULL)
     {
+        dyn_array->free_value(value);
         return;
     }
 
@@ -124,7 +126,7 @@ void dynamic_array_insert(dynamic_array_t *dyn_array, size_t index, void *value)
 
 void dynamic_array_pop(dynamic_array_t *dyn_array)
 {
-    if (dyn_array == NULL || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
     {
         return;
     }
@@ -136,7 +138,8 @@ void dynamic_array_pop(dynamic_array_t *dyn_array)
 
 void dynamic_array_pop_index(dynamic_array_t *dyn_array, size_t index)
 {
-    if (dyn_array == NULL || dyn_array->size == 0 || index >= dyn_array->size)
+    if (dyn_array == NULL || dyn_array->data == NULL
+        || dyn_array->size == 0 || index >= dyn_array->size)
     {
         return;
     }
@@ -154,7 +157,7 @@ void dynamic_array_pop_index(dynamic_array_t *dyn_array, size_t index)
 
 void dynamic_array_remove(dynamic_array_t *dyn_array, void *value)
 {
-    if (dyn_array == NULL || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
     {
         return;
     }
@@ -172,7 +175,7 @@ void dynamic_array_remove(dynamic_array_t *dyn_array, void *value)
 
 void *dynamic_array_at(dynamic_array_t *dyn_array, size_t index)
 {
-    if (dyn_array == NULL || index >= dyn_array->size)
+    if (dyn_array == NULL || dyn_array->data == NULL || index >= dyn_array->size)
     {
         return NULL;
     }
@@ -182,7 +185,8 @@ void *dynamic_array_at(dynamic_array_t *dyn_array, size_t index)
 
 bool dynamic_array_index(dynamic_array_t *dyn_array, size_t *index, void *value)
 {
-    if (dyn_array == NULL || dyn_array->size == 0 || index == NULL)
+    if (dyn_array == NULL || dyn_array->data == NULL
+        || dyn_array->size == 0 || index == NULL)
     {
         return false;
     }
@@ -201,7 +205,8 @@ bool dynamic_array_index(dynamic_array_t *dyn_array, size_t *index, void *value)
 
 bool dynamic_array_contains(dynamic_array_t *dyn_array, void *value)
 {
-    if (dyn_array == NULL || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL 
+        || dyn_array->size == 0)
     {
         return false;
     }
@@ -219,7 +224,7 @@ bool dynamic_array_contains(dynamic_array_t *dyn_array, void *value)
 
 void dynamic_array_reverse(dynamic_array_t *dyn_array)
 {
-    if (dyn_array == NULL || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
     {
         return;
     }
@@ -238,7 +243,7 @@ void dynamic_array_reverse(dynamic_array_t *dyn_array)
 
 bool dynamic_array_iterate(dynamic_array_t *dyn_array, void **value)
 {
-    if (dyn_array == NULL || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
     {
         return false;
     }
@@ -260,7 +265,7 @@ bool dynamic_array_iterate(dynamic_array_t *dyn_array, void **value)
 
 void dynamic_array_print(dynamic_array_t *dyn_array)
 {
-    if (dyn_array == NULL || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
     {
         printf("{}\n");
         return;
@@ -284,6 +289,12 @@ void dynamic_array_free(dynamic_array_t *dyn_array)
 {
     if (dyn_array == NULL)
     {
+        return;
+    }
+
+    if (dyn_array->data == NULL)
+    {
+        free(dyn_array);
         return;
     }
 
