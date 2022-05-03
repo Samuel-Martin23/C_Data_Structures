@@ -68,6 +68,11 @@ dynamic_array_t *dynamic_array_init_alloc(dynamic_array_equal_values equal_value
 
 void dynamic_array_push(dynamic_array_t *dyn_array, void *value)
 {
+    if (dyn_array == NULL)
+    {
+        return;
+    }
+
     check_capacity_reallocation(dyn_array);
 
     dyn_array->data[dyn_array->size] = value;
@@ -76,6 +81,11 @@ void dynamic_array_push(dynamic_array_t *dyn_array, void *value)
 
 void dynamic_array_insert(dynamic_array_t *dyn_array, size_t index, void *value)
 {
+    if (dyn_array == NULL)
+    {
+        return;
+    }
+
     if (index > dyn_array->size)
     {
         index = dyn_array->size;
@@ -95,7 +105,7 @@ void dynamic_array_insert(dynamic_array_t *dyn_array, size_t index, void *value)
 
 void dynamic_array_pop(dynamic_array_t *dyn_array)
 {
-    if (dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->size == 0)
     {
         return;
     }
@@ -107,7 +117,7 @@ void dynamic_array_pop(dynamic_array_t *dyn_array)
 
 void dynamic_array_pop_index(dynamic_array_t *dyn_array, size_t index)
 {
-    if (dyn_array->size == 0 || index >= dyn_array->size)
+    if (dyn_array == NULL || dyn_array->size == 0 || index >= dyn_array->size)
     {
         return;
     }
@@ -125,14 +135,15 @@ void dynamic_array_pop_index(dynamic_array_t *dyn_array, size_t index)
 
 void dynamic_array_remove(dynamic_array_t *dyn_array, void *value)
 {
-    if (dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->size == 0)
     {
         return;
     }
 
-    long long index = dynamic_array_get_value_index(dyn_array, value);
+    size_t index = 0;
+    bool is_found = dynamic_array_get_value_index(dyn_array, &index, value);
 
-    if (index == -1)
+    if (!(is_found))
     {
         return;
     }
@@ -142,7 +153,7 @@ void dynamic_array_remove(dynamic_array_t *dyn_array, void *value)
 
 void *dynamic_array_at(dynamic_array_t *dyn_array, size_t index)
 {
-    if (index >= dyn_array->size)
+    if (dyn_array == NULL || index >= dyn_array->size)
     {
         return NULL;
     }
@@ -150,28 +161,28 @@ void *dynamic_array_at(dynamic_array_t *dyn_array, size_t index)
     return dyn_array->data[index];
 }
 
-// Needs to be a long long because we return -1 as an error check.
-long long dynamic_array_get_value_index(dynamic_array_t *dyn_array, void *value)
+bool dynamic_array_index(dynamic_array_t *dyn_array, size_t *index, void *value)
 {
-    if (dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->size == 0 || index == NULL)
     {
-        return -1;
+        return false;
     }
 
     for (size_t i = 0; i < dyn_array->size; i++)
     {
         if (dyn_array->equal_values(value, dyn_array->data[i]))
         {
-            return i;
+            *index = i;
+            return true;
         }
     }
 
-    return -1;
+    return false;
 }
 
 bool dynamic_array_contains(dynamic_array_t *dyn_array, void *value)
 {
-    if (dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->size == 0)
     {
         return false;
     }
@@ -189,7 +200,7 @@ bool dynamic_array_contains(dynamic_array_t *dyn_array, void *value)
 
 void dynamic_array_reverse(dynamic_array_t *dyn_array)
 {
-    if (dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->size == 0)
     {
         return;
     }
@@ -208,7 +219,7 @@ void dynamic_array_reverse(dynamic_array_t *dyn_array)
 
 bool dynamic_array_iterate(dynamic_array_t *dyn_array, void **value)
 {
-    if (dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->size == 0)
     {
         return false;
     }
@@ -231,8 +242,9 @@ bool dynamic_array_iterate(dynamic_array_t *dyn_array, void **value)
 
 void dynamic_array_print(dynamic_array_t *dyn_array)
 {
-    if (dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->size == 0)
     {
+        printf("{}\n");
         return;
     }
 
@@ -252,6 +264,11 @@ void dynamic_array_print(dynamic_array_t *dyn_array)
 
 void dynamic_array_free(dynamic_array_t *dyn_array)
 {
+    if (dyn_array == NULL)
+    {
+        return;
+    }
+
     for (size_t i = 0; i < dyn_array->size; i++)
     {
         dyn_array->free_index(dyn_array->data[i]);
