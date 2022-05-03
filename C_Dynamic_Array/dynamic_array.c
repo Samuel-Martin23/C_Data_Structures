@@ -10,25 +10,36 @@ typedef struct dynamic_array
 
     dynamic_array_equal_values equal_values;
     dynamic_array_print_index print_index;
-    dynamic_array_free_index free_index;
+    dynamic_array_free_value free_value;
 } dynamic_array_t;
 
-static void realloc_void_elements(dynamic_array_t *dyn_array, size_t new_capacity)
+static bool realloc_void_elements(dynamic_array_t *dyn_array, size_t new_capacity)
 {
+    void **data = realloc(dyn_array->data, sizeof(void*) * new_capacity);
+
+    if (data == NULL)
+    {
+        return false;
+    }
+
     dyn_array->capacity = new_capacity;
-    dyn_array->data = realloc(dyn_array->data, sizeof(void*) * dyn_array->capacity);
+    dyn_array->data = data;
+
+    return true;
 }
 
-static void check_capacity_reallocation(dynamic_array_t *dyn_array)
+static bool check_capacity_reallocation(dynamic_array_t *dyn_array)
 {
     if (dyn_array->size == dyn_array->capacity)
     {
-        realloc_void_elements(dyn_array, dyn_array->capacity + DEFAULT_CAPACITY_SIZE);
+        return realloc_void_elements(dyn_array, dyn_array->capacity + DEFAULT_CAPACITY_SIZE);
     }
     else if ((dyn_array->size % DEFAULT_CAPACITY_SIZE) == 0 && dyn_array->capacity != DEFAULT_CAPACITY_SIZE)
     {
-        realloc_void_elements(dyn_array, dyn_array->size);
+        return realloc_void_elements(dyn_array, dyn_array->size);
     }
+
+    return true;
 }
 
 size_t dynamic_array_get_size(dynamic_array_t *dyn_array)
@@ -49,7 +60,7 @@ void **dynamic_array_get_data(dynamic_array_t *dyn_array)
 }
 
 dynamic_array_t *dynamic_array_init_alloc(dynamic_array_equal_values equal_values, dynamic_array_print_index print_index,
-                                            dynamic_array_free_index free_index)
+                                            dynamic_array_free_value free_value)
 {
     dynamic_array_t *dyn_array = malloc(sizeof(dynamic_array_t));
 
@@ -61,7 +72,7 @@ dynamic_array_t *dynamic_array_init_alloc(dynamic_array_equal_values equal_value
 
     dyn_array->equal_values = equal_values;
     dyn_array->print_index = print_index;
-    dyn_array->free_index = free_index;
+    dyn_array->free_value = free_value;
 
     return dyn_array;
 }
@@ -73,7 +84,11 @@ void dynamic_array_push(dynamic_array_t *dyn_array, void *value)
         return;
     }
 
-    check_capacity_reallocation(dyn_array);
+    if (!(check_capacity_reallocation(dyn_array)))
+    {
+        dyn_array->free_value(value);
+        return;
+    }
 
     dyn_array->data[dyn_array->size] = value;
     dyn_array->size++;
@@ -91,7 +106,11 @@ void dynamic_array_insert(dynamic_array_t *dyn_array, size_t index, void *value)
         index = dyn_array->size;
     }
 
-    check_capacity_reallocation(dyn_array);
+    if (!(check_capacity_reallocation(dyn_array)))
+    {
+        dyn_array->free_value(value);
+        return;
+    }
 
     for (size_t i = dyn_array->size; i > index; i--)
     {
@@ -111,7 +130,7 @@ void dynamic_array_pop(dynamic_array_t *dyn_array)
     }
 
     dyn_array->size--;
-    dyn_array->free_index(dyn_array->data[dyn_array->size]);
+    dyn_array->free_value(dyn_array->data[dyn_array->size]);
     check_capacity_reallocation(dyn_array);
 }
 
@@ -123,7 +142,7 @@ void dynamic_array_pop_index(dynamic_array_t *dyn_array, size_t index)
     }
 
     dyn_array->size--;
-    dyn_array->free_index(dyn_array->data[index]);
+    dyn_array->free_value(dyn_array->data[index]);
 
     for (size_t i = index; i < dyn_array->size; i++)
     {
@@ -237,7 +256,6 @@ bool dynamic_array_iterate(dynamic_array_t *dyn_array, void **value)
     dyn_array->iter_index++;
 
     return true;
-    
 }
 
 void dynamic_array_print(dynamic_array_t *dyn_array)
@@ -271,7 +289,7 @@ void dynamic_array_free(dynamic_array_t *dyn_array)
 
     for (size_t i = 0; i < dyn_array->size; i++)
     {
-        dyn_array->free_index(dyn_array->data[i]);
+        dyn_array->free_value(dyn_array->data[i]);
     }
 
     free(dyn_array->data);
