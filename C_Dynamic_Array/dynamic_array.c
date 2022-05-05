@@ -163,9 +163,9 @@ void dynamic_array_remove(dynamic_array_t *dyn_array, void *value)
     }
 
     size_t index = 0;
-    bool is_found = dynamic_array_index(dyn_array, &index, value);
 
-    if (!(is_found))
+    // Returns false if the value is not in the array.
+    if (!(dynamic_array_index(dyn_array, &index, value)))
     {
         return;
     }
