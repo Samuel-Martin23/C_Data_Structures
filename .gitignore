@@ -3,6 +3,8 @@
 !*/
 !**/Makefile
 
+build/
+
 .vscode/
 *.DS_Store
 *.o

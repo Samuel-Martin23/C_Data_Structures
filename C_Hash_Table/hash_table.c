@@ -1,31 +1,37 @@
 #include "hash_table.h"
 
-typedef struct table_slot
+typedef struct TableSlot
 {
     void *key;
     void *value;
-    struct table_slot *next;
-} table_slot_t;
+    struct TableSlot *next;
+} TableSlot;
 
-typedef struct hash_table
+typedef struct HashTable
 {
     size_t size;
     size_t capacity;
-    table_slot_t **table;
-
-    size_t iter_index;
-    table_slot_t *iter_slot;
+    TableSlot **table;
 
     ht_get_hash_value get_hash_value;
     ht_equal_keys equal_keys;
     ht_print_slot print_slot;
     ht_free_pair free_pair;
-} hash_table_t;
+} HashTable;
 
-static table_slot_t *hash_table_lookup_slot(hash_table_t *ht, void *key)
+typedef struct HashTableIterator
+{
+    size_t size;
+    size_t capacity;
+    size_t index;
+    TableSlot *slot;
+    TableSlot **table;
+} HashTableIterator;
+
+static TableSlot *hash_table_lookup_slot(HashTable *ht, void *key)
 {
     size_t index = ht->get_hash_value(key) % ht->capacity;
-    table_slot_t *slot = ht->table[index];
+    TableSlot *slot = ht->table[index];
 
     while (slot != NULL && !(ht->equal_keys(key, slot->key)))
     {
@@ -35,9 +41,9 @@ static table_slot_t *hash_table_lookup_slot(hash_table_t *ht, void *key)
     return slot;
 }
 
-static table_slot_t *alloc_table_slot(void *key, void *value)
+static TableSlot *alloc_table_slot(void *key, void *value)
 {
-    table_slot_t *slot = malloc(sizeof(table_slot_t));
+    TableSlot *slot = malloc(sizeof(TableSlot));
 
     slot->key = key;
     slot->value = value;
@@ -46,24 +52,21 @@ static table_slot_t *alloc_table_slot(void *key, void *value)
     return slot;
 }
 
-static void free_table_slot(hash_table_t *ht, table_slot_t *slot)
+static void free_table_slot(HashTable *ht, TableSlot *slot)
 {
     ht->free_pair(slot->key, slot->value);
     free(slot);
 }
 
-hash_table_t *hash_table_init(ht_get_hash_value get_hash_value, ht_equal_keys equal_keys, ht_print_slot print_slot,
+HashTable *hash_table_init(ht_get_hash_value get_hash_value, ht_equal_keys equal_keys, ht_print_slot print_slot,
                                 ht_free_pair free_pair)
 {
-    hash_table_t *ht = malloc(sizeof(hash_table_t));
+    HashTable *ht = malloc(sizeof(HashTable));
 
     ht->capacity = 31;
     ht->size = 0;
 
-    ht->table = calloc(ht->capacity, sizeof(table_slot_t));
-
-    ht->iter_index = 0;
-    ht->iter_slot = NULL;
+    ht->table = calloc(ht->capacity, sizeof(TableSlot));
 
     ht->get_hash_value = get_hash_value;
     ht->equal_keys = equal_keys;
@@ -73,9 +76,9 @@ hash_table_t *hash_table_init(ht_get_hash_value get_hash_value, ht_equal_keys eq
     return ht;
 }
 
-void hash_table_insert(hash_table_t *ht, void *key, void *value)
+void hash_table_insert(HashTable *ht, void *key, void *value)
 {
-    table_slot_t *searched_slot = hash_table_lookup_slot(ht, key);
+    TableSlot *searched_slot = hash_table_lookup_slot(ht, key);
 
     // If the key is already in the hash table, free the key and the value
     // that was already there, since the incoming key and value are allocated.
@@ -87,7 +90,7 @@ void hash_table_insert(hash_table_t *ht, void *key, void *value)
         return;
     }
 
-    table_slot_t *slot = alloc_table_slot(key, value);
+    TableSlot *slot = alloc_table_slot(key, value);
     size_t index = ht->get_hash_value(key) % ht->capacity;
 
     if (ht->table[index] == NULL)
@@ -103,18 +106,18 @@ void hash_table_insert(hash_table_t *ht, void *key, void *value)
     ht->size++;
 }
 
-void *hash_table_find(hash_table_t *ht, void *key)
+void *hash_table_find(HashTable *ht, void *key)
 {
-    table_slot_t *slot = hash_table_lookup_slot(ht, key);
+    TableSlot *slot = hash_table_lookup_slot(ht, key);
 
     return (slot == NULL) ? NULL : slot->value;
 }
 
-void hash_table_delete(hash_table_t *ht, void *key)
+void hash_table_delete(HashTable *ht, void *key)
 {
     size_t index = ht->get_hash_value(key) % ht->capacity;
-    table_slot_t *prev = NULL;
-    table_slot_t *curr = ht->table[index];
+    TableSlot *prev = NULL;
+    TableSlot *curr = ht->table[index];
 
     while (curr != NULL && !(ht->equal_keys(key, curr->key)))
     {
@@ -141,51 +144,7 @@ void hash_table_delete(hash_table_t *ht, void *key)
     free_table_slot(ht, curr);
 }
 
-bool hash_table_iterate(hash_table_t *ht, void **key, void **value)
-{
-    if (ht->size == 0)
-    {
-        return false;
-    }
-
-    // Where is the next slot at?
-    while (ht->iter_slot == NULL)
-    {
-        ht->iter_slot = ht->table[ht->iter_index];
-
-        // We have reached the end.
-        if (ht->iter_index == ht->capacity)
-        {
-            // Reset everything back to the beginning.
-            ht->iter_index = 0;
-            ht->iter_slot = NULL;
-            *key = NULL;
-            *value = NULL;
-
-            return false;
-        }
-
-        ht->iter_index++;
-    }
-
-    // In case "key" is NULL.
-    if (key)
-    {
-        *key = ht->iter_slot->key;
-    }
-
-    // In case "value" is NULL.
-    if (value)
-    {
-        *value = ht->iter_slot->value;
-    }
-
-    ht->iter_slot = ht->iter_slot->next;
-
-    return true;
-}
-
-void hash_table_print(hash_table_t *ht)
+void hash_table_print(HashTable *ht)
 {
     if (ht->size == 0)
     {
@@ -193,7 +152,7 @@ void hash_table_print(hash_table_t *ht)
         return;
     }
 
-    table_slot_t *slot = NULL;
+    TableSlot *slot = NULL;
 
     printf("{");
 
@@ -217,10 +176,10 @@ void hash_table_print(hash_table_t *ht)
     printf("\b\b}\n");
 }
 
-void hash_table_free(hash_table_t *ht)
+void hash_table_free(HashTable *ht)
 {
-    table_slot_t *slot = NULL;
-    table_slot_t *slot_succeeding = NULL;
+    TableSlot *slot = NULL;
+    TableSlot *slot_succeeding = NULL;
 
     for (size_t i = 0; i < ht->capacity; i++)
     {
@@ -241,4 +200,66 @@ void hash_table_free(hash_table_t *ht)
 
     free(ht->table);
     free(ht);
+}
+
+HashTableIterator *hash_table_iterator_init(HashTable *ht)
+{
+    HashTableIterator *iter = malloc(sizeof(HashTableIterator));
+
+    iter->size = ht->size;
+    iter->capacity = ht->capacity;
+    iter->index = 0;
+    iter->slot = NULL;
+    iter->table = ht->table;
+
+    return iter;
+}
+
+bool hash_table_iterator_iterate(HashTableIterator *iter, void **key, void **value)
+{
+    if (iter->size == 0)
+    {
+        return false;
+    }
+
+    // Where is the next slot at?
+    while (iter->slot == NULL)
+    {
+        iter->slot = iter->table[iter->index];
+
+        // We have reached the end.
+        if (iter->index == iter->capacity)
+        {
+            // Reset everything back to the beginning.
+            iter->index = 0;
+            iter->slot = NULL;
+            *key = NULL;
+            *value = NULL;
+
+            return false;
+        }
+
+        iter->index++;
+    }
+
+    // In case "key" is NULL.
+    if (key)
+    {
+        *key = iter->slot->key;
+    }
+
+    // In case "value" is NULL.
+    if (value)
+    {
+        *value = iter->slot->value;
+    }
+
+    iter->slot = iter->slot->next;
+
+    return true;
+}
+
+void hash_table_iterator_free(HashTableIterator *iter)
+{
+    free(iter);
 }
