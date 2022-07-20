@@ -21,7 +21,7 @@ void **dynamic_array_get_data(DynamicArray *dyn_array);
 
 DynamicArray *dynamic_array_init(dynamic_array_equal_values equal_values, dynamic_array_print_index print_index,
                                     dynamic_array_free_value free_value);
-void dynamic_array_push(DynamicArray *dyn_array, void *value);
+void dynamic_array_append(DynamicArray *dyn_array, void *value);
 void dynamic_array_insert(DynamicArray *dyn_array, size_t index, void *value);
 void dynamic_array_pop(DynamicArray *dyn_array);
 void dynamic_array_pop_index(DynamicArray *dyn_array, size_t index);

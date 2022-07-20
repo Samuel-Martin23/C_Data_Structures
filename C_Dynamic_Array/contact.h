@@ -10,7 +10,7 @@ typedef struct
 } Contact;
 
 DynamicArray *dynamic_array_init_contact(void);
-void dynamic_array_push_contact(DynamicArray *dyn_array, const char *name, int age);
+void dynamic_array_append_contact(DynamicArray *dyn_array, const char *name, int age);
 void dynamic_array_remove_contact(DynamicArray *dyn_array, const char *name, int age);
 bool dynamic_array_iterate_contact(DynamicArrayIterator *iter, Contact **contact);
 

@@ -22,14 +22,14 @@ DynamicArray *dynamic_array_init_contact(void)
     return dynamic_array_init(contact_equals_contact, contact_print_contact, free);
 }
 
-void dynamic_array_push_contact(DynamicArray *dyn_array, const char *name, int age)
+void dynamic_array_append_contact(DynamicArray *dyn_array, const char *name, int age)
 {
     Contact *contact = malloc(sizeof(Contact));
 
     contact->age = age;
     memcpy(contact->name, name, 25);
 
-    dynamic_array_push(dyn_array, contact);
+    dynamic_array_append(dyn_array, contact);
 }
 
 void dynamic_array_remove_contact(DynamicArray *dyn_array, const char *name, int age)

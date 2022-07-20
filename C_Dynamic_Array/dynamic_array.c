@@ -80,7 +80,7 @@ DynamicArray *dynamic_array_init(dynamic_array_equal_values equal_values, dynami
     return dyn_array;
 }
 
-void dynamic_array_push(DynamicArray *dyn_array, void *value)
+void dynamic_array_append(DynamicArray *dyn_array, void *value)
 {
     if (dyn_array == NULL || dyn_array->data == NULL)
     {
