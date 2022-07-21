@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define DEFAULT_CAPACITY_SIZE       100
 
@@ -25,6 +24,7 @@ void dynamic_array_append(DynamicArray *dyn_array, void *value);
 void dynamic_array_insert(DynamicArray *dyn_array, size_t index, void *value);
 void dynamic_array_pop(DynamicArray *dyn_array);
 void dynamic_array_pop_index(DynamicArray *dyn_array, size_t index);
+void dynamic_array_pop_index_range(DynamicArray *dyn_array, size_t start_index, size_t end_index);
 void dynamic_array_remove(DynamicArray *dyn_array, void *value);
 void *dynamic_array_at(DynamicArray *dyn_array, size_t index);
 bool dynamic_array_index(DynamicArray *dyn_array, size_t *index, void *value);

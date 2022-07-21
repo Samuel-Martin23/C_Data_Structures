@@ -1,39 +1,25 @@
-#include "contact.h"
+#include "dynamic_array_int.h"
 
 int main()
 {
-    DynamicArray *contacts = dynamic_array_init_contact();
+    DynamicArray *nums = dynamic_array_init_int();
 
-    dynamic_array_push_contact(contacts, "Samuel", 45);
-    dynamic_array_push_contact(contacts, "John", 23);
-    dynamic_array_push_contact(contacts, "Luke", 72);
-    dynamic_array_push_contact(contacts, "Will", 29);
-
-    dynamic_array_print(contacts);
-
-    dynamic_array_pop_index(contacts, 0);
-
-    dynamic_array_print(contacts);
-
-    dynamic_array_remove_contact(contacts, "Luke", 72);
-
-    dynamic_array_print(contacts);
-
-    DynamicArrayIterator *iter = dynamic_array_iterator_init(contacts);
-
-    for (Contact *contact = NULL; dynamic_array_iterate_contact(iter, &contact);)
+    for (int i = 0; i < 50; i++)
     {
-        if (contact->age == 23)
-        {
-            dynamic_array_remove_contact(contacts, contact->name, contact->age);
-        }
+        dynamic_array_append_int(nums, i);
     }
 
-    dynamic_array_iterator_free(iter);
+    dynamic_array_pop_index_range(nums, 5, 40);
 
-    dynamic_array_print(contacts);
+    printf("The sum of the array is %d.\n", dynamic_array_sum_int(nums));
 
-    dynamic_array_free(contacts);
+    dynamic_array_extend_int_args(nums, 4, 100, 101, 102, 103);
+
+    dynamic_array_remove_int(nums, 100);
+
+    dynamic_array_print(nums);
+
+    dynamic_array_free(nums);
 
     return 0;
 }

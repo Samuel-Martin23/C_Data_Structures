@@ -6,4 +6,4 @@ if (${CMAKE_C_COMPILER_ID} MATCHES "Clang")
     set(CMAKE_C_FLAGS ${FLAGS})
 endif()
 
-add_executable(${PROJECT_NAME} main.c dynamic_array.c contact.c)
+add_executable(${PROJECT_NAME} main.c dynamic_array.c dynamic_array_int.c)

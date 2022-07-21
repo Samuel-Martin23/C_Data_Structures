@@ -158,6 +158,23 @@ void dynamic_array_pop_index(DynamicArray *dyn_array, size_t index)
     check_capacity_reallocation(dyn_array);
 }
 
+void dynamic_array_pop_index_range(DynamicArray *dyn_array, size_t start_index, size_t end_index)
+{
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0
+        || start_index > end_index || start_index >= dyn_array->size 
+        || end_index > dyn_array->size)
+    {
+        return;
+    }
+
+    size_t total_indices_removed = end_index - start_index;
+
+    for (size_t i = 0; i < total_indices_removed; i++)
+    {
+        dynamic_array_pop_index(dyn_array, start_index);
+    }
+}
+
 void dynamic_array_remove(DynamicArray *dyn_array, void *value)
 {
     if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
