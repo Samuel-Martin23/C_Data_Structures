@@ -10,16 +10,16 @@ static void print_int(void *value)
     printf("%d", *(int*)value);
 }
 
-static int *alloc_int(int value)
+static void *alloc_int(void *value)
 {
     int *alloc_value = malloc(sizeof(int));
-    *alloc_value = value;
+    *alloc_value = *(int*)value;
     return alloc_value;
 }
 
 DynamicArray *dynamic_array_init_int(void)
 {
-    return dynamic_array_init(equal_ints, print_int, free);
+    return dynamic_array_init(equal_ints, print_int, alloc_int, free);
 }
 
 DynamicArray *dynamic_array_init_int_args(size_t size, ...)
@@ -41,12 +41,12 @@ DynamicArray *dynamic_array_init_int_args(size_t size, ...)
 
 void dynamic_array_append_int(DynamicArray *dyn_array, int value)
 {
-    dynamic_array_append(dyn_array, alloc_int(value));
+    dynamic_array_append(dyn_array, &value);
 }
 
 void dynamic_array_insert_int(DynamicArray *dyn_array, size_t index, int value)
 {
-   dynamic_array_insert(dyn_array, index, alloc_int(value));
+   dynamic_array_insert(dyn_array, index, &value);
 }
 
 void dynamic_array_remove_int(DynamicArray *dyn_array, int value)

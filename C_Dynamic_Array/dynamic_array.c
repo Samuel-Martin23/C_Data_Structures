@@ -8,6 +8,7 @@ typedef struct DynamicArray
 
     dynamic_array_equal_values equal_values;
     dynamic_array_print_index print_index;
+    dynamic_array_alloc_value alloc_value;
     dynamic_array_free_value free_value;
 } DynamicArray;
 
@@ -47,6 +48,11 @@ static bool check_capacity_reallocation(DynamicArray *dyn_array)
     return true;
 }
 
+static size_t div_ceil_lu(size_t x, size_t y)
+{
+    return (size_t)ceil((double)x / (double)y);
+}
+
 size_t dynamic_array_get_size(DynamicArray *dyn_array)
 {
     return dyn_array->size;
@@ -65,7 +71,7 @@ void **dynamic_array_get_data(DynamicArray *dyn_array)
 }
 
 DynamicArray *dynamic_array_init(dynamic_array_equal_values equal_values, dynamic_array_print_index print_index,
-                                 dynamic_array_free_value free_value)
+                                 dynamic_array_alloc_value alloc_value, dynamic_array_free_value free_value)
 {
     DynamicArray *dyn_array = malloc(sizeof(DynamicArray));
 
@@ -75,6 +81,7 @@ DynamicArray *dynamic_array_init(dynamic_array_equal_values equal_values, dynami
 
     dyn_array->equal_values = equal_values;
     dyn_array->print_index = print_index;
+    dyn_array->alloc_value = alloc_value;
     dyn_array->free_value = free_value;
 
     return dyn_array;
@@ -82,27 +89,21 @@ DynamicArray *dynamic_array_init(dynamic_array_equal_values equal_values, dynami
 
 void dynamic_array_append(DynamicArray *dyn_array, void *value)
 {
-    if (dyn_array == NULL || dyn_array->data == NULL)
+    if (dyn_array == NULL || dyn_array->data == NULL
+        || !(check_capacity_reallocation(dyn_array)))
     {
-        dyn_array->free_value(value);
         return;
     }
 
-    if (!(check_capacity_reallocation(dyn_array)))
-    {
-        dyn_array->free_value(value);
-        return;
-    }
-
-    dyn_array->data[dyn_array->size] = value;
+    dyn_array->data[dyn_array->size] = dyn_array->alloc_value(value);
     dyn_array->size++;
 }
 
 void dynamic_array_insert(DynamicArray *dyn_array, size_t index, void *value)
 {
-    if (dyn_array == NULL || dyn_array->data == NULL)
+    if (dyn_array == NULL || dyn_array->data == NULL
+        || !(check_capacity_reallocation(dyn_array)))
     {
-        dyn_array->free_value(value);
         return;
     }
 
@@ -111,20 +112,39 @@ void dynamic_array_insert(DynamicArray *dyn_array, size_t index, void *value)
         index = dyn_array->size;
     }
 
-    if (!(check_capacity_reallocation(dyn_array)))
-    {
-        dyn_array->free_value(value);
-        return;
-    }
-
     for (size_t i = dyn_array->size; i > index; i--)
     {
         dyn_array->data[i] = dyn_array->data[i - 1];
     }
 
-    dyn_array->data[index] = value;
+    dyn_array->data[index] = dyn_array->alloc_value(value);
 
     dyn_array->size++;
+}
+
+DynamicArray *dynamic_array_slice(DynamicArray *dyn_array, size_t *start, size_t *end, size_t step)
+{
+    size_t start_index = (start == NULL) ? 0 : *start;
+    size_t end_index = (end == NULL) ? dyn_array->size : *end;
+
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0
+        || start_index > end_index || start_index >= dyn_array->size 
+        || end_index > dyn_array->size)
+    {
+        return NULL;
+    }
+
+    DynamicArray *dyn_array_slice = dynamic_array_init(dyn_array->equal_values, dyn_array->print_index, dyn_array->alloc_value, dyn_array->free_value);
+
+    size_t size = div_ceil_lu(end_index - start_index, step);
+
+    for (size_t i = 0; i < size; i++)
+    {
+        dynamic_array_append(dyn_array_slice, dyn_array->data[start_index]);
+        start_index += step;
+    }
+
+    return dyn_array_slice;
 }
 
 void dynamic_array_pop(DynamicArray *dyn_array)
@@ -158,8 +178,11 @@ void dynamic_array_pop_index(DynamicArray *dyn_array, size_t index)
     check_capacity_reallocation(dyn_array);
 }
 
-void dynamic_array_pop_index_range(DynamicArray *dyn_array, size_t start_index, size_t end_index)
+void dynamic_array_pop_index_range(DynamicArray *dyn_array, size_t *start, size_t *end, size_t step)
 {
+    size_t start_index = (start == NULL) ? 0 : *start;
+    size_t end_index = (end == NULL) ? dyn_array->size : *end;
+
     if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0
         || start_index > end_index || start_index >= dyn_array->size 
         || end_index > dyn_array->size)
@@ -167,11 +190,14 @@ void dynamic_array_pop_index_range(DynamicArray *dyn_array, size_t start_index, 
         return;
     }
 
-    size_t total_indices_removed = end_index - start_index;
+    size_t total_indices_removed = div_ceil_lu(end_index - start_index, step);
 
     for (size_t i = 0; i < total_indices_removed; i++)
     {
         dynamic_array_pop_index(dyn_array, start_index);
+        // Since we removed the index that we are currently on
+        // minus the step by 1.
+        start_index += (step - 1);
     }
 }
 
@@ -242,6 +268,27 @@ bool dynamic_array_contains(DynamicArray *dyn_array, void *value)
     return false;
 }
 
+size_t dynamic_array_count(DynamicArray *dyn_array, void *value)
+{
+    if (dyn_array == NULL || dyn_array->data == NULL 
+        || dyn_array->size == 0)
+    {
+        return 0;
+    }
+
+    size_t count = 0;
+
+    for (size_t i = 0; i < dyn_array->size; i++)
+    {
+        if (dyn_array->equal_values(value, dyn_array->data[i]))
+        {
+            count++;
+        }
+    }
+
+    return count;
+}
+
 void dynamic_array_reverse(DynamicArray *dyn_array)
 {
     if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
@@ -259,6 +306,11 @@ void dynamic_array_reverse(DynamicArray *dyn_array)
         dyn_array->data[i] = dyn_array->data[last_index - i];
         dyn_array->data[last_index - i] = temp;
     }
+}
+
+DynamicArray *dynamic_array_copy(DynamicArray *dyn_array)
+{
+    return dynamic_array_slice(dyn_array, NULL, NULL, 1);
 }
 
 void dynamic_array_print(DynamicArray *dyn_array)

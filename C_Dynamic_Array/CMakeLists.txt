@@ -7,3 +7,4 @@ if (${CMAKE_C_COMPILER_ID} MATCHES "Clang")
 endif()
 
 add_executable(${PROJECT_NAME} main.c dynamic_array.c dynamic_array_int.c)
+target_link_libraries(${PROJECT_NAME} m)
