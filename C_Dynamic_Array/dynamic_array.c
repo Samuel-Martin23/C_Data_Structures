@@ -282,8 +282,7 @@ bool dynamic_array_index(DynamicArray *dyn_array, size_t *index, void *value)
 
 bool dynamic_array_contains(DynamicArray *dyn_array, void *value)
 {
-    if (dyn_array == NULL || dyn_array->data == NULL 
-        || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
     {
         return false;
     }
@@ -301,8 +300,7 @@ bool dynamic_array_contains(DynamicArray *dyn_array, void *value)
 
 size_t dynamic_array_count(DynamicArray *dyn_array, void *value)
 {
-    if (dyn_array == NULL || dyn_array->data == NULL 
-        || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
     {
         return 0;
     }
@@ -318,6 +316,18 @@ size_t dynamic_array_count(DynamicArray *dyn_array, void *value)
     }
 
     return count;
+}
+
+void dynamic_array_set(DynamicArray *dyn_array, size_t index, void *value)
+{
+    if (dyn_array == NULL || dyn_array->data == NULL
+        || index >= dyn_array->size)
+    {
+        return;
+    }
+
+    dyn_array->free_value(dyn_array->data[index]);
+    dyn_array->data[index] = dyn_array->alloc_value(value);
 }
 
 void dynamic_array_reverse(DynamicArray *dyn_array)

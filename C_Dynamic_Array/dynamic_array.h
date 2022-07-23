@@ -34,6 +34,7 @@ void *dynamic_array_at(DynamicArray *dyn_array, size_t index);
 bool dynamic_array_index(DynamicArray *dyn_array, size_t *index, void *value);
 bool dynamic_array_contains(DynamicArray *dyn_array, void *value);
 size_t dynamic_array_count(DynamicArray *dyn_array, void *value);
+void dynamic_array_set(DynamicArray *dyn_array, size_t index, void *value);
 void dynamic_array_reverse(DynamicArray *dyn_array);
 DynamicArray *dynamic_array_copy(DynamicArray *dyn_array);
 void dynamic_array_clear(DynamicArray *dyn_array);

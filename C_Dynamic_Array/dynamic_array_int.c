@@ -108,6 +108,11 @@ size_t dynamic_array_count_int(DynamicArray *dyn_array, int value)
     return dynamic_array_count(dyn_array, &value);
 }
 
+void dynamic_array_set_int(DynamicArray *dyn_array, size_t index, int value)
+{
+    dynamic_array_set(dyn_array, index, &value);
+}
+
 bool dynamic_array_iterate_int(DynamicArrayIterator *iter, int *value)
 {
     void *iter_value = NULL;
