@@ -351,9 +351,11 @@ void dynamic_array_clear(DynamicArray *dyn_array)
         return;
     }
 
-    for (size_t i = 0; i < dyn_array->size; i++)
+    size_t size = dyn_array->size;
+
+    for (size_t i = 0; i < size; i++)
     {
-        dyn_array->free_value(dyn_array->data[i]);
+        dynamic_array_pop(dyn_array);
     }
 }
 
