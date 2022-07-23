@@ -7,7 +7,7 @@ typedef struct DynamicArray
     void **data;
 
     dynamic_array_equal_values equal_values;
-    dynamic_array_print_index print_index;
+    dynamic_array_print_value print_value;
     dynamic_array_alloc_value alloc_value;
     dynamic_array_free_value free_value;
 } DynamicArray;
@@ -70,7 +70,7 @@ void **dynamic_array_get_data(DynamicArray *dyn_array)
     return dyn_array->data;
 }
 
-DynamicArray *dynamic_array_init(dynamic_array_equal_values equal_values, dynamic_array_print_index print_index,
+DynamicArray *dynamic_array_init(dynamic_array_equal_values equal_values, dynamic_array_print_value print_value,
                                  dynamic_array_alloc_value alloc_value, dynamic_array_free_value free_value)
 {
     DynamicArray *dyn_array = malloc(sizeof(DynamicArray));
@@ -80,7 +80,7 @@ DynamicArray *dynamic_array_init(dynamic_array_equal_values equal_values, dynami
     dyn_array->data = calloc(dyn_array->capacity, sizeof(void*));
 
     dyn_array->equal_values = equal_values;
-    dyn_array->print_index = print_index;
+    dyn_array->print_value = print_value;
     dyn_array->alloc_value = alloc_value;
     dyn_array->free_value = free_value;
 
@@ -97,6 +97,26 @@ void dynamic_array_append(DynamicArray *dyn_array, void *value)
 
     dyn_array->data[dyn_array->size] = dyn_array->alloc_value(value);
     dyn_array->size++;
+}
+
+void dynamic_array_extend(DynamicArray *src, DynamicArray *ext)
+{
+    if (src == NULL || src->data == NULL || ext == NULL
+        || ext->data == NULL || ext->size == 0
+        // This is a way of checking to see if there are the
+        // same type.
+        || src->equal_values != ext->equal_values
+        || src->print_value != ext->print_value
+        || src->alloc_value != ext->alloc_value
+        || src->free_value != ext->free_value)
+    {
+        return;
+    }
+
+    for (size_t i = 0; i < ext->size; i++)
+    {
+        dynamic_array_append(src, ext->data[i]);
+    }
 }
 
 void dynamic_array_insert(DynamicArray *dyn_array, size_t index, void *value)
@@ -139,7 +159,8 @@ DynamicArray *dynamic_array_slice(DynamicArray *dyn_array, size_t *start, size_t
         return NULL;
     }
 
-    DynamicArray *dyn_array_slice = dynamic_array_init(dyn_array->equal_values, dyn_array->print_index, dyn_array->alloc_value, dyn_array->free_value);
+    DynamicArray *dyn_array_slice = dynamic_array_init(dyn_array->equal_values, dyn_array->print_value,
+                                                       dyn_array->alloc_value, dyn_array->free_value);
 
     size_t size = div_ceil_lu(end_index - start_index, step);
 
@@ -323,6 +344,19 @@ DynamicArray *dynamic_array_copy(DynamicArray *dyn_array)
     return dynamic_array_slice(dyn_array, NULL, NULL, 1);
 }
 
+void dynamic_array_clear(DynamicArray *dyn_array)
+{
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
+    {
+        return;
+    }
+
+    for (size_t i = 0; i < dyn_array->size; i++)
+    {
+        dyn_array->free_value(dyn_array->data[i]);
+    }
+}
+
 void dynamic_array_print(DynamicArray *dyn_array)
 {
     if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
@@ -337,11 +371,11 @@ void dynamic_array_print(DynamicArray *dyn_array)
 
     for (i = 0; i < dyn_array->size-1; i++)
     {
-        dyn_array->print_index(dyn_array->data[i]);
+        dyn_array->print_value(dyn_array->data[i]);
         printf(", ");
     }
 
-    dyn_array->print_index(dyn_array->data[i]);
+    dyn_array->print_value(dyn_array->data[i]);
     printf("}\n");
 }
 
@@ -358,10 +392,7 @@ void dynamic_array_free(DynamicArray *dyn_array)
         return;
     }
 
-    for (size_t i = 0; i < dyn_array->size; i++)
-    {
-        dyn_array->free_value(dyn_array->data[i]);
-    }
+    dynamic_array_clear(dyn_array);
 
     free(dyn_array->data);
     free(dyn_array);

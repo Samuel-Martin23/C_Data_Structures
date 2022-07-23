@@ -103,16 +103,9 @@ void dynamic_array_extend_int_array(DynamicArray *dyn_array, int *arr, size_t si
     }
 }
 
-void dynamic_array_extend_int_dyn_array(DynamicArray *src, DynamicArray *ext)
+size_t dynamic_array_count_int(DynamicArray *dyn_array, int value)
 {
-    DynamicArrayIterator *iter = dynamic_array_iterator_init(ext);
-
-    for (int value = 0; dynamic_array_iterate_int(iter, &value);)
-    {
-        dynamic_array_append_int(src, value);
-    }
-
-    dynamic_array_iterator_free(iter);
+    return dynamic_array_count(dyn_array, &value);
 }
 
 bool dynamic_array_iterate_int(DynamicArrayIterator *iter, int *value)
