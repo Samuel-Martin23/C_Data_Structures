@@ -144,8 +144,8 @@ void dynamic_array_insert(DynamicArray *dyn_array, size_t index, void *value)
 
 DynamicArray *dynamic_array_slice(DynamicArray *dyn_array, size_t *start, size_t *end, size_t step)
 {
-    // Testing the dyn_array stuff first. I just want to make sure that dyn_array is not NULL.
-    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0
+        || step == 0)
     {
         return NULL;
     }
@@ -206,8 +206,8 @@ void dynamic_array_pop_index(DynamicArray *dyn_array, size_t index)
 
 void dynamic_array_pop_index_range(DynamicArray *dyn_array, size_t *start, size_t *end, size_t step)
 {
-    // Testing the dyn_array stuff first. I just want to make sure that dyn_array is not NULL.
-    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
+    if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0
+        || step == 0)
     {
         return;
     }
