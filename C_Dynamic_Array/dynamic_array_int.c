@@ -118,13 +118,9 @@ bool dynamic_array_iterate_int(DynamicArrayIterator *iter, int *value)
     void *iter_value = NULL;
     bool is_iterating = dynamic_array_iterator_iterate(iter, &iter_value);
 
-    if (is_iterating)
+    if (value)
     {
-        *value = *(int*)iter_value;
-    }
-    else
-    {
-        *value = 0;
+        *value = (is_iterating) ? *(int*)iter_value : 0;
     }
 
     return is_iterating;

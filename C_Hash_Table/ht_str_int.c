@@ -49,16 +49,33 @@ HashTable *hash_table_init_str_int(void)
     return hash_table_init(get_hash_str, str_keys_equal, str_int_print, alloc_str, alloc_int, str_int_free);
 }
 
-void hash_table_insert_str_int(HashTable *ht, const char *key_name, int value_age)
+HashTable *hash_table_init_str_int_args(size_t num_pairs, ...)
 {
-    hash_table_insert(ht, (void*)key_name, &value_age);
+    HashTable *ht = hash_table_init_str_int();
+
+    va_list args;
+    va_start(args, num_pairs);
+
+    for (size_t i = 0; i < num_pairs; i++)
+    {
+        hash_table_insert_str_int(ht, va_arg(args, char*), va_arg(args, int));
+    }
+
+    va_end(args);
+
+    return ht;
 }
 
-void hash_table_delete_str_int(HashTable *ht, const char *key_name) {hash_table_delete(ht, (void*)key_name);}
-
-int hash_table_find_str_int(HashTable *ht, const char *key_name)
+void hash_table_insert_str_int(HashTable *ht, const char *key, int value)
 {
-    void *value = hash_table_find(ht, (void*)key_name);
+    hash_table_insert(ht, (void*)key, &value);
+}
+
+void hash_table_delete_str_int(HashTable *ht, const char *key) {hash_table_delete(ht, (void*)key);}
+
+int hash_table_find_str_int(HashTable *ht, const char *key)
+{
+    void *value = hash_table_find(ht, (void*)key);
 
     if (value == NULL)
     {
@@ -69,23 +86,22 @@ int hash_table_find_str_int(HashTable *ht, const char *key_name)
     return *(int*)value;
 }
 
-bool hash_table_iterate_str_int(HashTableIterator *iter, const char **key_str, int *value_int)
+bool hash_table_iterate_str_int(HashTableIterator *iter, const char **key, int *value)
 {
-    void *key = NULL;
-    void *value = NULL;
+    void *iter_key = NULL;
+    void *iter_value = NULL;
 
-    bool is_next = hash_table_iterator_iterate(iter, &key, &value);
+    bool is_iterating = hash_table_iterator_iterate(iter, &iter_key, &iter_value);
 
-    if (is_next)
+    if (key)
     {
-        *key_str = (char*)key;
-        *value_int = *(int*)value;
-    }
-    else
-    {
-        *key_str = "";
-        *value_int = 0;
+        *key = (is_iterating) ? (char*)iter_key : "";
     }
 
-    return is_next;
+    if (value)
+    {
+        *value = (is_iterating) ? *(int*)iter_value : 0;
+    }
+
+    return is_iterating;
 }

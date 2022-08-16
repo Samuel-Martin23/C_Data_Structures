@@ -2,11 +2,8 @@
 
 int main()
 {
-    HashTable *names_ages = hash_table_init_str_int();
+    HashTable *names_ages = hash_table_init_str_int_args(3, "Sam", 23, "Luke", 32, "John", 67);
 
-    hash_table_insert_str_int(names_ages, "Sam", 23);
-    hash_table_insert_str_int(names_ages, "Luke", 32);
-    hash_table_insert_str_int(names_ages, "John", 67);
     hash_table_insert_str_int(names_ages, "Will", 50);
 
     hash_table_print(names_ages);
