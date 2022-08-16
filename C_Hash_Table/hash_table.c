@@ -15,7 +15,9 @@ typedef struct HashTable
 
     ht_get_hash_value get_hash_value;
     ht_equal_keys equal_keys;
-    ht_print_slot print_slot;
+    ht_print_pair print_pair;
+    ht_alloc_key alloc_key;
+    ht_alloc_value alloc_value;
     ht_free_pair free_pair;
 } HashTable;
 
@@ -58,8 +60,8 @@ static void free_table_slot(HashTable *ht, TableSlot *slot)
     free(slot);
 }
 
-HashTable *hash_table_init(ht_get_hash_value get_hash_value, ht_equal_keys equal_keys, ht_print_slot print_slot,
-                                ht_free_pair free_pair)
+HashTable *hash_table_init(ht_get_hash_value get_hash_value, ht_equal_keys equal_keys, ht_print_pair print_pair,
+                           ht_alloc_key alloc_key, ht_alloc_value alloc_value, ht_free_pair free_pair)
 {
     HashTable *ht = malloc(sizeof(HashTable));
 
@@ -70,7 +72,9 @@ HashTable *hash_table_init(ht_get_hash_value get_hash_value, ht_equal_keys equal
 
     ht->get_hash_value = get_hash_value;
     ht->equal_keys = equal_keys;
-    ht->print_slot = print_slot;
+    ht->print_pair = print_pair;
+    ht->alloc_key = alloc_key;
+    ht->alloc_value = alloc_value;
     ht->free_pair = free_pair;
 
     return ht;
@@ -85,12 +89,12 @@ void hash_table_insert(HashTable *ht, void *key, void *value)
     if (searched_slot)
     {
         ht->free_pair(searched_slot->key, searched_slot->value);
-        searched_slot->key = key;
-        searched_slot->value = value;
+        searched_slot->key = ht->alloc_key(key);
+        searched_slot->value = ht->alloc_value(value);
         return;
     }
 
-    TableSlot *slot = alloc_table_slot(key, value);
+    TableSlot *slot = alloc_table_slot(ht->alloc_key(key), ht->alloc_value(value));
     size_t index = ht->get_hash_value(key) % ht->capacity;
 
     if (ht->table[index] == NULL)
@@ -167,7 +171,7 @@ void hash_table_print(HashTable *ht)
 
         while (slot != NULL)
         {
-            ht->print_slot(slot->key, slot->value);
+            ht->print_pair(slot->key, slot->value);
             printf(", ");
             slot = slot->next;
         }

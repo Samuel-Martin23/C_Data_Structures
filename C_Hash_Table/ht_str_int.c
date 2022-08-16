@@ -1,18 +1,5 @@
 #include "ht_str_int.h"
 
-static char *alloc_str(const char *s)
-{
-    size_t size = strlen(s) + 1;
-    char *str = malloc(sizeof(char) * size);
-
-    if (str != NULL)
-    {
-        memcpy(str, s, size);
-    }
-
-    return str;
-}
-
 static size_t get_hash_str(void *key)
 {
     size_t hash_value = 0;
@@ -34,19 +21,37 @@ static void str_int_print(void *key, void *value)
     printf("\"%s\": %d", (const char*)key, *(int*)value);
 }
 
+static void *alloc_str(void *value)
+{
+    char *s = (char*)value;
+    size_t size = strlen(s) + 1;
+    char *str = malloc(sizeof(char) * size);
+
+    if (str != NULL)
+    {
+        memcpy(str, s, size);
+    }
+
+    return str;
+}
+
+static void *alloc_int(void *value)
+{
+    int *alloc_value = malloc(sizeof(int));
+    *alloc_value = *(int*)value;
+    return alloc_value;
+}
+
 static void str_int_free(void *key, void *value) {free(key); free(value);}
 
 HashTable *hash_table_init_str_int(void)
 {
-    return hash_table_init(get_hash_str, str_keys_equal, str_int_print, str_int_free);
+    return hash_table_init(get_hash_str, str_keys_equal, str_int_print, alloc_str, alloc_int, str_int_free);
 }
 
 void hash_table_insert_str_int(HashTable *ht, const char *key_name, int value_age)
 {
-    int *age_alloc = malloc(sizeof(int));
-    *age_alloc = value_age;
-
-    hash_table_insert(ht, alloc_str(key_name), age_alloc);
+    hash_table_insert(ht, (void*)key_name, &value_age);
 }
 
 void hash_table_delete_str_int(HashTable *ht, const char *key_name) {hash_table_delete(ht, (void*)key_name);}
