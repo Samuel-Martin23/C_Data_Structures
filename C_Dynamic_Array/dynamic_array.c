@@ -48,11 +48,6 @@ static bool check_capacity_reallocation(DynamicArray *dyn_array)
     return true;
 }
 
-static size_t div_ceil_lu(size_t x, size_t y)
-{
-    return (size_t)ceil((double)x / (double)y);
-}
-
 size_t dynamic_array_get_size(DynamicArray *dyn_array)
 {
     return dyn_array->size;
@@ -162,7 +157,7 @@ DynamicArray *dynamic_array_slice(DynamicArray *dyn_array, size_t *start, size_t
     DynamicArray *dyn_array_slice = dynamic_array_init(dyn_array->equal_values, dyn_array->print_value,
                                                        dyn_array->alloc_value, dyn_array->free_value);
 
-    size_t size = div_ceil_lu(end_index - start_index, step);
+    size_t size = ((end_index - start_index) + step - 1) / step;
 
     for (size_t i = 0; i < size; i++)
     {
@@ -221,7 +216,7 @@ void dynamic_array_pop_index_range(DynamicArray *dyn_array, size_t *start, size_
         return;
     }
 
-    size_t total_indices_removed = div_ceil_lu(end_index - start_index, step);
+    size_t total_indices_removed = ((end_index - start_index) + step - 1) / step;
 
     for (size_t i = 0; i < total_indices_removed; i++)
     {
