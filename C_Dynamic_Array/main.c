@@ -9,9 +9,7 @@ int main()
         dynamic_array_append_int(nums, i);
     }
 
-    size_t start = 5;
-    size_t end = 40;
-    dynamic_array_pop_index_range(nums, &start, &end, 1);
+    dynamic_array_pop_index_range(nums, 5, 40, 1);
 
     printf("The sum of the array is %d.\n", dynamic_array_sum_int(nums));
 
