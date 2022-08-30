@@ -283,6 +283,12 @@ bool dynamic_array_contains(DynamicArray *dyn_array, void *value)
     return false;
 }
 
+bool dynamic_array_is_empty(DynamicArray *dyn_array)
+{
+    // Idk how I feel about returning true if dyn_array or dyn_array->data are NULL.
+    return (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0);
+}
+
 size_t dynamic_array_count(DynamicArray *dyn_array, void *value)
 {
     if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0)
