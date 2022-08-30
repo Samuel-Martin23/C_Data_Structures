@@ -137,6 +137,14 @@ void dynamic_array_insert(DynamicArray *dyn_array, size_t index, void *value)
     dyn_array->size++;
 }
 
+void dynamic_array_insert_n(DynamicArray *dyn_array, size_t index, void *value, size_t n)
+{
+    for (size_t i = 0; i < n; i++)
+    {
+        dynamic_array_insert(dyn_array, index, value);
+    }
+}
+
 DynamicArray *dynamic_array_slice(DynamicArray *dyn_array, size_t start, size_t end, size_t step)
 {
     if (dyn_array == NULL || dyn_array->data == NULL || dyn_array->size == 0
