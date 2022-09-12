@@ -356,7 +356,8 @@ void dynamic_array_clear(DynamicArray *dyn_array)
 
     for (size_t i = 0; i < size; i++)
     {
-        dynamic_array_pop(dyn_array);
+        dyn_array->size--;
+        dyn_array->free_value(dyn_array->data[dyn_array->size]);
     }
 }
 
